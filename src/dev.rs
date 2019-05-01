@@ -95,19 +95,36 @@ pub fn update(model: &mut Model, msg: Msg, cmd: &Cmd) {
 
 pub fn view(model: &Model) -> Html<Msg> {
     let navigation = view!(nav.ul|
+        margin: "0",
+        padding: "0",
+        list_style: "none",
+        display: "flex",
+        width: "100%",
+        justify_content: "space-around",
+        font_size: "2em",
+        text_transform: "uppercase",
+        font_family: "sans-serif",
+        background_color: "#000",
+        color: "#fff",
         li(
+            width: "100%",
+            text_align: "center",
             on.click = move |event| {
                 Msg::UrlRequest(Page::Homepage)
             },
             a(text("Homepage"))
         ),
         li(
+            width: "100%",
+            text_align: "center",
             on.click = move |event| {
                 Msg::UrlRequest(Page::Content)
             },
             a(text("Content"))
         ),
         li(
+            width: "100%",
+            text_align: "center",
             on.click = move |event| {
                 Msg::UrlRequest(Page::Account)
             },

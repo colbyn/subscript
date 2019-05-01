@@ -116,6 +116,7 @@ impl<Msg: Clone + Debug + 'static> Tag<Msg> {
         self.attributes.init(&self.dom_ref);
         self.styling.init(style_mount);
         self.events.init(&self.dom_ref);
+        self.dom_ref.set_attribute("id", self.id.as_str());
     }
     pub fn clear(&self, style_mount: &StyleMount) {
         // CLEAR CHILDREN

@@ -118,8 +118,8 @@ pub enum Style {
 
 #[derive(Debug, PartialEq, Clone, Hash)]
 pub struct PseudoClass {
-    name: String,
-    rules: Vec<Rule>
+    pub name: String,
+    pub rules: Vec<Rule>
 }
 
 impl PseudoClass {
@@ -138,58 +138,19 @@ impl PseudoClass {
 
 #[derive(Debug, PartialEq, Clone, Hash)]
 pub struct Rule {
-    property: String,
-    value: String,
+    pub property: String,
+    pub value: String,
 }
 
 impl Rule {
     pub fn stringify(&self) -> String {
-        format!("{prop}: {value};", prop=self.property, value=self.value)
+        format!(
+            "{prop}: {value};",
+            prop=self.property.replace("_", "-"),
+            value=self.value
+        )
     }
 }
-
-// impl Style {
-//     pub fn render_decls(selector: &String, styles: &Vec<Style>) -> String {
-//         let mut inner: Vec<String> = Vec::new();
-//         for style in styles {
-//             match style.render_decl() {
-//                 Some(decl) => inner.push(decl),
-//                 _ => {}
-//             }
-//         }
-//         format!(
-//             "{selector} {{{body}}}",
-//             selector=selector,
-//             body=inner.join(" "),
-//         )
-//     }
-//     pub fn render_decl(&self) -> Option<String> {
-//         match &self {
-//             Style::Style{property, value} => {
-//                 let property = property.replace("_", "-");
-//                 Some(format!(
-//                     "{prop}: {value};",
-//                     prop=property,
-//                     value=value,
-//                 ))
-//             },
-//             Style::PseudoClass(name, body) => None,
-//         }
-//     }
-//     pub fn render_pseudo_selector(&self, node_id: &String) -> Option<String> {
-//         match &self {
-//             Style::Style{..} => None,
-//             Style::PseudoClass(pseudo_name, body) => {
-//                 let selector = format!(
-//                     "#{id}:{pseudo_name}",
-//                     id=node_id,
-//                     pseudo_name=pseudo_name,
-//                 );
-//                 Some(Style::render_decls(&selector, body))
-//             },
-//         }
-//     }
-// }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -198,17 +159,17 @@ impl Rule {
 
 
 pub trait CssValue {
-    fn stringify(&self) -> String;
+    fn stringify_value(&self) -> String;
 }
 
 impl CssValue for String {
-    fn stringify(&self) -> String {
+    fn stringify_value(&self) -> String {
         self.clone()
     }
 }
 
 impl CssValue for &str {
-    fn stringify(&self) -> String {
+    fn stringify_value(&self) -> String {
         self.clone().to_owned()
     }
 }

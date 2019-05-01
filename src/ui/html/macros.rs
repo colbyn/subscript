@@ -43,6 +43,36 @@ macro_rules! attribute_value {
 #[macro_export]
 macro_rules! view_argument {
     ///////////////////////////////////////////////////////////////////////////
+    // STYLE
+    ///////////////////////////////////////////////////////////////////////////
+    // CSS RULE
+    ($node:expr, $key:ident : $val:expr) => {
+        $node.add_style({
+            let value = $val.stringify_value();
+            Style::Rule(Rule {
+                property: String::from(stringify!($key)),
+                value: value,
+            })
+        });
+    };
+    // EMPTY PSEUDO-CLASS
+    ($node:expr, : $key:ident ()) => {
+        $node.add_style(Style::PseudoClass(
+            String::from(stringify!($key)),
+            Vec::new()
+        ));
+    };
+    // PSEUDO-CLASS
+    ($node:expr, : $key:ident $val:tt) => {{
+        let mut body: Vec<Rule> = Vec::new();
+        style_properties_only_arguments!(body, $val);
+        $node.add_style(Style::PseudoClass(PseudoClass {
+            name: String::from(stringify!($key)),
+            rules: body
+        }));
+    }};
+    
+    ///////////////////////////////////////////////////////////////////////////
     // EVENT HANDLER
     ///////////////////////////////////////////////////////////////////////////
     ($node:expr, on . $key:ident = $value:expr) => {
@@ -60,33 +90,6 @@ macro_rules! view_argument {
             attribute_value!($key, $val).clone()
         );
     };
-
-    ///////////////////////////////////////////////////////////////////////////
-    // STYLE
-    ///////////////////////////////////////////////////////////////////////////
-    // CSS RULE
-    ($node:expr, $key:ident : $val:expr) => {
-        $node.add_style(Style::Style{
-            property: String::from(stringify!($key)),
-            value: $val.stringify(),
-        });
-    };
-    // EMPTY PSEUDO-CLASS
-    ($node:expr, : $key:ident ()) => {
-        $node.add_style(Style::PseudoClass(
-            String::from(stringify!($key)),
-            Vec::new()
-        ));
-    };
-    // PSEUDO-CLASS
-    ($node:expr, : $key:ident $val:tt) => {{
-        let mut body: Vec<Style> = Vec::new();
-        style_properties_only_arguments!(body, $val);
-        $node.add_style(Style::PseudoClass(
-            String::from(stringify!($key)),
-            body
-        ));
-    }};
     
     ///////////////////////////////////////////////////////////////////////////
     // CHILDREN
@@ -141,10 +144,12 @@ macro_rules! style_properties_only_arguments {
     ///////////////////////////////////////////////////////////////////////////
     // CSS RULE
     ($list:expr, $key:ident : $val:expr) => {
-        $list.push(Style::Style {
-            property: String::from(stringify!($key)),
-            value: $val.stringify(),
-        });
+        $list.push(
+            Rule {
+                property: String::from(stringify!($key)),
+                value: $val.stringify(),
+            }
+        );
     };
     
     ///////////////////////////////////////////////////////////////////////////
@@ -215,7 +220,7 @@ macro_rules! view_arguments {
     ///////////////////////////////////////////////////////////////////////////
     // MANY - EXPRESSION
     ///////////////////////////////////////////////////////////////////////////
-    ($node:expr, $value:expr, $($rest:tt)*) => {
+    ($node:expr, $value:tt, $($rest:tt)*) => {
         view_argument!($node, $value);
         view_arguments!(
             $node,
