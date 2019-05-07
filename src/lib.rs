@@ -1,18 +1,24 @@
 #![allow(dead_code, unused)]
 
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsValue;
-
 #[macro_use]
-pub mod ui;
-pub mod dev;
+extern crate lazy_static;
+
 pub mod browser;
+#[macro_use]
+pub mod tree;
+#[macro_use]
+pub mod process;
+#[macro_use]
+pub mod effect;
+
+pub mod dev;
 
 
 #[wasm_bindgen]
-pub fn main() -> Result<(), JsValue> {
+pub fn main() -> Result<(), wasm_bindgen::JsValue> {
     console_error_panic_hook::set_once();
-    dev::run();
+    dev::main();
     Ok(())
 }
 

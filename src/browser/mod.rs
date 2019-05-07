@@ -1,17 +1,12 @@
-use std::fmt;
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 use std::convert::From;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
-use std::collections::HashMap;
-use std::collections::BTreeSet;
-use std::collections::BTreeMap;
-use std::collections::VecDeque;
+use std::collections::*;
 use std::cell::{self, Cell, RefCell};
 use std::rc::Rc;
 use std::any::Any;
-use either::Either;
-use serde::{self, Serialize, Deserialize};
+use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
 use wasm_bindgen::closure;
 use wasm_bindgen::closure::Closure;
@@ -93,6 +88,10 @@ pub struct DomRef {
     pub dom_ref_as_element: web_sys::Element,
 }
 
+impl Hash for DomRef {
+    fn hash<H: Hasher>(&self, state: &mut H) {}
+}
+
 impl DomRef {
     pub fn new(tag: &str) -> Self {
         let element = internal::new_element(&tag.to_owned());
@@ -108,11 +107,6 @@ impl DomRef {
             dom_ref_as_node: From::from(value.clone()),
             dom_ref_as_element: From::from(value),
         }
-    }
-    pub fn append_child(&self, child: &DomRef) {
-        self.dom_ref_as_node
-            .append_child(&child.dom_ref_as_node)
-            .expect("appendChild failed");
     }
     pub fn clone_node(&self, deep: bool) -> DomRef {
         let new_dom_ref = {
@@ -134,12 +128,12 @@ impl DomRef {
             dom_ref_as_node: new_dom_ref,
         }
     }
-    pub fn add_event_listener<Return>(&self, event_name: &str, callback: &Callback<Return>) {
-        self.dom_ref_as_node.add_event_listener_with_callback(event_name, &callback.js_function)
+    pub fn add_event_listener(&self, event_name: &str, callback: &js_sys::Function) {
+        self.dom_ref_as_node.add_event_listener_with_callback(event_name, &callback)
             .expect("addEventListener failed");
     }
-    pub fn remove_event_listener<Return>(&self, event_name: &str, callback: &Callback<Return>) {
-        self.dom_ref_as_node.remove_event_listener_with_callback(event_name, &callback.js_function)
+    pub fn remove_event_listener(&self, event_name: &str, callback: &js_sys::Function) {
+        self.dom_ref_as_node.remove_event_listener_with_callback(event_name, &callback)
             .expect("removeEventListener failed");
     }
     pub fn set_attribute(&self, key: &str, value: &str) {
@@ -153,15 +147,29 @@ impl DomRef {
     pub fn set_text_content(&self, value: &str) {
         self.dom_ref_as_node.set_text_content(Some(value));
     }
+    pub fn append_child(&self, child: &DomRef) {
+        self.dom_ref_as_node
+            .append_child(&child.dom_ref_as_node)
+            .expect("appendChild failed");
+    }
+    pub fn remove_child(&self, child: &DomRef) {
+        self.dom_ref_as_node
+            .remove_child(&child.dom_ref_as_node)
+            .expect("removeChild failed");
+    }
+    pub fn replace_child(&self, new_child: &DomRef, old_child: &DomRef) {
+        self.dom_ref_as_node
+            .replace_child(&new_child.dom_ref_as_node, &old_child.dom_ref_as_node)
+            .expect("replacedNode failed");
+    }
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// JAVASCRIPT CALLBACKS
+// JAVASCRIPT CALLBACKS - Immediate
 ///////////////////////////////////////////////////////////////////////////////
 
 
-// EVENT HANDLER
 #[derive(Clone)]
 pub struct Callback<Return> {
     pub function: Rc<Fn(JsValue) -> Option<Return>>,
@@ -200,12 +208,12 @@ impl<Return: Clone + Debug + 'static> Callback<Return> {
         xs
     }
 }
-impl<Msg> Debug for Callback<Msg> {
+impl<Msg: Clone> Debug for Callback<Msg> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> fmt::Result {
         write!(f, "Callback")
     }
 }
-impl<Msg> PartialEq for Callback<Msg> {
+impl<Msg: Clone> PartialEq for Callback<Msg> {
     fn eq(&self, other: &Callback<Msg>) -> bool {true}
 }
 
@@ -253,6 +261,54 @@ pub mod internal {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// LOCAL-STORAGE
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone, Debug)]
+pub struct LocalStorage {
+    object_ref: web_sys::Storage
+}
+
+impl LocalStorage {
+    pub fn new() -> Self {
+        let object_ref = internal::get_window()
+            .local_storage()
+            .expect("localStorage failed")
+            .expect("localStorage missing");
+        LocalStorage {
+            object_ref: object_ref,
+        }
+    }
+    pub fn get<Value>(&self, key: &str) -> Option<Value>
+    where
+        Value: DeserializeOwned
+    {
+        let value = self.object_ref
+            .get_item(key)
+            .expect("getItem method failed");
+        match value {
+            None => None,
+            Some(value) => match serde_json::from_str(value.clone().as_str()) {
+                Err(msg) => None,
+                Ok(value) => Some(value)
+            }
+        }
+    }
+    pub fn set<Value: Serialize>(&self, key: &str, value: &Value) {
+        match serde_json::to_string(value) {
+            Err(msg) => (),
+            Ok(value) => self.object_ref
+                .set_item(key, value.as_str())
+                .expect("setItem method failed")
+        }
+    }
+    pub fn remove(&self, key: &str) {
+        self.object_ref
+            .remove_item(key)
+            .expect("removeItem method failed")
+    }
+}
 
 
 

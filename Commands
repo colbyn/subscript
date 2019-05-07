@@ -4,4 +4,7 @@ command run-chrome do
       --auto-open-devtools-for-tabs
 
 command build do
-  wasm-pack build --out-name index --target web
+  npm run build
+
+command start do
+  npm start

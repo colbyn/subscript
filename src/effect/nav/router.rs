@@ -19,9 +19,9 @@ use wasm_bindgen::closure;
 use wasm_bindgen::closure::Closure;
 use uuid::Uuid;
 
+use crate::effect::nav::UrlChange;
 
-
-pub type Navigation<Msg> = Rc<Fn(String)->Option<Msg>>;
+pub type RouterFn<Msg> = Rc<Fn(UrlChange)->Option<Msg>>;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -198,9 +198,13 @@ macro_rules! path_entry {
 
 #[macro_export]
 macro_rules! match_path {
+    () => {
+        Rc::new(move |raw_input: UrlChange| None);
+    };
     ($($ps:tt => $ex:tt)*) => {Rc::new(
-        move |raw_input: String| {
-            use crate::ui::effect::nav::*;
+        move |raw_input: UrlChange| {
+            use crate::effect::nav::*;
+            let raw_input: String = raw_input.new_url.clone();
             let mut result = None;
             {$(
                 path_entry!(raw_input; result; $ps => $ex);
@@ -209,84 +213,4 @@ macro_rules! match_path {
         }
     )};
 }
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// DEV
-///////////////////////////////////////////////////////////////////////////////
-
-pub mod app {
-    use super::*;
-    
-    #[derive(Debug, PartialEq, Clone, Hash)]
-    pub enum Route {
-        RootIndex,
-        ContentIndex,
-        ContentItem {
-            uid: Uuid
-        },
-        AccountIndex,
-        AccountUser {
-            user_name: String
-        },
-        NotFound
-    }
-    
-    pub fn router() {
-        use app::Route;
-        
-        let matcher: Rc<Fn(String)->Option<app::Route>> = match_path!(
-            [] => {
-                Route::RootIndex
-            }
-            ["content"] => {
-                Route::ContentIndex
-            }
-            ["content", uid: Uuid] => {
-                Route::ContentItem {uid: uid}
-            }
-            ["account"] => {
-                Route::AccountIndex
-            }
-            ["account", user_name: String] => {
-                Route::AccountUser {user_name: user_name}
-            }
-            _ => {
-                Route::NotFound
-            }
-        );
-        console::log_1(&JsValue::from(
-            format!("Result: {:#?}", matcher.as_ref()(String::from("/content")))
-        ));
-    }
-}
-
-// pub fn init(on_url_change: Callback) {
-//     web_sys::window()
-//         .expect("missing window")
-//         .set_onpopstate(Some(&function));
-//     web_sys::window()
-//         .expect("missing window")
-//         .set_onload(Some(&function));
-// }
-// 
-// pub fn test() {
-//     use wasm_bindgen::JsCast;
-//     let closure: Closure<dyn FnMut(JsValue)> = Closure::wrap(Box::new({
-//         move |value: JsValue| {
-//             console::log_1(&value);
-//         }
-//     }));
-//     let function: &js_sys::Function = closure.as_ref().unchecked_ref();
-//     let function: js_sys::Function = function.clone();
-//     closure.forget();
-//     web_sys::window()
-//         .expect("missing window")
-//         .set_onpopstate(Some(&function));
-//     web_sys::window()
-//         .expect("missing window")
-//         .set_onload(Some(&function));
-// }
 
