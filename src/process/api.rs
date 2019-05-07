@@ -219,13 +219,13 @@ impl<S: Spec> ProcessHandle for Process<S> {
 
 pub fn save_model<S: Spec>(model: &S::Model) {
     let local_storage = LocalStorage::new();
-    let spec_type_id = format!("{:#?}", std::any::TypeId::of::<S>());
+    let spec_type_id = format!("{:?}", std::any::TypeId::of::<S>());
     local_storage.set::<S::Model>(spec_type_id.as_ref(), model);
 }
 
 pub fn load_saved_model<S: Spec>() -> Option<S::Model> {
     let local_storage = LocalStorage::new();
-    let spec_type_id = format!("{:#?}", std::any::TypeId::of::<S>());
+    let spec_type_id = format!("{:?}", std::any::TypeId::of::<S>());
     local_storage.get::<S::Model>(spec_type_id.as_ref())
 }
 

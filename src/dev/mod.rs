@@ -1,4 +1,6 @@
 pub mod login;
+pub mod data;
+pub mod utils;
 
 use std::fmt::{self, Debug};
 use std::convert::From;
@@ -13,6 +15,7 @@ use std::marker::Sized;
 use either::Either;
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
+use uuid::Uuid;
 
 use crate::browser::*;
 use crate::tree::offline::data::*;
@@ -20,7 +23,34 @@ use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
 use crate::process::data::*;
 use crate::dev::login::*;
+use crate::dev::data::*;
 
+
+///////////////////////////////////////////////////////////////////////////////
+// DOMAIN LOGIC MISCELLANEOUS - DATA TYPES
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum Page {
+    Homepage,
+    Content,
+    Analytics,
+    Account,
+    NotFound
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct Session {
+    account: Account,
+    user_id: Uuid,
+    user_name: String,
+    encoded_token: String,
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// APP SPECIFICATION - DATA TYPES
+///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone)]
 pub struct AppSpec {
@@ -35,18 +65,15 @@ pub enum AppMsg {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Page {
-    Homepage,
-    Content,
-    Analytics,
-    Account,
-    NotFound
-}
-
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct AppModel {
     page: Option<Page>,
+    session: Option<Session>
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+// APP SPECIFICATION - IMPLEMENTATION
+///////////////////////////////////////////////////////////////////////////////
 
 impl Spec for AppSpec {
     type Model = AppModel;
@@ -77,14 +104,11 @@ impl Spec for AppSpec {
         Init {
             model: AppModel {
                 page: None,
+                session: None,
             },
             subs: subscriptions!(
                 on(value: UrlChange) -> AppMsg {
-                    if let Some(msg) = url_matcher(value) {
-                        msg
-                    } else {
-                        AppMsg::NoOp
-                    }
+                    url_matcher(value).unwrap_or(AppMsg::NoOp)
                 }
             )
         }
@@ -117,15 +141,11 @@ impl Spec for AppSpec {
             width: "100%"
             text_align: "center"
             padding: "8px"
-            self.css.merge({
+            self.css.append({
                 if model.page == Some(page.clone()) {
-                    css!(
-                        
-                    )
+                    css!()
                 } else {
-                    css!(
-                        font_weight: "300"
-                    )
+                    css!(font_weight: "300")
                 }
             })
             .click(move |_| {
@@ -184,13 +204,19 @@ impl Spec for AppSpec {
             {navigation}
             h1(text("Loading"))
         );
-        match &model.page {
-            Some(Page::Homepage) => homepage,
-            Some(Page::Content) => content,
-            Some(Page::Analytics) => analytics,
-            Some(Page::Account) => account,
-            Some(Page::NotFound) => not_found,
-            None => loading,
+        let active_session = || {
+            match &model.page {
+                Some(Page::Homepage) => homepage,
+                Some(Page::Content) => content,
+                Some(Page::Analytics) => analytics,
+                Some(Page::Account) => account,
+                Some(Page::NotFound) => not_found,
+                None => loading,
+            }
+        };
+        match &model.session {
+            Some(session) => active_session(),
+            None => HtmlBuild::new_component(Rc::new(self.login.clone()))
         }
     }
 }

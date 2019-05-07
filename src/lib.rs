@@ -11,6 +11,7 @@ pub mod tree;
 pub mod process;
 #[macro_use]
 pub mod effect;
+pub mod extras;
 
 pub mod dev;
 

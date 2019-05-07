@@ -23,7 +23,7 @@ use crate::process::data::*;
 #[macro_export]
 macro_rules! markup_argument {
     // SELF METHODS
-    ($parent:expr; self.css.merge ($style_node:expr)) => {{
+    ($parent:expr; self.css.append ($style_node:expr)) => {{
         $parent.merge_style_node($style_node);
     }};
     ($parent:expr; self.append ($children:expr)) => {{
@@ -120,8 +120,8 @@ macro_rules! markup_argument {
 macro_rules! markup_arguments {
     ($parent:expr;) => {};
     // SELF METHODS
-    ($parent:expr; self.css.merge ($body:expr) $($rest:tt)*) => {{
-        markup_argument!($parent; self.css.merge ($body));
+    ($parent:expr; self.css.append ($body:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.css.append ($body));
         markup_arguments!($parent; $($rest)*);
     }};
     ($parent:expr; self.append ($body:expr) $($rest:tt)*) => {{
