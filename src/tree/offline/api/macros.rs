@@ -22,6 +22,10 @@ use crate::process::data::*;
 
 #[macro_export]
 macro_rules! markup_argument {
+    // EXPRESSION
+    ($parent:expr; {$value:expr}) => {
+        $parent.add_child($value.clone());
+    };
     // SELF METHODS
     ($parent:expr; self.css.append ($style_node:expr)) => {{
         $parent.merge_style_node($style_node);
@@ -31,10 +35,6 @@ macro_rules! markup_argument {
             $parent.add_child(child.clone());
         }
     }};
-    // EXPRESSION
-    ($parent:expr; {$value:expr}) => {
-        $parent.add_child($value.clone());
-    };
     // CSS
     ($parent:expr; @media [$($prop_cond:ident : $value_cond:expr),*] ($($prop:ident : $value:expr)*)) => {{
         let mut media_selectors: Vec<Rule> = Vec::new();
@@ -119,6 +119,11 @@ macro_rules! markup_argument {
 #[macro_export]
 macro_rules! markup_arguments {
     ($parent:expr;) => {};
+    // EXPRESSION
+    ($parent:expr; {$value:expr} $($rest:tt)*) => {{
+        markup_argument!($parent; {$value});
+        markup_arguments!($parent; $($rest)*);
+    }};
     // SELF METHODS
     ($parent:expr; self.css.append ($body:expr) $($rest:tt)*) => {{
         markup_argument!($parent; self.css.append ($body));
@@ -126,11 +131,6 @@ macro_rules! markup_arguments {
     }};
     ($parent:expr; self.append ($body:expr) $($rest:tt)*) => {{
         markup_argument!($parent; self.append ($body));
-        markup_arguments!($parent; $($rest)*);
-    }};
-    // EXPRESSION
-    ($parent:expr; {$value:tt} $($rest:tt)*) => {{
-        markup_argument!($parent; {$value});
         markup_arguments!($parent; $($rest)*);
     }};
     // CSS

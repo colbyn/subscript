@@ -58,7 +58,7 @@ impl GlobalCss {
 // INTERFACE - HTML
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<Msg> LiveHtml<Msg> {
+impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
     pub fn from_builder(build: HtmlBuild<Msg>) -> Self {
         match build {
             HtmlBuild::Component(comp) => {
@@ -136,6 +136,44 @@ impl<Msg> LiveHtml<Msg> {
 }
 
 impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
+    pub fn init(&self) {
+        // match self {
+        //     LiveHtml::Node(node) => {
+        //         GLOBAL_CSS.with(|css| {
+        //             css.remove_node(&node.node_id);
+        //         });
+        //         for child in node.children.borrow().iter() {
+        //             child.clear();
+        //         }
+        //         for (key, value) in node.events.borrow().iter() {
+        //             node.dom_ref.remove_event_listener(key, &value.js_function);
+        //         }
+        //     }
+        //     LiveHtml::Component(comp) => {
+        //         comp.process.init();
+        //     }
+        //     LiveHtml::Text(text) => {}
+        // }
+    }
+    pub fn clear(&self) {
+        // match self {
+        //     LiveHtml::Node(node) => {
+        //         GLOBAL_CSS.with(|css| {
+        //             css.remove_node(&node.node_id);
+        //         });
+        //         for child in node.children.borrow().iter() {
+        //             child.clear();
+        //         }
+        //         for (key, value) in node.events.borrow().iter() {
+        //             node.dom_ref.remove_event_listener(key, &value.js_function);
+        //         }
+        //     }
+        //     LiveHtml::Component(comp) => {
+        //         comp.process.clear()
+        //     },
+        //     LiveHtml::Text(text) => (),
+        // }
+    }
     pub fn tick(&self, messages: &mut Vec<Msg>) {
         match self {
             LiveHtml::Node(node) => {
@@ -149,26 +187,7 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
             LiveHtml::Component(comp) => {
                 comp.process.tick();
             }
-            LiveHtml::Text(text) => {
-                
-            }
-        }
-    }
-    pub fn clear(&self) {
-        match self {
-            LiveHtml::Node(node) => {
-                GLOBAL_CSS.with(|css| {
-                    css.remove_node(&node.node_id);
-                });
-                for child in node.children.borrow().iter() {
-                    child.clear();
-                }
-                for (key, value) in node.events.borrow().iter() {
-                    node.dom_ref.remove_event_listener(key, &value.js_function);
-                }
-            }
-            LiveHtml::Component(comp) => comp.process.clear(),
-            LiveHtml::Text(text) => (),
+            LiveHtml::Text(text) => {}
         }
     }
     pub fn sync(&self, other: &HtmlBuild<Msg>) -> Option<LiveHtml<Msg>> {
@@ -184,17 +203,17 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
                         html::sync_styling(&x.styling, &y.styling, &x.node_id);
                         html::sync_children(&x.children, &y.children, &x.dom_ref);
                     } else {
-                        self.clear();
                         replacement = Some(LiveHtml::from_builder(other.clone()));
                     }
                 }
-                (LiveHtml::Component(x), HtmlBuild::Component(y)) => (),
+                (LiveHtml::Component(x), HtmlBuild::Component(y)) => {
+                    replacement = Some(LiveHtml::from_builder(other.clone()));
+                },
                 (LiveHtml::Text(x), HtmlBuild::Text(y)) => {
                     x.dom_ref.set_text_content(&y.value);
                     x.value.replace(y.value.clone());
                 }
                 _ => {
-                    self.clear();
                     replacement = Some(LiveHtml::from_builder(other.clone()));
                 }
             }

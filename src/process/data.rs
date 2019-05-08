@@ -141,6 +141,7 @@ pub trait ProcessHandle {
     fn receive_broadcast(&self, value: Rc<Any>);
     fn clear(&self);
     fn tick(&self);
+    fn init(&self);
 }
 
 #[derive(Clone)]

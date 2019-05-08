@@ -7,6 +7,7 @@ use std::cell::{self, Cell, RefCell};
 use std::rc::Rc;
 use std::any::Any;
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
+use either::Either;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::closure;
 use wasm_bindgen::closure::Closure;
@@ -20,30 +21,47 @@ pub mod console {
     use super::*;
     
     pub fn log(value: impl Loggable) {
-        value.log();
+        match value.to_js_value() {
+            Either::Left(x) => {
+                web_sys::console::log_1(&x);
+            }
+            Either::Right(x) => {
+                web_sys::console::log_1(x);
+            }
+        }
+    }
+    pub fn warn(value: impl Loggable) {
+        match value.to_js_value() {
+            Either::Left(x) => {
+                web_sys::console::warn_1(&x);
+            }
+            Either::Right(x) => {
+                web_sys::console::warn_1(x);
+            }
+        }
     }
     
     pub trait Loggable {
-        fn log(&self);
+        fn to_js_value(&self) -> Either<JsValue, &JsValue>;
     }
     impl Loggable for &str {
-        fn log(&self) {
-            web_sys::console::log_1(&JsValue::from_str(self));
+        fn to_js_value(&self) -> Either<JsValue, &JsValue> {
+            Either::Left(JsValue::from_str(self))
         }
     }
     impl Loggable for String {
-        fn log(&self) {
-            web_sys::console::log_1(&JsValue::from(self));
+        fn to_js_value(&self) -> Either<JsValue, &JsValue> {
+            Either::Left(JsValue::from_str(self.as_str()))
         }
     }
     impl Loggable for JsValue {
-        fn log(&self) {
-            web_sys::console::log_1(self);
+        fn to_js_value(&self) -> Either<JsValue, &JsValue> {
+            Either::Right(&self)
         }
     }
     impl Loggable for &JsValue {
-        fn log(&self) {
-            web_sys::console::log_1(self);
+        fn to_js_value(&self) -> Either<JsValue, &JsValue> {
+            Either::Right(self.clone())
         }
     }
 }

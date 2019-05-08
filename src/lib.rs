@@ -19,7 +19,7 @@ pub mod dev;
 #[wasm_bindgen]
 pub fn main() -> Result<(), wasm_bindgen::JsValue> {
     console_error_panic_hook::set_once();
-    dev::main();
+    dev::client::main();
     Ok(())
 }
 

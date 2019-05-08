@@ -53,7 +53,9 @@ pub fn unchanged<Msg: Clone>(x: &LiveHtml<Msg>, y: &HtmlBuild<Msg>) -> bool {
         (LiveHtml::Text(x), HtmlBuild::Text(y)) => {
             x.value.borrow().as_str() == y.value.as_str()
         }
-        (LiveHtml::Component(x), HtmlBuild::Component(y)) => {true}
+        (LiveHtml::Component(x), HtmlBuild::Component(y)) => {
+            x.process.process_id() == y.process.process_id()
+        }
         _ => {false}
     }
 }
@@ -158,6 +160,7 @@ where
             .for_each(|(x, y)| {
                 if let Some(replacement) = x.sync(y) {
                     x.clear();
+                    replacement.init();
                     dom_ref.replace_child(replacement.dom_ref(), x.dom_ref());
                     *x = replacement;
                 }
@@ -171,6 +174,7 @@ where
             ys  .iter()
                 .map(|y| {
                     let new_child = LiveHtml::from_builder(y.clone());
+                    new_child.init();
                     dom_ref.append_child(new_child.dom_ref());
                     new_child
                 })

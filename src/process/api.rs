@@ -115,10 +115,22 @@ impl Application {
 impl<S: Spec> Process<S> {
     pub fn from_spec(spec: S) -> Self {
         let Init{model, subs} = spec.init(InitArgs {
-            saved_model: None
+            saved_model: load_saved_model::<S>(),
         });
         let offline_html = spec.view(&model);
-        let online_html = LiveHtml::from_builder(offline_html.clone());
+        let online_html = {
+            let root = LiveHtml::from_builder(offline_html.clone());
+            match root {
+                LiveHtml::Component(_) => {
+                    let msg = "The root view type of a process is a component,
+the root view type of a process doesn’t change. Recommend changing such be a
+child of an html node (e.g. where the root-most value is a div node).";
+                    console::warn(msg);
+                }
+                _ => {}
+            }
+            root
+        };
         Process {
             process_id: format!("pid-{}", rand::random::<u16>()),
             spec: spec,
@@ -174,6 +186,7 @@ impl<S: Spec> ProcessHandle for Process<S> {
                 );
                 self.online_html.sync(&self.offline_html.borrow());
             }
+            // PROCESS COMMANDS
             let queued_commands = self.queued_commands
                 .borrow_mut()
                 .drain(..)
@@ -212,6 +225,14 @@ impl<S: Spec> ProcessHandle for Process<S> {
             reg.remove_process(&self.process_id);
         });
         self.online_html.clear();
+    }
+    fn init(&self) {
+        // PROCESS VIEW
+        self.offline_html.replace(
+            self.spec.view(&self.model.borrow())
+        );
+        self.online_html.init();
+        self.online_html.sync(&self.offline_html.borrow());
     }
 }
 

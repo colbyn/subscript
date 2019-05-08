@@ -11,19 +11,17 @@ use std::marker::Sized;
 use either::Either;
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
+use uuid::Uuid;
 
 use crate::browser::*;
+use crate::process::data::*;
 use crate::tree::offline::data::*;
 use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
-use crate::process::data::*;
-use crate::dev::utils;
-use crate::extras::*;
+use crate::dev::server::data::*;
+use crate::dev::client::data::*;
+use crate::dev::client::utils;
 
-
-///////////////////////////////////////////////////////////////////////////////
-// DOMAIN LOGIC MISCELLANEOUS - DATA TYPES
-///////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -31,80 +29,48 @@ use crate::extras::*;
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone)]
-pub struct LoginSpec {}
+pub struct AnalyticsSpec {
+    
+}
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     NoOp,
-    LoginNameInput(String),
-    LoginPasswordInput(String),
-    NewNameInput(String),
-    NewPasswordInput(String),
-    NewPasswordConfirmInput(String),
-    SubmitLogIn,
-    SubmitCreateAccount,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Model {
-    login_name: String,
-    login_password: PasswordString,
-    new_name: String,
-    new_password: PasswordString,
-    new_password_confirm: PasswordString,
+    
 }
 
 impl Default for Model {
     fn default() -> Self {
         Model {
-            login_name: String::new(),
-            login_password: PasswordString(String::new()),
-            new_name: String::new(),
-            new_password: PasswordString(String::new()),
-            new_password_confirm: PasswordString(String::new()),
+            
         }
     }
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // APP SPECIFICATION - IMPLEMENTATION
 ///////////////////////////////////////////////////////////////////////////////
 
-impl Spec for LoginSpec {
+impl Spec for AnalyticsSpec {
     type Model = Model;
     type Msg = Msg;
     
     fn init(&self, loaded: InitArgs<Self::Model>) -> Init<Self::Model, Self::Msg> {
         Init {
-            model: Default::default(),
-            subs: Rc::new(|_| None),
+            model: match loaded.saved_model {
+                Some(saved_model) => saved_model,
+                None => Default::default(),
+            },
+            subs: subscriptions!()
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {
         match msg {
-            Msg::LoginNameInput(text) => {
-                model.login_name = text;
-            },
-            Msg::LoginPasswordInput(text) => {
-                model.login_password = PasswordString(text);
-            },
-            Msg::NewNameInput(text) => {
-                model.new_name = text;
-            },
-            Msg::NewPasswordInput(text) => {
-                model.new_password = PasswordString(text);
-            },
-            Msg::NewPasswordConfirmInput(text) => {
-                model.new_password_confirm = PasswordString(text);
-            },
-            Msg::SubmitLogIn => {
-                
-            },
-            Msg::SubmitCreateAccount => {
-                
-            },
             Msg::NoOp => (),
         }
     }
@@ -135,31 +101,9 @@ impl Spec for LoginSpec {
         let user_login = panel("Log In", markup!(form|
             border_radius: "3px"
             self.append(&[
-                form_field(
-                    FormMeta {
-                        name: "Account Name",
-                        placeholder: "Name",
-                        type_: "text",
-                    },
-                    move |ref event| -> Msg {
-                        Msg::LoginNameInput(
-                            utils::event::get_oninput_value(event)
-                        )
-                    }
-                ),
-                form_field(
-                    FormMeta {
-                        name: "Password",
-                        placeholder: "Password",
-                        type_: "password",
-                    },
-                    move |ref event| -> Msg {
-                        Msg::LoginPasswordInput(
-                            utils::event::get_oninput_value(event)
-                        )
-                    }
-                ),
-                form_submit(move |event| Msg::SubmitLogIn),
+                form_field(),
+                form_field(),
+                form_submit(),
             ])
         ));
         
@@ -167,43 +111,10 @@ impl Spec for LoginSpec {
         let create_account = panel("Create Account", markup!(form|
             border_radius: "3px"
             self.append(&[
-                form_field(
-                    FormMeta {
-                        name: "Account Name",
-                        placeholder: "Name",
-                        type_: "text",
-                    },
-                    move |ref event| -> Msg {
-                        Msg::NewNameInput(
-                            utils::event::get_oninput_value(event)
-                        )
-                    }
-                ),
-                form_field(
-                    FormMeta {
-                        name: "Password",
-                        placeholder: "Password",
-                        type_: "password",
-                    },
-                    move |ref event| -> Msg {
-                        Msg::NewPasswordInput(
-                            utils::event::get_oninput_value(event)
-                        )
-                    }
-                ),
-                form_field(
-                    FormMeta {
-                        name: "Re-Enter Password",
-                        placeholder: "Password",
-                        type_: "password",
-                    },
-                    move |ref event| -> Msg {
-                        Msg::NewPasswordConfirmInput(
-                            utils::event::get_oninput_value(event)
-                        )
-                    }
-                ),
-                form_submit(move |ref event| Msg::SubmitCreateAccount)
+                form_field(),
+                form_field(),
+                form_field(),
+                form_submit()
             ])
         ));
         
@@ -238,24 +149,8 @@ impl Spec for LoginSpec {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// APP VIEW HELPERS
-///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
-struct FormMeta
-{
-    name: &'static str,
-    placeholder: &'static str,
-    type_: &'static str,
-}
-
-
-fn form_field(
-    meta: FormMeta,
-    on_input: impl Fn(JsValue) -> Msg + 'static
-) -> Html<Msg>
-{
+fn form_field() -> Html<Msg> {
     let ref input_id: String = format!("{}", rand::random::<u16>());
     markup!(
         margin_bottom: "18px"
@@ -265,14 +160,15 @@ fn form_field(
             font_size: "1em"
             color: "#656565"
             for = {input_id}
-            text(meta.name)
+            text("test")
         )
         input(
-            .input(on_input)
+            .input(move |event| {
+                Msg::NoOp
+            })
             ::placeholder (
                 color: "#666"
             )
-            text_transform: "lowercase"
             font_family: "'Source Sans Pro', sans-serif"
             font_size: "1em"
             width: "100%"
@@ -280,19 +176,17 @@ fn form_field(
             border: "1px solid #b1b1b1"
             border_radius: "3px"
             padding_left: "8px"
-            placeholder={meta.placeholder}
             font_size: "1.1em"
             padding: "2px"
             padding_left: "6px"
             id = {input_id}
-            type = {meta.type_}
+            type = "text"
             text("")
         )
     )
 }
 
-
-fn form_submit(on_submit: impl Fn(JsValue) -> Msg + 'static) -> Html<Msg> {
+fn form_submit() -> Html<Msg> {
     let ref input_id: String = format!("{}", rand::random::<u16>());
     markup!(
         input(
@@ -316,13 +210,10 @@ fn form_submit(on_submit: impl Fn(JsValue) -> Msg + 'static) -> Html<Msg> {
             type = "submit"
             .click(move |event| {
                 utils::event::prevent_default(&event);
-                on_submit(event)
+                Msg::NoOp
             })
             text("Submit")
         )
     )
 }
-
-
-
 
