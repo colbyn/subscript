@@ -45,6 +45,23 @@ impl Cmd {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// GLOBAL REGISTRY
+///////////////////////////////////////////////////////////////////////////////
+
+impl GlobalRegistry {
+    pub fn drain_events(&self) -> Vec<Rc<Any>> {
+        self.events
+            .borrow_mut()
+            .drain(..)
+            .collect::<Vec<Rc<Any>>>()
+    }
+    pub fn add_event(&self, event: Rc<Any>) {
+        self.events.borrow_mut().push(event);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 // APPLICATION
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -52,7 +69,7 @@ impl AppBuilder {
     pub fn from_spec<S: Spec>(spec: S) -> Self {
         AppBuilder {
             effects: Vec::new(),
-            process: Rc::new(Process::from_spec(spec)),
+            process: Rc::new(Process::from_spec("Root Process", spec)),
         }
     }
     pub fn with_effect(mut self, effect: impl Effect + 'static) -> Self {
@@ -60,9 +77,6 @@ impl AppBuilder {
         self
     }
     pub fn build(self) -> Application {
-        GLOBAL_REGISTRY.with(|reg| {
-            reg.add_process(self.process.clone());
-        });
         Application {
             js_tick_callback: Rc::new(RefCell::new(None)),
             root_process: self.process,
@@ -73,7 +87,10 @@ impl AppBuilder {
 
 impl Application {
     pub fn tick(&self) {
-        self.root_process.tick();
+        let ref global_events: Vec<Rc<Any>> = GLOBAL_REGISTRY.with(|reg| {
+            reg.drain_events()
+        });
+        self.root_process.tick(global_events);
         GLOBAL_CSS.with(|css| {
             css.tick();
         });
@@ -113,7 +130,7 @@ impl Application {
 ///////////////////////////////////////////////////////////////////////////////
 
 impl<S: Spec> Process<S> {
-    pub fn from_spec(spec: S) -> Self {
+    pub fn from_spec(process_name: &str, spec: S) -> Self {
         let Init{model, subs} = spec.init(InitArgs {
             saved_model: load_saved_model::<S>(),
         });
@@ -122,72 +139,76 @@ impl<S: Spec> Process<S> {
             let root = LiveHtml::from_builder(offline_html.clone());
             match root {
                 LiveHtml::Component(_) => {
-                    let msg = "The root view type of a process is a component,
-the root view type of a process doesn’t change. Recommend changing such be a
-child of an html node (e.g. where the root-most value is a div node).";
-                    console::warn(msg);
+                    console::warn("The root view type of a process is a component.");
                 }
                 _ => {}
             }
             root
         };
-        Process {
-            process_id: format!("pid-{}", rand::random::<u16>()),
-            spec: spec,
-            model: RefCell::new(model),
-            subscriber: subs,
-            offline_html: RefCell::new(offline_html),
-            online_html: online_html,
-            queued_commands: Rc::new(RefCell::new(VecDeque::new())),
-            queued_anything: RefCell::new(VecDeque::new()),
-            queued_messages: RefCell::new(VecDeque::new()),
-            sub_processes: RefCell::new(Vec::new()),
-        }
+        let process = Process {
+            rc: Rc::new(ProcessInstance {
+                process_name: Some(String::from(process_name)),
+                process_id: format!("pid-{}", rand::random::<u16>()),
+                status: RefCell::new(Status::Offline),
+                spec: spec,
+                model: RefCell::new(model),
+                subscriber: subs,
+                offline_html: RefCell::new(offline_html),
+                online_html: online_html,
+                queued_commands: Rc::new(RefCell::new(VecDeque::new())),
+            })
+        };
+        process.online();
+        process
     }
 }
 
 impl<S: Spec> ProcessHandle for Process<S> {
     fn process_id(&self) -> String {
-        self.process_id.clone()
+        self.rc.process_id.clone()
+    }
+    fn status(&self) -> Status {
+        self.rc.status.borrow().clone()
     }
     fn dom_ref(&self) -> &DomRef {
-        self.online_html.dom_ref()
+        self.rc.online_html.dom_ref()
     }
-    fn receive_broadcast(&self, value: Rc<Any>) {
-        self.queued_anything
-            .borrow_mut()
-            .push_back(value);
-    }
-    fn tick(&self) {
+    fn tick(&self, global_events: &Vec<Rc<Any>>) {
         let messages = {
+            // SETUP
             let mut xs: Vec<S::Msg> = Vec::new();
-            self.online_html.tick(&mut xs);
-            for something in self.queued_anything.borrow_mut().drain(..) {
-                match self.subscriber.as_ref()(something.clone()) {
+            // GLOBAL EVENTS
+            for something in global_events {
+                match self.rc.subscriber.as_ref()(something.clone()) {
                     None => (),
-                    Some(msg) => xs.push(msg),
+                    Some(msg) => {
+                        xs.push(msg)
+                    },
                 }
             }
+            // HTML DOM EVENTS
+            self.rc.online_html.tick(&mut xs, global_events);
+            // DONE
             xs
         };
         if !messages.is_empty() {
             // PROCESS EVENTS
             let ref cmd = Cmd {
                 update_view: Rc::new(Cell::new(false)),
-                queued_commands: self.queued_commands.clone(),
+                queued_commands: self.rc.queued_commands.clone(),
             };
             for msg in messages {
-                self.spec.update(&mut self.model.borrow_mut(), msg, cmd);
+                self.rc.spec.update(&mut self.rc.model.borrow_mut(), msg, cmd);
             }
             // PROCESS VIEW
             if cmd.update_view.get() {
-                self.offline_html.replace(
-                    self.spec.view(&self.model.borrow())
+                self.rc.offline_html.replace(
+                    self.rc.spec.view(&self.rc.model.borrow())
                 );
-                self.online_html.sync(&self.offline_html.borrow());
+                self.rc.online_html.sync(&self.rc.offline_html.borrow());
             }
             // PROCESS COMMANDS
-            let queued_commands = self.queued_commands
+            let queued_commands = self.rc.queued_commands
                 .borrow_mut()
                 .drain(..)
                 .collect::<Vec<CmdRequest>>();
@@ -208,11 +229,11 @@ impl<S: Spec> ProcessHandle for Process<S> {
                                 .expect("pushState failed");
                         }
                         CmdRequest::Save => {
-                            save_model::<S>(&self.model.borrow());
+                            save_model::<S>(&self.rc.model.borrow());
                         }
                         CmdRequest::Broadcast(value) => {
                             GLOBAL_REGISTRY.with(|reg| {
-                                reg.broadcast(value, Some(self.process_id.as_str()));
+                                reg.add_event(value);
                             });
                         }
                     }
@@ -220,19 +241,16 @@ impl<S: Spec> ProcessHandle for Process<S> {
             }
         }
     }
-    fn clear(&self) {
-        GLOBAL_REGISTRY.with(|reg| {
-            reg.remove_process(&self.process_id);
-        });
-        self.online_html.clear();
+    fn online(&self) {
+        self.rc.status.replace(Status::Online);
+        self.rc.online_html.online();
     }
-    fn init(&self) {
-        // PROCESS VIEW
-        self.offline_html.replace(
-            self.spec.view(&self.model.borrow())
-        );
-        self.online_html.init();
-        self.online_html.sync(&self.offline_html.borrow());
+    fn offline(&self) {
+        self.rc.status.replace(Status::Offline);
+        self.rc.online_html.offline();
+    }
+    fn box_clone(&self) -> Box<ProcessHandle> {
+        Box::new(self.clone())
     }
 }
 
@@ -251,10 +269,14 @@ pub fn load_saved_model<S: Spec>() -> Option<S::Model> {
 }
 
 
+#[macro_export]
+macro_rules! subscription_body {
+    ($body:expr) => {{$body}};
+}
 
 #[macro_export]
 macro_rules! subscriptions {
-    ($(on($value:ident: $ty:ty) -> $msg_ty:ty {$body:expr})*) => {
+    ($(on($value:ident: $ty:ty) -> $msg_ty:ty {$($x:tt)*})*) => {
         Rc::new({
             move |something: Rc<Any>| {
                 let mut return_value = None;
@@ -263,7 +285,7 @@ macro_rules! subscriptions {
                         if let Some($value) = something.downcast_ref::<$ty>() {
                             let $value = $value.clone();
                             if return_value.is_none() {
-                                return_value = Some({$body});
+                                return_value = Some(subscription_body!({$($x)*}));
                             }
                         }
                     }

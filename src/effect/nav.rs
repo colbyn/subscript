@@ -52,7 +52,7 @@ impl Navigation {
                                 .expect("pathname failed")
                         };
                         GLOBAL_REGISTRY.with(|reg| {
-                            reg.broadcast(Rc::new(payload), None);
+                            reg.add_event(Rc::new(payload));
                         });
                         None
                     }
@@ -79,7 +79,7 @@ impl Effect for Navigation {
                 .expect("pathname failed")
         };
         GLOBAL_REGISTRY.with(|reg| {
-            reg.broadcast(Rc::new(payload), None);
+            reg.add_event(Rc::new(payload));
         });
     }
 }

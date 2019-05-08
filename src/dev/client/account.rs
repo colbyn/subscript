@@ -75,10 +75,73 @@ impl Spec for AccountSpec {
     }
     fn view(&self, model: &Self::Model) -> Html<Self::Msg> {
         markup!(
-            h1(text("AccountSpec"))
+            width: "100%"
+            height: "100%"
+            display: "grid"
+            grid_template_columns: "300px 1fr"
+            {pane(ChildPos::First, Some("Nav"))}
+            {pane(ChildPos::Last, Some("Username"))}
         )
     }
 }
 
+pub fn pane(pos: ChildPos, header: Option<&str>) -> Html<Msg> {
+    markup!(
+        display: "flex"
+        flex_direction: "column"
+        width: "100%"
+        height: "100%"
+        header(
+            width: "100%"
+            height: "100px"
+            display: "flex"
+            justify_content: "center"
+            align_items: "center"
+            font_family: "'Source Sans Pro', sans-serif"
+            text_transform: "uppercase"
+            font_size: "0.9em"
+            border_bottom: "1px solid #000"
+            {
+                if let Some(txt) = header {
+                    markup!(text(txt))
+                } else {
+                    markup!()
+                }
+            }
+        )
+        div(
+            width: "100%"
+            height: "100%"
+        )
+    )
+}
+
+#[derive(Debug, Clone)]
+pub enum ChildPos {
+    First,
+    Middle,
+    Last,
+}
+
+impl ChildPos {
+    pub fn is_first(&self) -> bool {
+        match &self {
+            ChildPos::First => true,
+            _ => false
+        }
+    }
+    pub fn is_middle(&self) -> bool {
+        match &self {
+            ChildPos::First => true,
+            _ => false
+        }
+    }
+    pub fn is_last(&self) -> bool {
+        match &self {
+            ChildPos::First => true,
+            _ => false
+        }
+    }
+}
 
 

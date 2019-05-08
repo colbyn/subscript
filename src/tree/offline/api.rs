@@ -22,8 +22,8 @@ impl<Msg> HtmlBuild<Msg> {
     pub fn new_node(tag: &str) -> Self {
         HtmlBuild::Node(NodeBuild {
             tag: String::from(tag),
-            attributes: HashMap::new(),
-            events: HashMap::new(),
+            attributes: BTreeMap::new(),
+            events: BTreeMap::new(),
             styling: StyleNode {
                 self_rules: Vec::new(),
                 self_media_queries: Vec::new(),
@@ -37,7 +37,7 @@ impl<Msg> HtmlBuild<Msg> {
             value: String::from(value),
         })
     }
-    pub fn new_component(process: Rc<ProcessHandle>) -> Self {
+    pub fn new_component(process: Box<ProcessHandle>) -> Self {
         HtmlBuild::Component(ComponentBuild {
             process: process,
         })

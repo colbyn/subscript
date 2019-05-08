@@ -62,9 +62,11 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
     pub fn from_builder(build: HtmlBuild<Msg>) -> Self {
         match build {
             HtmlBuild::Component(comp) => {
-                LiveHtml::Component(LiveComponent {
+                let component = LiveHtml::Component(LiveComponent {
                     process: comp.process.clone(),
-                })
+                });
+                component.online();
+                component
             },
             HtmlBuild::Text(text) => {
                 LiveHtml::Text(LiveText {
@@ -136,56 +138,44 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
 }
 
 impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
-    pub fn init(&self) {
-        // match self {
-        //     LiveHtml::Node(node) => {
-        //         GLOBAL_CSS.with(|css| {
-        //             css.remove_node(&node.node_id);
-        //         });
-        //         for child in node.children.borrow().iter() {
-        //             child.clear();
-        //         }
-        //         for (key, value) in node.events.borrow().iter() {
-        //             node.dom_ref.remove_event_listener(key, &value.js_function);
-        //         }
-        //     }
-        //     LiveHtml::Component(comp) => {
-        //         comp.process.init();
-        //     }
-        //     LiveHtml::Text(text) => {}
-        // }
-    }
-    pub fn clear(&self) {
-        // match self {
-        //     LiveHtml::Node(node) => {
-        //         GLOBAL_CSS.with(|css| {
-        //             css.remove_node(&node.node_id);
-        //         });
-        //         for child in node.children.borrow().iter() {
-        //             child.clear();
-        //         }
-        //         for (key, value) in node.events.borrow().iter() {
-        //             node.dom_ref.remove_event_listener(key, &value.js_function);
-        //         }
-        //     }
-        //     LiveHtml::Component(comp) => {
-        //         comp.process.clear()
-        //     },
-        //     LiveHtml::Text(text) => (),
-        // }
-    }
-    pub fn tick(&self, messages: &mut Vec<Msg>) {
+    pub fn online(&self) {
         match self {
             LiveHtml::Node(node) => {
                 for child in node.children.borrow().iter() {
-                    child.tick(messages);
+                    child.online();
+                }
+            }
+            LiveHtml::Component(comp) => {
+                comp.process.online()
+            },
+            LiveHtml::Text(text) => (),
+        }
+    }
+    pub fn offline(&self) {
+        match self {
+            LiveHtml::Node(node) => {
+                for child in node.children.borrow().iter() {
+                    child.offline();
+                }
+            }
+            LiveHtml::Component(comp) => {
+                comp.process.offline()
+            },
+            LiveHtml::Text(text) => (),
+        }
+    }
+    pub fn tick(&self, messages: &mut Vec<Msg>, sub_enqueue: &Vec<Rc<Any>>) {
+        match self {
+            LiveHtml::Node(node) => {
+                for child in node.children.borrow().iter() {
+                    child.tick(messages, sub_enqueue);
                 }
                 for event in node.events.borrow().values() {
                     messages.append(&mut event.drain());
                 }
             }
             LiveHtml::Component(comp) => {
-                comp.process.tick();
+                comp.process.tick(sub_enqueue);
             }
             LiveHtml::Text(text) => {}
         }
@@ -198,7 +188,7 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
                 (LiveHtml::Node(x), HtmlBuild::Node(y)) => {
                     let tag_unchanged = x.tag == y.tag;
                     if tag_unchanged {
-                        html::sync_attributes(&x.attributes, &y.attributes, &x.dom_ref);
+                        html::sync_attributes(&x.attributes, &y.attributes, &x.dom_ref, &x.tag);
                         html::sync_events(&x.events, &y.events, &x.dom_ref);
                         html::sync_styling(&x.styling, &y.styling, &x.node_id);
                         html::sync_children(&x.children, &y.children, &x.dom_ref);

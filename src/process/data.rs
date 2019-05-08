@@ -66,44 +66,22 @@ pub enum CmdRequest {
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
-// META - GLOBAL-REGISTRY
+// INTERNAL GLOBAL REGISTRY
 ///////////////////////////////////////////////////////////////////////////////
 
 thread_local! {
     pub static GLOBAL_REGISTRY: GlobalRegistry = {
         GlobalRegistry {
-            processes: RefCell::new(HashMap::new())
+            events: RefCell::new(Vec::new())
         }
     };
 }
 
 pub struct GlobalRegistry {
-    processes: RefCell<HashMap<ProcessId, Rc<ProcessHandle>>>,
+    pub events: RefCell<Vec<Rc<Any>>>,
 }
 
-impl GlobalRegistry {
-    pub fn add_process(&self, process: Rc<ProcessHandle>) {
-        self.processes.borrow_mut().insert(process.process_id(), process);
-    }
-    pub fn remove_process(&self, process_id: &ProcessId) {
-        self.processes.borrow_mut().remove(process_id);
-    }
-    pub fn broadcast(&self, value: Rc<Any>, sender_pid: Option<&str>) {
-        for process in self.processes.borrow().values() {
-            let is_sender = {
-                match sender_pid {
-                    None => false,
-                    Some(pid) => pid == process.process_id().as_str(),
-                }
-            };
-            if !is_sender {
-                process.receive_broadcast(value.clone());
-            }
-        }
-    }
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -129,7 +107,13 @@ pub struct Application {
 // PROCESS
 ///////////////////////////////////////////////////////////////////////////////
 
-type ProcessId = String;
+pub type ProcessId = String;
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Status {
+    Online,
+    Offline
+}
 
 pub trait Effect {
     fn init(&self);
@@ -138,24 +122,37 @@ pub trait Effect {
 pub trait ProcessHandle {
     fn process_id(&self) -> String;
     fn dom_ref(&self) -> &DomRef;
-    fn receive_broadcast(&self, value: Rc<Any>);
-    fn clear(&self);
-    fn tick(&self);
-    fn init(&self);
+    fn status(&self) -> Status;
+    fn tick(&self, sub_enqueue: &Vec<Rc<Any>>);
+    fn online(&self);
+    fn offline(&self);
+    fn box_clone(&self) -> Box<ProcessHandle>;
 }
+
+impl Clone for Box<ProcessHandle>
+{
+    fn clone(&self) -> Box<ProcessHandle> {
+        self.box_clone()
+    }
+}
+
+
 
 #[derive(Clone)]
 pub struct Process<S: Spec> {
+    pub rc: Rc<ProcessInstance<S>>,
+}
+
+pub struct ProcessInstance<S: Spec> {
+    pub process_name: Option<String>,
     pub process_id: ProcessId,
+    pub status: RefCell<Status>,
     pub spec: S,
     pub model: RefCell<S::Model>,
     pub subscriber: Rc<Fn(Rc<Any>)->Option<S::Msg>>,
     pub offline_html: RefCell<HtmlBuild<S::Msg>>,
     pub online_html: LiveHtml<S::Msg>,
-    pub queued_messages: RefCell<VecDeque<S::Msg>>,
     pub queued_commands: Rc<RefCell<VecDeque<CmdRequest>>>,
-    pub queued_anything: RefCell<VecDeque<Rc<Any>>>,
-    pub sub_processes: RefCell<Vec<Rc<ProcessHandle>>>,
 }
 
 

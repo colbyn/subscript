@@ -147,6 +147,8 @@ impl Spec for LoginSpec {
                         encoded_token: String::from(""),
                         account: account,
                     };
+                    *model = Default::default();
+                    cmd.update_view();
                     cmd.broadcast(NewSession(session));
                 }
             },
@@ -182,13 +184,13 @@ impl Spec for LoginSpec {
             self.append(&[
                 form_field(
                     FormMeta {
+                        value: model.login_name.clone(),
                         errors: vec![],
                         name: "Account Name",
                         placeholder: "Name",
                         type_: "text",
                     },
                     move |ref event| -> Msg {
-                        console::log("LoginNameInput msg");
                         Msg::LoginNameInput(
                             utils::event::get_oninput_value(event)
                         )
@@ -196,6 +198,7 @@ impl Spec for LoginSpec {
                 ),
                 form_field(
                     FormMeta {
+                        value: model.login_password.0.clone(),
                         errors: vec![],
                         name: "Password",
                         placeholder: "Password",
@@ -217,6 +220,7 @@ impl Spec for LoginSpec {
             self.append(&[
                 form_field(
                     FormMeta {
+                        value: model.new_name.clone(),
                         errors: model.new_name_errors.clone(),
                         name: "Account Name",
                         placeholder: "Name",
@@ -230,6 +234,7 @@ impl Spec for LoginSpec {
                 ),
                 form_field(
                     FormMeta {
+                        value: model.new_password.0.clone(),
                         errors: model.new_password_errors.clone(),
                         name: "Password",
                         placeholder: "Password",
@@ -243,6 +248,7 @@ impl Spec for LoginSpec {
                 ),
                 form_field(
                     FormMeta {
+                        value: model.new_password_confirm.0.clone(),
                         errors: model.new_password_confirm_errors.clone(),
                         name: "Re-Enter Password",
                         placeholder: "Password",
@@ -296,6 +302,7 @@ impl Spec for LoginSpec {
 #[derive(Clone)]
 struct FormMeta
 {
+    value: String,
     errors: Vec<String>,
     name: &'static str,
     placeholder: &'static str,
@@ -337,7 +344,7 @@ fn form_field(
             padding_left: "6px"
             id = {input_id}
             type = {meta.type_}
-            text("")
+            value = {meta.value}
         )
         {field_error_messages(&meta.errors)}
     )

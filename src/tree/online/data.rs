@@ -66,7 +66,7 @@ pub enum LiveHtml<Msg> {
 
 #[derive(Clone)]
 pub struct LiveComponent {
-    pub process: Rc<ProcessHandle>,
+    pub process: Box<ProcessHandle>,
 }
 
 #[derive(Clone)]
@@ -80,8 +80,8 @@ pub struct LiveNode<Msg> {
     pub dom_ref: DomRef,
     pub node_id: NodeId,
     pub tag: String,
-    pub attributes: RefCell<HashMap<String, Either<bool, String>>>,
-    pub events: RefCell<HashMap<EventType, Callback<Msg>>>,
+    pub attributes: RefCell<BTreeMap<String, Either<bool, String>>>,
+    pub events: RefCell<BTreeMap<EventType, Callback<Msg>>>,
     pub styling: RefCell<StyleNode>,
     pub children: RefCell<Vec<LiveHtml<Msg>>>,
 }

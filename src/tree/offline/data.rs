@@ -134,7 +134,7 @@ pub enum HtmlBuild<Msg> {
 
 #[derive(Clone)]
 pub struct ComponentBuild {
-    pub process: Rc<ProcessHandle>
+    pub process: Box<ProcessHandle>,
 }
 
 
@@ -146,8 +146,8 @@ pub struct TextBuild {
 #[derive(Clone)]
 pub struct NodeBuild<Msg> {
     pub tag: String,
-    pub attributes: HashMap<String, Either<bool, String>>,
-    pub events: HashMap<EventType, Callback<Msg>>,
+    pub attributes: BTreeMap<String, Either<bool, String>>,
+    pub events: BTreeMap<EventType, Callback<Msg>>,
     pub styling: StyleNode,
     pub children: Vec<HtmlBuild<Msg>>,
 }

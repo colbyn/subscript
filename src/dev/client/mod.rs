@@ -104,11 +104,11 @@ impl Spec for AppSpec {
                 None => Default::default(),
             },
             subs: subscriptions!(
-                on(value: UrlChange) -> Msg {
-                    url_matcher(value).unwrap_or(Msg::NoOp)
-                }
                 on(value: NewSession) -> Msg {
                     Msg::NewSession(value.0)
+                }
+                on(value: UrlChange) -> Msg {
+                    url_matcher(value).unwrap_or(Msg::NoOp)
                 }
             )
         }
@@ -147,17 +147,11 @@ impl Spec for AppSpec {
         cmd.update_view();
     }
     fn view(&self, model: &Self::Model) -> Html<Self::Msg> {
-        let root_view = move |content: Html<Self::Msg>| {
-            markup!(
-                width: "100%"
-                height: "100%"
-                {content}
-            )
-        };
         let nav_link = move |name: &str, page: Page| -> Html<Msg> {markup!(li|
             width: "100%"
             text_align: "center"
             padding: "8px"
+            user_select: "none"
             self.css.append({
                 if model.page == Some(page.clone()) {
                     css!()
@@ -171,6 +165,8 @@ impl Spec for AppSpec {
             a(text(name))
         )};
         let navigation: Html<Msg> = markup!(nav.ul|
+            z_index: "2"
+            position: "relative"
             margin: "0"
             padding: "0"
             list_style: "none"
@@ -180,16 +176,17 @@ impl Spec for AppSpec {
             font_size: "0.9em"
             text_transform: "uppercase"
             font_family: "'Source Sans Pro', sans-serif"
-            background_color: "#5d5d5d"
             color: "#fff"
+            background_color: "#1b1b1b"
             li(
-                width: "300px"
+                width: "100%"
                 text_align: "center"
                 padding: "8px"
-                background_color: "#2d2d2d"
                 color: "#fff"
+                user_select: "none"
+                font_weight: "300"
                 .click(move |_| Msg::UrlRequest(Page::Homepage))
-                a(text("LOGO"))
+                a(text("LOGO.IO"))
             )
             self.append(&[
                 nav_link("Content", Page::Content),
@@ -203,48 +200,62 @@ impl Spec for AppSpec {
                 font_weight: "300"
                 color: "#eaeaea"
                 border_left: "1px solid #3c3c3c"
+                user_select: "none"
                 .click(move |_| Msg::Logout)
                 a(text("Logout"))
             )
         );
-        let homepage = markup!(
-            {navigation}
+        let root_page = move |content: Html<Self::Msg>| {
+            markup!(
+                // display: "flex"
+                // flex_direction: "column"
+                // min_width: "100%"
+                // min_height: "100%"
+                {navigation}
+                {content}
+            )
+        };
+        let homepage = root_page(markup!(
             h1(text("Homepage"))
-        );
-        let content = markup!(
-            {navigation}
+        ));
+        let content = root_page(markup!(
             h1(text("Content"))
+        ));
+        let analytics = root_page(
+            HtmlBuild::new_component(Box::new(self.analytics.clone()))
         );
-        let analytics = markup!(
-            {navigation}
-            {HtmlBuild::new_component(Rc::new(self.analytics.clone()))}
+        let account = root_page(
+            HtmlBuild::new_component(Box::new(self.account.clone()))
         );
-        let account = markup!(
-            {navigation}
-            {HtmlBuild::new_component(Rc::new(self.account.clone()))}
-        );
-        let not_found = markup!(
-            {navigation}
+        let not_found = root_page(markup!(
             h1(text("Not Found"))
-        );
-        let loading = markup!(
-            {navigation}
+        ));
+        let loading = root_page(markup!(
             h1(text("Loading"))
-        );
-        root_view({
-            if model.session.is_none() {
-                HtmlBuild::new_component(Rc::new(self.login.clone()))
-            } else {
-                match &model.page {
-                    Some(Page::Homepage) => homepage,
-                    Some(Page::Content) => content,
-                    Some(Page::Analytics) => analytics,
-                    Some(Page::Account) => account,
-                    Some(Page::NotFound) => not_found,
-                    None => loading,
+        ));
+        
+        markup!(
+            // display: "flex"
+            // flex_direction: "column"
+            // min_width: "100%"
+            // min_height: "100%"
+            {
+                if model.session.is_none() {
+                    HtmlBuild::new_component(
+                        Box::new(self.login.clone())
+                    )
+                } else {
+                    match &model.page {
+                        Some(Page::Homepage) => homepage,
+                        Some(Page::Content) => content,
+                        Some(Page::Analytics) => analytics,
+                        Some(Page::Account) => account,
+                        Some(Page::NotFound) => not_found,
+                        None => loading,
+                    }
                 }
             }
-        })
+        )
     }
 }
 
@@ -252,9 +263,9 @@ pub fn main() {
     use crate::effect::nav::Navigation;
     
     let app_spec = AppSpec {
-        login: Process::from_spec(LoginSpec {}),
-        account: Process::from_spec(AccountSpec {}),
-        analytics: Process::from_spec(AnalyticsSpec {}),
+        login: Process::from_spec("login", LoginSpec {}),
+        account: Process::from_spec("account", AccountSpec {}),
+        analytics: Process::from_spec("analytics", AnalyticsSpec {}),
     };
     AppBuilder::from_spec(app_spec)
         .with_effect(Navigation::new())

@@ -23,7 +23,7 @@ pub fn unchanged<Msg: Clone>(x: &LiveHtml<Msg>, y: &HtmlBuild<Msg>) -> bool {
         (LiveHtml::Node(x), HtmlBuild::Node(y)) => {
             let eq_tag = x.tag == y.tag;
             let eq_attributes: bool = {
-                let ats: &HashMap<String, Either<bool, String>> =
+                let ats: &BTreeMap<String, Either<bool, String>> =
                     &x.attributes.borrow();
                 ats == &y.attributes
             };
@@ -32,7 +32,7 @@ pub fn unchanged<Msg: Clone>(x: &LiveHtml<Msg>, y: &HtmlBuild<Msg>) -> bool {
                 ss == &y.styling
             };
             let eq_events: bool = {
-                let es: &HashMap<EventType, Callback<Msg>> =
+                let es: &BTreeMap<EventType, Callback<Msg>> =
                     &x.events.borrow();
                 es == &y.events
             };
@@ -61,13 +61,13 @@ pub fn unchanged<Msg: Clone>(x: &LiveHtml<Msg>, y: &HtmlBuild<Msg>) -> bool {
 }
 
 pub fn sync_events<Msg: Clone>(
-    xs: &RefCell<HashMap<EventType, Callback<Msg>>>,
-    ys: &HashMap<EventType, Callback<Msg>>,
+    xs: &RefCell<BTreeMap<EventType, Callback<Msg>>>,
+    ys: &BTreeMap<EventType, Callback<Msg>>,
     dom_ref: &DomRef
 )
 {
     let zipable = {
-        let xs: &HashMap<String, Callback<Msg>> = &xs.borrow();
+        let xs: &BTreeMap<String, Callback<Msg>> = &xs.borrow();
         xs.keys().collect::<Vec<&String>>() == ys.keys().collect::<Vec<&String>>()
     };
     if zipable {
@@ -88,14 +88,59 @@ pub fn sync_events<Msg: Clone>(
     }
 }
 
+pub fn sync_stateful_attribute_dom_values(
+    tag: &str,
+    dom_ref: &DomRef,
+    key: &str,
+    v1: &Either<bool, String>,
+    v2: &Either<bool, String>
+) {
+    match (tag, key, v1, v2) {
+        ("input", "value", Either::Right(old), Either::Right(new)) if old != new => {
+            set_input_value(dom_ref, new);
+        },
+        ("input", "value", _, Either::Right(new)) => {
+            set_input_value(dom_ref, new);
+        },
+        _ => {},
+    }
+}
+
+pub fn sync_attribute(
+    x: (&String, &mut Either<bool, String>),
+    y: (&String, &mut Either<bool, String>),
+    dom_ref: &DomRef,
+    tag: &str,
+) {
+    let unchanged = {
+        x.0 == y.0 &&
+        x.1 == y.1
+    };
+    if !unchanged {
+        *x.1 = y.1.clone();
+        match &x.1 {
+            Either::Left(true) => dom_ref.set_attribute(&x.0, ""),
+            Either::Left(false) => dom_ref.remove_attribute(&x.0),
+            Either::Right(value) => dom_ref.set_attribute(&x.0, value),
+        }
+        sync_stateful_attribute_dom_values(
+            tag,
+            dom_ref,
+            x.0,
+            x.1,
+            y.1
+        );
+    }
+}
+
 pub fn sync_attributes(
-    xs: &RefCell<HashMap<String, Either<bool, String>>>,
-    ys: &HashMap<String, Either<bool, String>>,
-    dom_ref: &DomRef
-)
-{
+    xs: &RefCell<BTreeMap<String, Either<bool, String>>>,
+    ys: &BTreeMap<String, Either<bool, String>>,
+    dom_ref: &DomRef,
+    tag: &str,
+) {
     let zipable = {
-        let xs: &HashMap<String, Either<bool, String>> = &xs.borrow();
+        let xs: &BTreeMap<String, Either<bool, String>> = &xs.borrow();
         xs.keys().collect::<Vec<&String>>() == ys.keys().collect::<Vec<&String>>()
     };
     if zipable {
@@ -103,15 +148,7 @@ pub fn sync_attributes(
             .iter_mut()
             .zip(ys.clone().iter_mut())
             .for_each(|(x, y)| {
-                let unchanged = x.0 == y.0;
-                if !unchanged {
-                    *x.1 = y.1.clone();
-                    match &x.1 {
-                        Either::Left(true) => dom_ref.set_attribute(&x.0, ""),
-                        Either::Left(false) => dom_ref.remove_attribute(&x.0),
-                        Either::Right(value) => dom_ref.set_attribute(&x.0, value),
-                    }
-                }
+                sync_attribute(x, y, dom_ref, tag);
             });
     } else {
         for old_key in xs.borrow().keys() {
@@ -159,22 +196,22 @@ where
             .zip(ys.iter())
             .for_each(|(x, y)| {
                 if let Some(replacement) = x.sync(y) {
-                    x.clear();
-                    replacement.init();
+                    x.offline();
+                    replacement.online();
                     dom_ref.replace_child(replacement.dom_ref(), x.dom_ref());
                     *x = replacement;
                 }
             });
     } else {
         for old_child in xs.borrow().iter() {
-            old_child.clear();
+            old_child.offline();
             dom_ref.remove_child(old_child.dom_ref());
         }
         let new_children: Vec<LiveHtml<Msg>> = {
             ys  .iter()
                 .map(|y| {
                     let new_child = LiveHtml::from_builder(y.clone());
-                    new_child.init();
+                    new_child.online();
                     dom_ref.append_child(new_child.dom_ref());
                     new_child
                 })
@@ -184,4 +221,18 @@ where
     }
 }
 
+
+pub fn form_reset<Msg>(node: &LiveNode<Msg>) {
+    if node.tag == "form" {
+        let node_ref: JsValue = From::from(node.dom_ref.dom_ref_as_element.clone());
+        let node_ref: web_sys::HtmlFormElement = From::from(node_ref);
+        node_ref.reset();
+    }
+}
+
+pub fn set_input_value(dom_ref: &DomRef, value: &str) {
+    let node_ref: JsValue = From::from(dom_ref.dom_ref_as_element.clone());
+    let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+    node_ref.set_value(value);
+}
 
