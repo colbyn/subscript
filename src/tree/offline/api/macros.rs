@@ -27,8 +27,28 @@ macro_rules! markup_argument {
         $parent.add_child($value.clone());
     };
     // SELF METHODS
-    ($parent:expr; self.css.append ($style_node:expr)) => {{
+    ($parent:expr; self.css.add.if($cond:expr)($style_node:expr)) => {{
+        if $cond {
+            $parent.merge_style_node($style_node);
+        }
+    }};
+    ($parent:expr; self.add.if($cond:expr)($child:expr)) => {{
+        if $cond {
+            $parent.add_child($child.clone());
+        }
+    }};
+    ($parent:expr; self.append.if($cond:expr)($children:expr)) => {{
+        if $cond {
+            for child in &($children).clone() {
+                $parent.add_child(child.clone());
+            }
+        }
+    }};
+    ($parent:expr; self.css.add ($style_node:expr)) => {{
         $parent.merge_style_node($style_node);
+    }};
+    ($parent:expr; self.add($child:expr)) => {{
+        $parent.add_child($child.clone());
     }};
     ($parent:expr; self.append ($children:expr)) => {{
         for child in &($children).clone() {
@@ -119,20 +139,50 @@ macro_rules! markup_argument {
 #[macro_export]
 macro_rules! markup_arguments {
     ($parent:expr;) => {};
+    // CONDITIONALS
+    ($parent:expr; if(let $l:pat = $r:expr)($($x:tt)*) $($rest:tt)*) => {{
+        if let $l = $r {
+            markup_arguments!($parent; $($x)*);
+        }
+        markup_arguments!($parent; $($rest)*);
+    }};
+    ($parent:expr; if($con:expr)($($x:tt)*) $($rest:tt)*) => {{
+        if $con {
+            markup_arguments!($parent; $($x)*);
+        }
+        markup_arguments!($parent; $($rest)*);
+    }};
     // EXPRESSION
     ($parent:expr; {$value:expr} $($rest:tt)*) => {{
         markup_argument!($parent; {$value});
         markup_arguments!($parent; $($rest)*);
     }};
     // SELF METHODS
-    ($parent:expr; self.css.append ($body:expr) $($rest:tt)*) => {{
-        markup_argument!($parent; self.css.append ($body));
+    ($parent:expr; self.css.add.if($cond:expr)($style_node:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.css.add.if($cond)($style_node));
         markup_arguments!($parent; $($rest)*);
     }};
-    ($parent:expr; self.append ($body:expr) $($rest:tt)*) => {{
-        markup_argument!($parent; self.append ($body));
+    ($parent:expr; self.add.if($cond:expr)($child:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.add.if($cond)($child));
         markup_arguments!($parent; $($rest)*);
     }};
+    ($parent:expr; self.append.if($cond:expr)($children:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.append.if($cond)($children));
+        markup_arguments!($parent; $($rest)*);
+    }};
+    ($parent:expr; self.css.add ($style_node:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.css.add ($style_node));
+        markup_arguments!($parent; $($rest)*);
+    }};
+    ($parent:expr; self.add($child:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.add($child));
+        markup_arguments!($parent; $($rest)*);
+    }};
+    ($parent:expr; self.append ($children:expr) $($rest:tt)*) => {{
+        markup_argument!($parent; self.append ($children));
+        markup_arguments!($parent; $($rest)*);
+    }};
+    
     // CSS
     ($parent:expr; @media $media_header:tt $body:tt $($rest:tt)*) => {{
         markup_argument!($parent; @media $media_header $body);

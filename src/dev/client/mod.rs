@@ -152,7 +152,7 @@ impl Spec for AppSpec {
             text_align: "center"
             padding: "8px"
             user_select: "none"
-            self.css.append({
+            self.css.add({
                 if model.page == Some(page.clone()) {
                     css!()
                 } else {
@@ -174,8 +174,8 @@ impl Spec for AppSpec {
             width: "100%"
             justify_content: "space-around"
             font_size: "0.9em"
-            text_transform: "uppercase"
             font_family: "'Source Sans Pro', sans-serif"
+            text_transform: "uppercase"
             color: "#fff"
             background_color: "#1b1b1b"
             li(

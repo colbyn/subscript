@@ -79,40 +79,87 @@ impl Spec for AccountSpec {
             height: "100%"
             display: "grid"
             grid_template_columns: "300px 1fr"
-            {pane(ChildPos::First, Some("Nav"))}
-            {pane(ChildPos::Last, Some("Username"))}
+            self.append(&[
+                navigation(),
+                body()
+            ])
         )
     }
 }
 
-pub fn pane(pos: ChildPos, header: Option<&str>) -> Html<Msg> {
-    markup!(
-        display: "flex"
-        flex_direction: "column"
-        width: "100%"
-        height: "100%"
-        header(
-            width: "100%"
-            height: "100px"
-            display: "flex"
-            justify_content: "center"
-            align_items: "center"
-            font_family: "'Source Sans Pro', sans-serif"
-            text_transform: "uppercase"
-            font_size: "0.9em"
-            border_bottom: "1px solid #000"
-            {
-                if let Some(txt) = header {
-                    markup!(text(txt))
-                } else {
-                    markup!()
-                }
-            }
+///////////////////////////////////////////////////////////////////////////////
+// APP VIEW HELPERS
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone)]
+pub struct NavSestion {
+    title: &'static str,
+    links: Vec<Link>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Link {
+    text: &'static str,
+}
+
+pub fn navigation() -> Html<Msg> {
+    let link = |link: Link| -> Html<Msg> {markup!(
+        li(
+            text(link.text)
         )
-        div(
-            width: "100%"
-            height: "100%"
+    )};
+    let section = |info: NavSestion| -> Html<Msg> {markup!(nav|
+        h3(
+            font_weight: "inherit"
+            text(info.title)
         )
+        ul(
+            margin: "0"
+            padding: "0"
+            list_style: "none"
+            self.append(
+                info.links
+                    .into_iter()
+                    .map(|x| link(x))
+                    .collect::<Vec<Html<Msg>>>()
+            )
+        )
+    )};
+    markup!(aside|
+        font_size: "0.8em"
+        font_family: "'Source Sans Pro', sans-serif"
+        font_weight: "400"
+        text_transform: "uppercase"
+        self.append(&[
+            section(NavSestion {
+                title: "Personal Settings",
+                links: vec![
+                    Link {
+                        text: "Password"
+                    },
+                    Link {
+                        text: "Email"
+                    },
+                ],
+            }),
+            section(NavSestion {
+                title: "Organization settings",
+                links: vec![
+                    Link {
+                        text: "Users"
+                    },
+                    Link {
+                        text: "Billing"
+                    },
+                ],
+            }),
+        ])
+    )
+}
+
+pub fn body() -> Html<Msg> {
+    markup!(main|
+        
     )
 }
 
@@ -132,13 +179,13 @@ impl ChildPos {
     }
     pub fn is_middle(&self) -> bool {
         match &self {
-            ChildPos::First => true,
+            ChildPos::Middle => true,
             _ => false
         }
     }
     pub fn is_last(&self) -> bool {
         match &self {
-            ChildPos::First => true,
+            ChildPos::Last => true,
             _ => false
         }
     }
