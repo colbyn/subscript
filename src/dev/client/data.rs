@@ -15,14 +15,106 @@ use uuid::Uuid;
 
 use crate::dev::server::data::*;
 
+
+///////////////////////////////////////////////////////////////////////////////
+// NAVIGATION
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct NewPage(pub Page);
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Page {
     Homepage,
     Content,
     Analytics,
-    Account,
-    NotFound
+    Account(AccountPage),
+    NotFound,
 }
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum AccountPage {
+    Password,
+    Email,
+    Users,
+    Billing,
+}
+
+impl Page {
+    pub fn is_homepage(&self) -> bool {
+        match self {
+            Page::Homepage => true,
+            _ => false
+        }
+    }
+    pub fn is_content(&self) -> bool {
+        match self {
+            Page::Content => true,
+            _ => false
+        }
+    }
+    pub fn is_analytics(&self) -> bool {
+        match self {
+            Page::Analytics => true,
+            _ => false
+        }
+    }
+    pub fn is_account(&self) -> bool {
+        match self {
+            Page::Account(_) => true,
+            _ => false
+        }
+    }
+    pub fn is_not_found(&self) -> bool {
+        match self {
+            Page::NotFound => true,
+            _ => false
+        }
+    }
+}
+
+impl AccountPage {
+    pub fn is_password(&self) -> bool {
+        match self {
+            AccountPage::Password => true,
+            _ => false
+        }
+    }
+    pub fn is_email(&self) -> bool {
+        match self {
+            AccountPage::Email => true,
+            _ => false
+        }
+    }
+    pub fn is_users(&self) -> bool {
+        match self {
+            AccountPage::Users => true,
+            _ => false
+        }
+    }
+    pub fn is_billing(&self) -> bool {
+        match self {
+            AccountPage::Billing => true,
+            _ => false
+        }
+    }
+}
+
+impl Default for Page {
+    fn default() -> Self {
+        Page::Homepage
+    }
+}
+
+impl Default for AccountPage {
+    fn default() -> Self {
+        AccountPage::Password
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ACCOUNT
+///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Session {

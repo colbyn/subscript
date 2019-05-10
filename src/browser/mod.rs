@@ -85,6 +85,7 @@ impl Browser {
             window: internal::get_window(),
             document: internal::get_document(),
             body: DomRef {
+                tag: Some(String::from("body")),
                 dom_ref_as_element: {
                     let x: JsValue = From::from(internal::get_body());
                     From::from(x)
@@ -102,6 +103,7 @@ impl Browser {
 
 #[derive(Clone, Debug)]
 pub struct DomRef {
+    pub tag: Option<String>,
     pub dom_ref_as_node: web_sys::Node,
     pub dom_ref_as_element: web_sys::Element,
 }
@@ -114,6 +116,7 @@ impl DomRef {
     pub fn new(tag: &str) -> Self {
         let element = internal::new_element(&tag.to_owned());
         DomRef {
+            tag: Some(String::from(tag)),
             dom_ref_as_node: From::from(element.clone()),
             dom_ref_as_element: element,
         }
@@ -122,28 +125,9 @@ impl DomRef {
         let value: web_sys::Text = internal::new_text(&value.to_owned().clone());
         let value: JsValue = From::from(value);
         DomRef {
+            tag: None,
             dom_ref_as_node: From::from(value.clone()),
             dom_ref_as_element: From::from(value),
-        }
-    }
-    pub fn clone_node(&self, deep: bool) -> DomRef {
-        let new_dom_ref = {
-            if deep {
-                self.dom_ref_as_node
-                    .clone_node_with_deep(true)
-                    .expect("cloneNode failed")
-            } else {
-                self.dom_ref_as_node
-                    .clone_node()
-                    .expect("cloneNode failed")
-            }
-        };
-        DomRef {
-            dom_ref_as_element: {
-                let x: JsValue = From::from(new_dom_ref.clone());
-                From::from(x)
-            },
-            dom_ref_as_node: new_dom_ref,
         }
     }
     pub fn add_event_listener(&self, event_name: &str, callback: &js_sys::Function) {

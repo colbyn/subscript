@@ -19,7 +19,7 @@ use crate::tree::online::data::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// SPEC - EXTERNAL
+// SPEC - CORE
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, Debug)]
@@ -29,7 +29,7 @@ pub struct InitArgs<Model> {
 
 pub struct Init<Model, Msg> {
     pub model: Model,
-    pub subs: Rc<Fn(Rc<Any>)->Option<Msg>>,
+    pub subs: Subscriptions<Msg>,
 }
 
 #[derive(Clone)]
@@ -47,14 +47,15 @@ where
     type Msg: Debug + Clone + 'static;
     type Model: Debug + Clone + Serialize + DeserializeOwned;
     
-    fn init(&self, loaded: InitArgs<Self::Model>) -> Init<Self::Model, Self::Msg>;
+    fn new() -> Self;
+    fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg>;
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd);
     fn view(&self, model: &Self::Model) -> Html<Self::Msg>;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// SPEC - INTERNAL
+// SPEC - COMMANDS
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -67,19 +68,56 @@ pub enum CmdRequest {
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// SPEC - SUBSCRIPTIONS
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct Subscriptions<Msg> {
+    pub global_events: Rc<Vec<Box<Fn(Rc<Any>)->Option<Msg>>>>,
+    pub reactive_observers: Rc<Vec<Box<Fn()->Option<Msg>>>>,
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SPEC - SUBSCRIPTIONS - REACTIVE
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct InitKey(pub(crate) ());
+
+#[derive(Clone)]
+pub struct Reactive<T>(pub(crate) ReactiveValue<T>);
+
+#[derive(Clone)]
+pub enum ReactiveValue<T> {
+    JsHandler {
+        value: Rc<RefCell<T>>,
+        listener: Callback<T>,
+    },
+    Mutable {
+        v1: Rc<RefCell<T>>,
+        v2: Rc<RefCell<T>>,
+    }
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 // INTERNAL GLOBAL REGISTRY
 ///////////////////////////////////////////////////////////////////////////////
 
 thread_local! {
     pub static GLOBAL_REGISTRY: GlobalRegistry = {
         GlobalRegistry {
-            events: RefCell::new(Vec::new())
+            events: RefCell::new(Vec::new()),
+            processes: RefCell::new(Vec::new()),
         }
     };
 }
 
 pub struct GlobalRegistry {
     pub events: RefCell<Vec<Rc<Any>>>,
+    pub processes: RefCell<Vec<Box<ProcessHandle>>>,
 }
 
 
@@ -90,7 +128,6 @@ pub struct GlobalRegistry {
 
 #[derive(Clone)]
 pub struct AppBuilder {
-    pub effects: Vec<Rc<Effect>>,
     pub process: Rc<ProcessHandle>,
 }
 
@@ -99,7 +136,6 @@ pub struct AppBuilder {
 pub struct Application {
     pub js_tick_callback: Rc<RefCell<Option<Callback<()>>>>,
     pub root_process: Rc<ProcessHandle>,
-    pub effects: Vec<Rc<Effect>>,
 }
 
 
@@ -115,17 +151,12 @@ pub enum Status {
     Offline
 }
 
-pub trait Effect {
-    fn init(&self);
-}
-
 pub trait ProcessHandle {
+    fn spec_type_id(&self) -> TypeId;
     fn process_id(&self) -> String;
     fn dom_ref(&self) -> &DomRef;
-    fn status(&self) -> Status;
+    fn start(&self);
     fn tick(&self, sub_enqueue: &Vec<Rc<Any>>);
-    fn online(&self);
-    fn offline(&self);
     fn box_clone(&self) -> Box<ProcessHandle>;
 }
 
@@ -137,22 +168,22 @@ impl Clone for Box<ProcessHandle>
 }
 
 
-
 #[derive(Clone)]
-pub struct Process<S: Spec> {
-    pub rc: Rc<ProcessInstance<S>>,
-}
+pub struct Process<S: Spec>(pub Rc<ProcessInstance<S>>);
 
 pub struct ProcessInstance<S: Spec> {
     pub process_name: Option<String>,
     pub process_id: ProcessId,
-    pub status: RefCell<Status>,
     pub spec: S,
     pub model: RefCell<S::Model>,
-    pub subscriber: Rc<Fn(Rc<Any>)->Option<S::Msg>>,
+    pub subs: Subscriptions<S::Msg>,
     pub offline_html: RefCell<HtmlBuild<S::Msg>>,
     pub online_html: LiveHtml<S::Msg>,
     pub queued_commands: Rc<RefCell<VecDeque<CmdRequest>>>,
 }
 
+
+// impl<S: Spec> PartialEq for Process<S> {
+// 
+// }
 

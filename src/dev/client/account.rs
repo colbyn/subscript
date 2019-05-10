@@ -27,14 +27,15 @@ use crate::dev::client::data::*;
 // APP SPECIFICATION - DATA TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct AccountSpec {
-    
+    pub page: AccountPage,
 }
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     NoOp,
+    Page(AccountPage)
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -59,18 +60,26 @@ impl Spec for AccountSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn init(&self, loaded: InitArgs<Self::Model>) -> Init<Self::Model, Self::Msg> {
+    fn new() -> Self {
+        AccountSpec {
+            page: Default::default(),
+        }
+    }
+    fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
         Init {
             model: match loaded.saved_model {
-                Some(saved_model) => saved_model,
-                None => Default::default(),
+                Some(saved_model) => Model {..saved_model},
+                None => Model {..Default::default()},
             },
-            subs: subscriptions!()
+            subs: subscriptions!(),
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {
         match msg {
             Msg::NoOp => (),
+            Msg::Page(account_page) => cmd.broadcast(
+                NewPage(Page::Account(account_page))
+            ),
         }
     }
     fn view(&self, model: &Self::Model) -> Html<Self::Msg> {
@@ -80,8 +89,8 @@ impl Spec for AccountSpec {
             display: "grid"
             grid_template_columns: "300px 1fr"
             self.append(&[
-                navigation(),
-                body()
+                navigation(&self.page),
+                body(&self.page)
             ])
         )
     }
@@ -99,17 +108,44 @@ pub struct NavSestion {
 
 #[derive(Debug, Clone)]
 pub struct Link {
+    active: bool,
     text: &'static str,
+    on_click: Msg,
 }
 
-pub fn navigation() -> Html<Msg> {
-    let link = |link: Link| -> Html<Msg> {markup!(
-        li(
-            text(link.text)
+pub fn navigation(page: &AccountPage) -> Html<Msg> {
+    let link = move |link: Link| -> Html<Msg> {markup!(li|
+        :hover (
+            background_color: "#fbfbfb"
         )
+        if (link.active)(
+            font_weight: "600"
+            box_shadow: "0px 0px 2px 0px #b9b9b9"
+            position: "relative"
+            z_index: "3"
+        )
+        padding: "5px"
+        border_bottom: "1px solid #d4d4d4"
+        text(&link.text)
+        .click(move |event| {
+            link.on_click.clone()
+        })
     )};
     let section = |info: NavSestion| -> Html<Msg> {markup!(nav|
+        box_shadow: "0px 1px 1px 0px #e2e2e2"
+        display: "flex"
+        flex_direction: "column"
+        border: "1px solid #d4d4d4"
+        margin: "12px"
+        border_radius: "3px"
+        color: "#3e3e3e"
         h3(
+            border_top_left_radius: "3px"
+            border_top_right_radius: "3px"
+            padding: "3px"
+            margin: "0"
+            border_bottom: "1px solid #d4d4d4"
+            background_color: "#f9f9f9"
             font_weight: "inherit"
             text(info.title)
         )
@@ -135,10 +171,14 @@ pub fn navigation() -> Html<Msg> {
                 title: "Personal Settings",
                 links: vec![
                     Link {
-                        text: "Password"
+                        active: page.is_password(),
+                        text: "Password",
+                        on_click: Msg::Page(AccountPage::Password),
                     },
                     Link {
-                        text: "Email"
+                        active: page.is_email(),
+                        text: "Email",
+                        on_click: Msg::Page(AccountPage::Email),
                     },
                 ],
             }),
@@ -146,10 +186,14 @@ pub fn navigation() -> Html<Msg> {
                 title: "Organization settings",
                 links: vec![
                     Link {
-                        text: "Users"
+                        active: page.is_users(),
+                        text: "Users",
+                        on_click: Msg::Page(AccountPage::Users),
                     },
                     Link {
-                        text: "Billing"
+                        active: page.is_billing(),
+                        text: "Billing",
+                        on_click: Msg::Page(AccountPage::Billing),
                     },
                 ],
             }),
@@ -157,10 +201,21 @@ pub fn navigation() -> Html<Msg> {
     )
 }
 
-pub fn body() -> Html<Msg> {
-    markup!(main|
-        
-    )
+pub fn body(page: &AccountPage) -> Html<Msg> {
+    match page {
+        AccountPage::Password => markup!(main|
+            
+        ),
+        AccountPage::Email => markup!(main|
+            
+        ),
+        AccountPage::Users => markup!(main|
+            
+        ),
+        AccountPage::Billing => markup!(main|
+            
+        ),
+    }
 }
 
 #[derive(Debug, Clone)]

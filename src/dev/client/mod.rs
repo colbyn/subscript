@@ -20,6 +20,7 @@ use wasm_bindgen::JsValue;
 use uuid::Uuid;
 
 use crate::browser::*;
+use crate::effect::url::{self, Url};
 use crate::tree::offline::data::*;
 use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
@@ -38,9 +39,7 @@ use crate::dev::client::data::*;
 
 #[derive(Clone)]
 pub struct AppSpec {
-    login: Process<LoginSpec>,
-    account: Process<AccountSpec>,
-    analytics: Process<AnalyticsSpec>,
+    url: Reactive<Url>,
 }
 
 #[derive(Debug, Clone)]
@@ -54,14 +53,14 @@ pub enum Msg {
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Model {
-    page: Option<Page>,
+    page: Page,
     session: Option<Session>
 }
 
 impl Default for Model {
     fn default() -> Self {
         Model {
-            page: None,
+            page: Page::Homepage,
             session: None,
         }
     }
@@ -76,39 +75,65 @@ impl Spec for AppSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn init(&self, loaded: InitArgs<Self::Model>) -> Init<Self::Model, Self::Msg> {
-        use crate::effect::nav::UrlChange;
-        use crate::effect::nav::router::*;
+    fn new() -> Self {
+        AppSpec {
+            url: url::mk_reactive(),
+        }
+    }
+    fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
+        use crate::effect::url::*;
         
-        let url_matcher: RouterFn<Self::Msg> = match_path!(
+        let url_parser: UrlParser<Page> = match_path!(
             [] => {
-                Msg::UrlChanged(Page::Homepage)
+                Page::Homepage
             }
             ["content"] => {
-                Msg::UrlChanged(Page::Content)
+                Page::Content
             }
             ["analytics"] => {
-                Msg::UrlChanged(Page::Analytics)
+                Page::Analytics
             }
             ["account"] => {
-                Msg::UrlChanged(Page::Account)
+                Page::Account(Default::default())
+            }
+            ["account", "password"] => {
+                Page::Account(AccountPage::Password)
+            }
+            ["account", "email"] => {
+                Page::Account(AccountPage::Email)
+            }
+            ["account", "users"] => {
+                Page::Account(AccountPage::Users)
+            }
+            ["account", "billing"] => {
+                Page::Account(AccountPage::Billing)
             }
             _ => {
-                Msg::UrlChanged(Page::NotFound)
+                Page::NotFound
             }
         );
         
+        let initial_page = {
+            let url = self.url.unlock(key);
+            let page = url_parser(url).unwrap_or(Page::NotFound);
+            page
+        };
+        
         Init {
             model: match loaded.saved_model {
-                Some(saved_model) => saved_model,
-                None => Default::default(),
+                Some(saved_model) => Model {page: initial_page, ..saved_model},
+                None => Model {page: initial_page, ..Default::default()},
             },
             subs: subscriptions!(
-                on(value: NewSession) -> Msg {
-                    Msg::NewSession(value.0)
+                bind(self.url -> value) -> Msg {
+                    let new_page = url_parser(value).unwrap_or(Page::NotFound);
+                    Msg::UrlChanged(new_page)
                 }
-                on(value: UrlChange) -> Msg {
-                    url_matcher(value).unwrap_or(Msg::NoOp)
+                on(msg: NewPage) -> Msg {
+                    Msg::UrlRequest(msg.0)
+                }
+                on(msg: NewSession) -> Msg {
+                    Msg::NewSession(msg.0)
                 }
             )
         }
@@ -127,7 +152,7 @@ impl Spec for AppSpec {
                 cmd.update_view();
             }
             Msg::UrlChanged(page) => {
-                model.page = Some(page);
+                model.page = page;
                 cmd.save();
                 cmd.update_view();
             }
@@ -136,10 +161,10 @@ impl Spec for AppSpec {
                     Page::Homepage => cmd.navigate("/"),
                     Page::Content => cmd.navigate("/content"),
                     Page::Analytics => cmd.navigate("/analytics"),
-                    Page::Account => cmd.navigate("/account"),
+                    Page::Account(_) => cmd.navigate("/account"),
                     Page::NotFound => cmd.navigate("/not-found"),
                 }
-                model.page = Some(page);
+                model.page = page;
                 cmd.save();
                 cmd.update_view();
             }
@@ -147,22 +172,18 @@ impl Spec for AppSpec {
         cmd.update_view();
     }
     fn view(&self, model: &Self::Model) -> Html<Self::Msg> {
-        let nav_link = move |name: &str, page: Page| -> Html<Msg> {markup!(li|
+        let nav_link = move |text: &str, active: bool, on_click: Msg| -> Html<Msg> {markup!(li|
             width: "100%"
             text_align: "center"
             padding: "8px"
             user_select: "none"
-            self.css.add({
-                if model.page == Some(page.clone()) {
-                    css!()
-                } else {
-                    css!(font_weight: "300")
-                }
-            })
+            if(!active)(
+                font_weight: "300"
+            )
             .click(move |_| {
-                Msg::UrlRequest(page.clone())
+                on_click.clone()
             })
-            a(text(name))
+            a(text(text))
         )};
         let navigation: Html<Msg> = markup!(nav.ul|
             z_index: "2"
@@ -189,9 +210,21 @@ impl Spec for AppSpec {
                 a(text("LOGO.IO"))
             )
             self.append(&[
-                nav_link("Content", Page::Content),
-                nav_link("Analytics", Page::Analytics),
-                nav_link("Account", Page::Account),
+                nav_link(
+                    "Content",
+                    model.page.is_content(),
+                    Msg::UrlRequest(Page::Content)
+                ),
+                nav_link(
+                    "Analytics",
+                    model.page.is_analytics(),
+                    Msg::UrlRequest(Page::Analytics)
+                ),
+                nav_link(
+                    "Account",
+                    model.page.is_account(),
+                    Msg::UrlRequest(Page::Account(Default::default()))
+                ),
             ])
             li(
                 width: "300px"
@@ -207,10 +240,6 @@ impl Spec for AppSpec {
         );
         let root_page = move |content: Html<Self::Msg>| {
             markup!(
-                // display: "flex"
-                // flex_direction: "column"
-                // min_width: "100%"
-                // min_height: "100%"
                 {navigation}
                 {content}
             )
@@ -222,36 +251,43 @@ impl Spec for AppSpec {
             h1(text("Content"))
         ));
         let analytics = root_page(
-            HtmlBuild::new_component(Box::new(self.analytics.clone()))
+            HtmlBuild::new_component(
+                Box::new(
+                    Process::from_spec("analytics", AnalyticsSpec {})
+                )
+            )
         );
-        let account = root_page(
-            HtmlBuild::new_component(Box::new(self.account.clone()))
-        );
+        let account = |subpage| {
+            root_page(
+                HtmlBuild::new_component(
+                    Box::new(
+                        Process::from_spec("account", AccountSpec {
+                            page: subpage
+                        })
+                    )
+                )
+            )
+        };
         let not_found = root_page(markup!(
             h1(text("Not Found"))
         ));
-        let loading = root_page(markup!(
-            h1(text("Loading"))
-        ));
         
         markup!(
-            // display: "flex"
-            // flex_direction: "column"
-            // min_width: "100%"
-            // min_height: "100%"
+            height: "100%"
             {
                 if model.session.is_none() {
                     HtmlBuild::new_component(
-                        Box::new(self.login.clone())
+                        Box::new(
+                            Process::from_spec("login", LoginSpec {})
+                        )
                     )
                 } else {
                     match &model.page {
-                        Some(Page::Homepage) => homepage,
-                        Some(Page::Content) => content,
-                        Some(Page::Analytics) => analytics,
-                        Some(Page::Account) => account,
-                        Some(Page::NotFound) => not_found,
-                        None => loading,
+                        Page::Homepage => homepage,
+                        Page::Content => content,
+                        Page::Analytics => analytics,
+                        Page::Account(subpage) => account(subpage.clone()),
+                        Page::NotFound => not_found,
                     }
                 }
             }
@@ -260,15 +296,10 @@ impl Spec for AppSpec {
 }
 
 pub fn main() {
-    use crate::effect::nav::Navigation;
-    
     let app_spec = AppSpec {
-        login: Process::from_spec("login", LoginSpec {}),
-        account: Process::from_spec("account", AccountSpec {}),
-        analytics: Process::from_spec("analytics", AnalyticsSpec {}),
+        url: url::mk_reactive(),
     };
     AppBuilder::from_spec(app_spec)
-        .with_effect(Navigation::new())
         .build()
         .start();
 }

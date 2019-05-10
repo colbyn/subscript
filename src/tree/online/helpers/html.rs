@@ -196,22 +196,18 @@ where
             .zip(ys.iter())
             .for_each(|(x, y)| {
                 if let Some(replacement) = x.sync(y) {
-                    x.offline();
-                    replacement.online();
                     dom_ref.replace_child(replacement.dom_ref(), x.dom_ref());
                     *x = replacement;
                 }
             });
     } else {
         for old_child in xs.borrow().iter() {
-            old_child.offline();
             dom_ref.remove_child(old_child.dom_ref());
         }
         let new_children: Vec<LiveHtml<Msg>> = {
             ys  .iter()
                 .map(|y| {
                     let new_child = LiveHtml::from_builder(y.clone());
-                    new_child.online();
                     dom_ref.append_child(new_child.dom_ref());
                     new_child
                 })

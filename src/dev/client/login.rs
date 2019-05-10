@@ -27,7 +27,7 @@ use crate::extras::*;
 // APP SPECIFICATION - DATA TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct LoginSpec {}
 
 #[derive(Debug, Clone)]
@@ -83,10 +83,15 @@ impl Spec for LoginSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn init(&self, loaded: InitArgs<Self::Model>) -> Init<Self::Model, Self::Msg> {
+    fn new() -> Self {
+        LoginSpec {
+            
+        }
+    }
+    fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
         Init {
             model: Default::default(),
-            subs: Rc::new(|_| None),
+            subs: Default::default(),
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {

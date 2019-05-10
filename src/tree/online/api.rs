@@ -65,7 +65,6 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
                 let component = LiveHtml::Component(LiveComponent {
                     process: comp.process.clone(),
                 });
-                component.online();
                 component
             },
             HtmlBuild::Text(text) => {
@@ -138,32 +137,6 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
 }
 
 impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
-    pub fn online(&self) {
-        match self {
-            LiveHtml::Node(node) => {
-                for child in node.children.borrow().iter() {
-                    child.online();
-                }
-            }
-            LiveHtml::Component(comp) => {
-                comp.process.online()
-            },
-            LiveHtml::Text(text) => (),
-        }
-    }
-    pub fn offline(&self) {
-        match self {
-            LiveHtml::Node(node) => {
-                for child in node.children.borrow().iter() {
-                    child.offline();
-                }
-            }
-            LiveHtml::Component(comp) => {
-                comp.process.offline()
-            },
-            LiveHtml::Text(text) => (),
-        }
-    }
     pub fn tick(&self, messages: &mut Vec<Msg>, sub_enqueue: &Vec<Rc<Any>>) {
         match self {
             LiveHtml::Node(node) => {
@@ -213,4 +186,16 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
         }
     }
 }
+
+impl<Msg> Drop for LiveNode<Msg> {
+    fn drop(&mut self) {
+        for (event_name, callback) in self.events.borrow().iter() {
+            self.dom_ref.remove_event_listener(event_name, callback.js_function.as_ref());
+        }
+        GLOBAL_CSS.with(|css| {
+            css.remove_node(&self.node_id);
+        });
+    }
+}
+
 

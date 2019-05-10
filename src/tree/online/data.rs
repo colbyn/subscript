@@ -86,4 +86,3 @@ pub struct LiveNode<Msg> {
     pub children: RefCell<Vec<LiveHtml<Msg>>>,
 }
 
-

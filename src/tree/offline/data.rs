@@ -137,6 +137,10 @@ pub struct ComponentBuild {
     pub process: Box<ProcessHandle>,
 }
 
+#[derive(Clone)]
+pub struct ComponentBuild_ {
+    
+}
 
 #[derive(Clone)]
 pub struct TextBuild {

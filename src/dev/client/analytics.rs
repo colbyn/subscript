@@ -28,7 +28,7 @@ use crate::dev::client::utils;
 // APP SPECIFICATION - DATA TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct AnalyticsSpec {
     
 }
@@ -60,13 +60,18 @@ impl Spec for AnalyticsSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn init(&self, loaded: InitArgs<Self::Model>) -> Init<Self::Model, Self::Msg> {
+    fn new() -> Self {
+        AnalyticsSpec {
+            
+        }
+    }
+    fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
         Init {
             model: match loaded.saved_model {
                 Some(saved_model) => saved_model,
                 None => Default::default(),
             },
-            subs: subscriptions!()
+            subs: Default::default(),
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {

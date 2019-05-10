@@ -19,9 +19,9 @@ use wasm_bindgen::closure;
 use wasm_bindgen::closure::Closure;
 use uuid::Uuid;
 
-use crate::effect::nav::UrlChange;
+use crate::effect::url::*;
 
-pub type RouterFn<Msg> = Rc<Fn(UrlChange)->Option<Msg>>;
+pub type UrlParser<Msg> = Rc<Fn(Url)->Option<Msg>>;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,7 +29,7 @@ pub type RouterFn<Msg> = Rc<Fn(UrlChange)->Option<Msg>>;
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, PartialEq, Clone, Hash)]
-pub struct UrlPath(Vec<PathSegment>);
+pub struct UrlPath(pub Vec<PathSegment>);
 
 impl UrlPath {
     pub fn is_index(&self) -> bool {
@@ -201,14 +201,13 @@ macro_rules! path_entry {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[macro_export]
-macro_rules! match_path {
+macro_rules! match_path_impl {
     () => {
-        Rc::new(move |raw_input: UrlChange| None);
+        Rc::new(move |raw_input: Url| None);
     };
     ($($ps:tt => $ex:tt)*) => {Rc::new(
-        move |raw_input: UrlChange| {
-            use crate::effect::nav::*;
-            let raw_input: String = raw_input.new_url.clone();
+        move |raw_input: Url| {
+            let raw_input: String = raw_input.0.clone();
             let mut result = None;
             {$(
                 path_entry!(raw_input; result; $ps => $ex);
@@ -216,5 +215,19 @@ macro_rules! match_path {
             result
         }
     )};
+}
+
+#[macro_export]
+macro_rules! match_path {
+    () => {{
+        use crate::effect::url::*;
+        use crate::effect::url::parser::*;
+        Rc::new(move |raw_input: Url| None);
+    }};
+    ($($x:tt)*) => {{
+        use crate::effect::url::*;
+        use crate::effect::url::parser::*;
+        match_path_impl!($($x)*)
+    }};
 }
 
