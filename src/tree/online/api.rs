@@ -15,7 +15,11 @@ use crate::browser::*;
 use crate::tree::offline::data::*;
 use crate::tree::online::data::*;
 use crate::tree::online::helpers::{self, html};
-use crate::process::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,7 +67,7 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
         match build {
             HtmlBuild::Component(comp) => {
                 let component = LiveHtml::Component(LiveComponent {
-                    process: comp.process.clone(),
+                    process: comp.spawn(),
                 });
                 component
             },

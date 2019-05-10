@@ -14,7 +14,11 @@ use wasm_bindgen::JsValue;
 use crate::browser::*;
 use crate::tree::offline::data::*;
 use crate::tree::online::data::*;
-use crate::process::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 
 /// Helper type for rendering into syntactic form.

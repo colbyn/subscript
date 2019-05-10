@@ -16,7 +16,7 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
 
 use crate::browser::*;
-use crate::process::data::*;
+use crate::process::basics::*;
 
 pub use parser::UrlParser;
 

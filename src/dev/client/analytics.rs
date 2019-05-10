@@ -14,13 +14,16 @@ use wasm_bindgen::JsValue;
 use uuid::Uuid;
 
 use crate::browser::*;
-use crate::process::data::*;
 use crate::tree::offline::data::*;
 use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
 use crate::dev::server::data::*;
 use crate::dev::client::data::*;
 use crate::dev::client::utils;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::online::*;
 
 
 
@@ -60,11 +63,6 @@ impl Spec for AnalyticsSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn new() -> Self {
-        AnalyticsSpec {
-            
-        }
-    }
     fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
         Init {
             model: match loaded.saved_model {

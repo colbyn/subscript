@@ -14,7 +14,11 @@ use wasm_bindgen::JsValue;
 use crate::browser::*;
 use crate::tree::offline::data::*;
 use crate::tree::online::data::*;
-use crate::process::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 
 
@@ -54,7 +58,7 @@ pub fn unchanged<Msg: Clone>(x: &LiveHtml<Msg>, y: &HtmlBuild<Msg>) -> bool {
             x.value.borrow().as_str() == y.value.as_str()
         }
         (LiveHtml::Component(x), HtmlBuild::Component(y)) => {
-            x.process.process_id() == y.process.process_id()
+            x.process.spec_type_id() == y.spec_type_id()
         }
         _ => {false}
     }

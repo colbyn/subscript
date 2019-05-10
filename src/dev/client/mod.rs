@@ -24,12 +24,15 @@ use crate::effect::url::{self, Url};
 use crate::tree::offline::data::*;
 use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
-use crate::process::data::*;
 use crate::dev::client::login::LoginSpec;
 use crate::dev::client::account::AccountSpec;
 use crate::dev::client::analytics::AnalyticsSpec;
 use crate::dev::server::data::*;
 use crate::dev::client::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::online::*;
 
 
 
@@ -39,6 +42,7 @@ use crate::dev::client::data::*;
 
 #[derive(Clone)]
 pub struct AppSpec {
+    account_view: Reactive<AccountPage>,
     url: Reactive<Url>,
 }
 
@@ -75,11 +79,6 @@ impl Spec for AppSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn new() -> Self {
-        AppSpec {
-            url: url::mk_reactive(),
-        }
-    }
     fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
         use crate::effect::url::*;
         
@@ -251,21 +250,13 @@ impl Spec for AppSpec {
             h1(text("Content"))
         ));
         let analytics = root_page(
-            HtmlBuild::new_component(
-                Box::new(
-                    Process::from_spec("analytics", AnalyticsSpec {})
-                )
-            )
+            HtmlBuild::new_component(AnalyticsSpec {})
         );
         let account = |subpage| {
             root_page(
-                HtmlBuild::new_component(
-                    Box::new(
-                        Process::from_spec("account", AccountSpec {
-                            page: subpage
-                        })
-                    )
-                )
+                HtmlBuild::new_component(AccountSpec {
+                    page: self.account_view.set(subpage)
+                })
             )
         };
         let not_found = root_page(markup!(
@@ -276,11 +267,7 @@ impl Spec for AppSpec {
             height: "100%"
             {
                 if model.session.is_none() {
-                    HtmlBuild::new_component(
-                        Box::new(
-                            Process::from_spec("login", LoginSpec {})
-                        )
-                    )
+                    HtmlBuild::new_component(LoginSpec {})
                 } else {
                     match &model.page {
                         Page::Homepage => homepage,
@@ -297,11 +284,11 @@ impl Spec for AppSpec {
 
 pub fn main() {
     let app_spec = AppSpec {
+        account_view: Reactive::from_value(Default::default()),
         url: url::mk_reactive(),
     };
-    AppBuilder::from_spec(app_spec)
-        .build()
-        .start();
+    let app = Application::from_spec(app_spec);
+    app.start();
 }
 
 

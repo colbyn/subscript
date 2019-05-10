@@ -13,7 +13,11 @@ use wasm_bindgen::JsValue;
 
 use crate::browser::*;
 use crate::tree::offline::data::*;
-use crate::process::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -283,7 +287,10 @@ macro_rules! markup {
         use ::either::Either;
         use crate::browser::*;
         use crate::tree::offline::data::*;
-        use crate::process::data::*;
+        
+        use crate::process::app::*;
+        use crate::process::basics::*;
+        use crate::process::online::*;
         
         let mut node = HtmlBuild::new_node("div");
         node
@@ -293,7 +300,10 @@ macro_rules! markup {
         use crate::browser::*;
         use crate::tree::offline::api::macros::*;
         use crate::tree::offline::data::*;
-        use crate::process::data::*;
+        
+        use crate::process::app::*;
+        use crate::process::basics::*;
+        use crate::process::online::*;
         
         let mut nodes = Vec::new();
         let tags: &str = stringify!($($tag)*);
@@ -324,7 +334,10 @@ macro_rules! markup {
         use ::either::Either;
         use crate::browser::*;
         use crate::tree::offline::data::*;
-        use crate::process::data::*;
+        
+        use crate::process::app::*;
+        use crate::process::basics::*;
+        use crate::process::online::*;
         
         let mut node = HtmlBuild::new_node("div");
         markup_arguments!(node; $($x)*);

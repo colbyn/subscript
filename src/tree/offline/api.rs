@@ -16,7 +16,11 @@ use wasm_bindgen::JsValue;
 
 use crate::browser::*;
 use crate::tree::offline::data::*;
-use crate::process::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 impl<Msg> HtmlBuild<Msg> {
     pub fn new_node(tag: &str) -> Self {
@@ -37,10 +41,8 @@ impl<Msg> HtmlBuild<Msg> {
             value: String::from(value),
         })
     }
-    pub fn new_component(process: Box<ProcessHandle>) -> Self {
-        HtmlBuild::Component(ComponentBuild {
-            process: process,
-        })
+    pub fn new_component<S: Spec>(spec: S) -> Self {
+        HtmlBuild::Component(Box::new(OfflineProcess::from_spec(spec)))
     }
     pub fn unpack_node(&self) -> Option<&NodeBuild<Msg>> {
         match self {

@@ -12,8 +12,12 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
 
 use crate::browser::*;
-use crate::process::data::*;
 use crate::tree::offline::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -12,7 +12,11 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
 
 use crate::browser::*;
-use crate::process::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::offline::*;
+use crate::process::online::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -127,19 +131,9 @@ pub enum Style {
 
 #[derive(Clone)]
 pub enum HtmlBuild<Msg> {
-    Component(ComponentBuild),
+    Component(Box<OfflineProcessApi>),
     Text(TextBuild),
     Node(NodeBuild<Msg>)
-}
-
-#[derive(Clone)]
-pub struct ComponentBuild {
-    pub process: Box<ProcessHandle>,
-}
-
-#[derive(Clone)]
-pub struct ComponentBuild_ {
-    
 }
 
 #[derive(Clone)]

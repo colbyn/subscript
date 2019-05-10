@@ -14,12 +14,15 @@ use wasm_bindgen::JsValue;
 use uuid::Uuid;
 
 use crate::browser::*;
-use crate::process::data::*;
 use crate::tree::offline::data::*;
 use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
 use crate::dev::server::data::*;
 use crate::dev::client::data::*;
+
+use crate::process::app::*;
+use crate::process::basics::*;
+use crate::process::online::*;
 
 
 
@@ -27,26 +30,27 @@ use crate::dev::client::data::*;
 // APP SPECIFICATION - DATA TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub struct AccountSpec {
-    pub page: AccountPage,
+    pub page: Reactive<AccountPage>,
 }
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     NoOp,
-    Page(AccountPage)
+    UrlRequest(AccountPage),
+    UrlChanged(AccountPage),
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Model {
-    
+    pub page: AccountPage,
 }
 
 impl Default for Model {
     fn default() -> Self {
         Model {
-            
+            page: Default::default(),
         }
     }
 }
@@ -60,25 +64,34 @@ impl Spec for AccountSpec {
     type Model = Model;
     type Msg = Msg;
     
-    fn new() -> Self {
-        AccountSpec {
-            page: Default::default(),
-        }
-    }
     fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg> {
         Init {
             model: match loaded.saved_model {
-                Some(saved_model) => Model {..saved_model},
-                None => Model {..Default::default()},
+                Some(saved_model) => Model {
+                    page: self.page.unlock(key),
+                    ..saved_model
+                },
+                None => Model {
+                    page: self.page.unlock(key),
+                    ..Default::default()
+                },
             },
-            subs: subscriptions!(),
+            subs: subscriptions!(
+                bind(self.page -> new_value) -> Msg {
+                    Msg::UrlChanged(new_value)
+                }
+            ),
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {
         match msg {
             Msg::NoOp => (),
-            Msg::Page(account_page) => cmd.broadcast(
-                NewPage(Page::Account(account_page))
+            Msg::UrlChanged(page) => {
+                model.page = page;
+                cmd.update_view();
+            },
+            Msg::UrlRequest(page) => cmd.broadcast(
+                NewPage(Page::Account(page))
             ),
         }
     }
@@ -89,8 +102,8 @@ impl Spec for AccountSpec {
             display: "grid"
             grid_template_columns: "300px 1fr"
             self.append(&[
-                navigation(&self.page),
-                body(&self.page)
+                navigation(&model.page),
+                body(&model.page)
             ])
         )
     }
@@ -173,12 +186,12 @@ pub fn navigation(page: &AccountPage) -> Html<Msg> {
                     Link {
                         active: page.is_password(),
                         text: "Password",
-                        on_click: Msg::Page(AccountPage::Password),
+                        on_click: Msg::UrlRequest(AccountPage::Password),
                     },
                     Link {
                         active: page.is_email(),
                         text: "Email",
-                        on_click: Msg::Page(AccountPage::Email),
+                        on_click: Msg::UrlRequest(AccountPage::Email),
                     },
                 ],
             }),
@@ -188,12 +201,12 @@ pub fn navigation(page: &AccountPage) -> Html<Msg> {
                     Link {
                         active: page.is_users(),
                         text: "Users",
-                        on_click: Msg::Page(AccountPage::Users),
+                        on_click: Msg::UrlRequest(AccountPage::Users),
                     },
                     Link {
                         active: page.is_billing(),
                         text: "Billing",
-                        on_click: Msg::Page(AccountPage::Billing),
+                        on_click: Msg::UrlRequest(AccountPage::Billing),
                     },
                 ],
             }),

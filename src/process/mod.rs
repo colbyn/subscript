@@ -1,5 +1,10 @@
 #[macro_use]
-pub mod data;
+pub mod app;
 #[macro_use]
-pub mod api;
+pub mod online;
+#[macro_use]
+pub mod offline;
+#[macro_use]
+pub mod basics;
+pub mod registry;
 
