@@ -32,9 +32,17 @@ pub struct Init<Model, Msg> {
     pub subs: Subscriptions<Msg>,
 }
 
+impl<Model: Default, Msg> Default for Init<Model, Msg> {
+    fn default() -> Self {
+        Init {
+            model: Default::default(),
+            subs: Default::default(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Cmd {
-    pub update_view: Rc<Cell<bool>>,
     pub queued_commands: Rc<RefCell<VecDeque<CmdRequest>>>,
 }
 
@@ -45,12 +53,13 @@ where
     Self: Clone + 'static
 {
     type Msg: Debug + Clone + 'static;
-    type Model: Debug + Clone + Serialize + DeserializeOwned;
+    type Model: Debug + Clone + Serialize + DeserializeOwned + PartialEq;
     
     fn init(&self, loaded: InitArgs<Self::Model>, key: &InitKey) -> Init<Self::Model, Self::Msg>;
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd);
     fn view(&self, model: &Self::Model) -> Html<Self::Msg>;
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -128,9 +137,6 @@ impl<T: PartialEq + Clone> Reactive<T> {
 ///////////////////////////////////////////////////////////////////////////////
 
 impl Cmd {
-    pub fn update_view(&self) {
-        self.update_view.set(true);
-    }
     pub fn navigate(&self, route: &str) {
         self.queued_commands.borrow_mut().push_back(
             CmdRequest::Navigate(String::from(route))
@@ -196,7 +202,7 @@ macro_rules! subscription_body {
 #[macro_export]
 macro_rules! subscriptions_impl {
     ($sb:expr;) => {};
-    ($sb:expr; bind($self:ident . $react:ident -> $new:ident) -> $msg:ty {$($xs:tt)*} $($rest:tt)*) => {{
+    ($sb:expr; on($self:ident . $react:ident -> $new:ident) -> $msg:ty {$($xs:tt)*} $($rest:tt)*) => {{
         $sb.reactive_observers.push(Box::new({
             let this = $self.clone();
             move || {

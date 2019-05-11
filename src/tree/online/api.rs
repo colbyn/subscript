@@ -79,7 +79,7 @@ impl<Msg: Clone + Debug + 'static> LiveHtml<Msg> {
             }
             HtmlBuild::Node(node) => {
                 let dom_ref = DomRef::new(node.tag.as_str());
-                let node_id = format!("id-{}", rand::random::<u16>());
+                let node_id = format!("id-{}", rand::random::<u32>());
                 let tag = node.tag;
                 let attributes = {
                     dom_ref.set_attribute(node_id.as_str(), "");

@@ -42,8 +42,10 @@ use crate::process::online::*;
 
 #[derive(Clone)]
 pub struct AppSpec {
-    account_view: Reactive<AccountPage>,
     url: Reactive<Url>,
+    session: Reactive<Option<Session>>,
+    account_view: Reactive<AccountPage>,
+    account_users_view: Reactive<UsersPage>,
 }
 
 #[derive(Debug, Clone)]
@@ -102,7 +104,10 @@ impl Spec for AppSpec {
                 Page::Account(AccountPage::Email)
             }
             ["account", "users"] => {
-                Page::Account(AccountPage::Users)
+                Page::Account(AccountPage::Users(UsersPage::Index))
+            }
+            ["account", "users", "add-user"] => {
+                Page::Account(AccountPage::Users(UsersPage::AddUser))
             }
             ["account", "billing"] => {
                 Page::Account(AccountPage::Billing)
@@ -120,11 +125,23 @@ impl Spec for AppSpec {
         
         Init {
             model: match loaded.saved_model {
-                Some(saved_model) => Model {page: initial_page, ..saved_model},
-                None => Model {page: initial_page, ..Default::default()},
+                Some(saved_model) => {
+                    self.session.set(saved_model.session.clone());
+                    Model {
+                        page: initial_page,
+                        ..saved_model
+                    }
+                },
+                None => {
+                    self.session.set(None);
+                    Model {
+                        page: initial_page,
+                        ..Default::default()
+                    }
+                },
             },
             subs: subscriptions!(
-                bind(self.url -> value) -> Msg {
+                on(self.url -> value) -> Msg {
                     let new_page = url_parser(value).unwrap_or(Page::NotFound);
                     Msg::UrlChanged(new_page)
                 }
@@ -134,41 +151,50 @@ impl Spec for AppSpec {
                 on(msg: NewSession) -> Msg {
                     Msg::NewSession(msg.0)
                 }
-            )
+            ),
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {
         match msg {
             Msg::NoOp => (),
             Msg::NewSession(new_session) => {
+                self.session.set(Some(new_session.clone()));
                 model.session = Some(new_session);
                 cmd.save();
-                cmd.update_view();
             }
             Msg::Logout => {
                 model.session = None;
                 cmd.save();
-                cmd.update_view();
             }
             Msg::UrlChanged(page) => {
                 model.page = page;
                 cmd.save();
-                cmd.update_view();
             }
             Msg::UrlRequest(page) => {
                 match &page {
-                    Page::Homepage => cmd.navigate("/"),
-                    Page::Content => cmd.navigate("/content"),
-                    Page::Analytics => cmd.navigate("/analytics"),
-                    Page::Account(_) => cmd.navigate("/account"),
-                    Page::NotFound => cmd.navigate("/not-found"),
+                    Page::Homepage =>
+                        cmd.navigate("/"),
+                    Page::Content =>
+                        cmd.navigate("/content"),
+                    Page::Analytics =>
+                        cmd.navigate("/analytics"),
+                    Page::Account(AccountPage::Password) =>
+                        cmd.navigate("/account/password"),
+                    Page::Account(AccountPage::Email) =>
+                        cmd.navigate("/account/email"),
+                    Page::Account(AccountPage::Users(UsersPage::Index)) =>
+                    cmd.navigate("/account/users"),
+                    Page::Account(AccountPage::Users(UsersPage::AddUser)) =>
+                        cmd.navigate("/account/users/add-user"),
+                    Page::Account(AccountPage::Billing) =>
+                        cmd.navigate("/account/billing"),
+                    Page::NotFound =>
+                        cmd.navigate("/not-found"),
                 }
                 model.page = page;
                 cmd.save();
-                cmd.update_view();
             }
         }
-        cmd.update_view();
     }
     fn view(&self, model: &Self::Model) -> Html<Self::Msg> {
         let nav_link = move |text: &str, active: bool, on_click: Msg| -> Html<Msg> {markup!(li|
@@ -250,14 +276,18 @@ impl Spec for AppSpec {
             h1(text("Content"))
         ));
         let analytics = root_page(
-            HtmlBuild::new_component(AnalyticsSpec {})
+            markup!(
+                component(AnalyticsSpec {})
+            )
         );
         let account = |subpage| {
-            root_page(
-                HtmlBuild::new_component(AccountSpec {
-                    page: self.account_view.set(subpage)
+            root_page(markup!(
+                component(AccountSpec {
+                    page: self.account_view.set(subpage),
+                    session: self.session.clone(),
+                    users_view: self.account_users_view.clone(),
                 })
-            )
+            ))
         };
         let not_found = root_page(markup!(
             h1(text("Not Found"))
@@ -265,27 +295,28 @@ impl Spec for AppSpec {
         
         markup!(
             height: "100%"
-            {
-                if model.session.is_none() {
-                    HtmlBuild::new_component(LoginSpec {})
-                } else {
-                    match &model.page {
-                        Page::Homepage => homepage,
-                        Page::Content => content,
-                        Page::Analytics => analytics,
-                        Page::Account(subpage) => account(subpage.clone()),
-                        Page::NotFound => not_found,
-                    }
+            if(model.session.is_none())(
+                component(LoginSpec {})
+            )
+            if(model.session.is_some())({
+                match &model.page {
+                    Page::Homepage => homepage,
+                    Page::Content => content,
+                    Page::Analytics => analytics,
+                    Page::Account(subpage) => account(subpage.clone()),
+                    Page::NotFound => not_found,
                 }
-            }
+            })
         )
     }
 }
 
 pub fn main() {
     let app_spec = AppSpec {
-        account_view: Reactive::from_value(Default::default()),
         url: url::mk_reactive(),
+        session: Reactive::from_value(None),
+        account_view: Reactive::from_value(Default::default()),
+        account_users_view: Reactive::from_value(Default::default()),
     };
     let app = Application::from_spec(app_spec);
     app.start();

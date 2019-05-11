@@ -96,11 +96,9 @@ impl Spec for LoginSpec {
         match msg {
             Msg::LoginNameInput(text) => {
                 model.login_name = text;
-                cmd.update_view();
             },
             Msg::LoginPasswordInput(text) => {
                 model.login_password = PasswordString(text);
-                cmd.update_view();
             },
             Msg::NewNameInput(text) => {
                 model.new_name_errors = run_check_for(
@@ -108,7 +106,6 @@ impl Spec for LoginSpec {
                     text.clone(),
                 );
                 model.new_name = text;
-                cmd.update_view();
             },
             Msg::NewPasswordInput(text) => {
                 model.new_password_errors = run_check_for(
@@ -116,7 +113,6 @@ impl Spec for LoginSpec {
                     text.clone(),
                 );
                 model.new_password = PasswordString(text);
-                cmd.update_view();
             },
             Msg::NewPasswordConfirmInput(text) => {
                 model.new_password_confirm_errors = run_check_for(
@@ -126,7 +122,6 @@ impl Spec for LoginSpec {
                     text.clone(),
                 );
                 model.new_password_confirm = PasswordString(text);
-                cmd.update_view();
             },
             Msg::SubmitLogIn => {
                 
@@ -151,7 +146,6 @@ impl Spec for LoginSpec {
                         account: account,
                     };
                     *model = Default::default();
-                    cmd.update_view();
                     cmd.broadcast(NewSession(session));
                 }
             },
@@ -379,7 +373,7 @@ fn form_submit(on_submit: impl Fn(JsValue) -> Msg + 'static) -> Html<Msg> {
                 utils::event::prevent_default(&event);
                 on_submit(event)
             })
-            text("Submit")
+            value = "Submit"
         )
     )
 }
@@ -448,7 +442,7 @@ pub fn new_name_checks() -> Vec<Check> {
             error_msg: "Invalid length",
             validate: Rc::new(|value| {
                 value.len() >= 3 && 
-                value.len() <= 100
+                value.len() <= 20
             })
         },
         Check {

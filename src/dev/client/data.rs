@@ -36,9 +36,16 @@ pub enum Page {
 pub enum AccountPage {
     Password,
     Email,
-    Users,
+    Users(UsersPage),
     Billing,
 }
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum UsersPage {
+    Index,
+    AddUser
+}
+
 
 impl Page {
     pub fn is_homepage(&self) -> bool {
@@ -88,7 +95,7 @@ impl AccountPage {
     }
     pub fn is_users(&self) -> bool {
         match self {
-            AccountPage::Users => true,
+            AccountPage::Users(_) => true,
             _ => false
         }
     }
@@ -96,6 +103,21 @@ impl AccountPage {
         match self {
             AccountPage::Billing => true,
             _ => false
+        }
+    }
+}
+
+impl UsersPage {
+    pub fn is_index(&self) -> bool {
+        match self {
+            UsersPage::Index => true,
+            _ => false,
+        }
+    }
+    pub fn is_add_user(&self) -> bool {
+        match self {
+            UsersPage::AddUser => true,
+            _ => false,
         }
     }
 }
@@ -111,6 +133,13 @@ impl Default for AccountPage {
         AccountPage::Password
     }
 }
+
+impl Default for UsersPage {
+    fn default() -> Self {
+        UsersPage::Index
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // ACCOUNT

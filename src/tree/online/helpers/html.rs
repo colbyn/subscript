@@ -164,6 +164,13 @@ pub fn sync_attributes(
                 Either::Right(value) => dom_ref.set_attribute(new_key, value),
                 _ => ()
             }
+            sync_stateful_attribute_dom_values(
+                tag,
+                dom_ref,
+                new_key,
+                &Either::Left(false),
+                new_value
+            );
         }
         xs.replace(ys.clone());
     }

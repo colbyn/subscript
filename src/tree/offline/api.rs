@@ -22,7 +22,7 @@ use crate::process::basics::*;
 use crate::process::offline::*;
 use crate::process::online::*;
 
-impl<Msg> HtmlBuild<Msg> {
+impl<Msg: Clone> HtmlBuild<Msg> {
     pub fn new_node(tag: &str) -> Self {
         HtmlBuild::Node(NodeBuild {
             tag: String::from(tag),
@@ -43,6 +43,12 @@ impl<Msg> HtmlBuild<Msg> {
     }
     pub fn new_component<S: Spec>(spec: S) -> Self {
         HtmlBuild::Component(Box::new(OfflineProcess::from_spec(spec)))
+    }
+    pub fn unpack_node_own(self) -> Option<NodeBuild<Msg>> {
+        match self {
+            HtmlBuild::Node(node) => Some(node),
+            _ => None
+        }
     }
     pub fn unpack_node(&self) -> Option<&NodeBuild<Msg>> {
         match self {
@@ -67,6 +73,26 @@ impl<Msg> HtmlBuild<Msg> {
             node.styling.self_pseudo_selectors.append(
                 &mut other.self_pseudo_selectors.clone()
             );
+        }
+    }
+    pub fn merge_mixin(&mut self, mixin: Mixin<Msg>) {
+        if let Some(node) = self.unpack_node_mut() {
+            // ATTRIBUTES
+            node.attributes.append(&mut mixin.attributes.clone());
+            // STYLING
+            node.styling.self_rules.append(
+                &mut mixin.styling.self_rules.clone()
+            );
+            node.styling.self_media_queries.append(
+                &mut mixin.styling.self_media_queries.clone()
+            );
+            node.styling.self_pseudo_selectors.append(
+                &mut mixin.styling.self_pseudo_selectors.clone()
+            );
+            // EVENTS
+            node.events.append(&mut mixin.events.clone());
+            // CHILDREN
+            node.children.append(&mut mixin.nodes.clone());
         }
     }
 }

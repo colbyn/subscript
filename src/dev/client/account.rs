@@ -1,3 +1,7 @@
+pub mod password;
+pub mod billing;
+pub mod users;
+
 use std::fmt::{self, Debug};
 use std::convert::From;
 use std::hash::{Hash, Hasher};
@@ -19,6 +23,8 @@ use crate::tree::offline::api::*;
 use crate::tree::online::data::*;
 use crate::dev::server::data::*;
 use crate::dev::client::data::*;
+use crate::dev::client::utils;
+use crate::extras::*;
 
 use crate::process::app::*;
 use crate::process::basics::*;
@@ -33,24 +39,29 @@ use crate::process::online::*;
 #[derive(Clone)]
 pub struct AccountSpec {
     pub page: Reactive<AccountPage>,
+    pub session: Reactive<Option<Session>>,
+    pub users_view: Reactive<UsersPage>,
 }
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     NoOp,
+    Session(Option<Session>),
     UrlRequest(AccountPage),
     UrlChanged(AccountPage),
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Model {
-    pub page: AccountPage,
+    page: AccountPage,
+    session: Option<Session>,
 }
 
 impl Default for Model {
     fn default() -> Self {
         Model {
             page: Default::default(),
+            session: None,
         }
     }
 }
@@ -69,16 +80,21 @@ impl Spec for AccountSpec {
             model: match loaded.saved_model {
                 Some(saved_model) => Model {
                     page: self.page.unlock(key),
+                    session: self.session.unlock(key),
                     ..saved_model
                 },
                 None => Model {
                     page: self.page.unlock(key),
+                    session: self.session.unlock(key),
                     ..Default::default()
                 },
             },
             subs: subscriptions!(
-                bind(self.page -> new_value) -> Msg {
+                on(self.page -> new_value) -> Msg {
                     Msg::UrlChanged(new_value)
+                }
+                on(self.session -> new_value) -> Msg {
+                    Msg::Session(new_value)
                 }
             ),
         }
@@ -86,9 +102,11 @@ impl Spec for AccountSpec {
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, cmd: &Cmd) {
         match msg {
             Msg::NoOp => (),
+            Msg::Session(session) => {
+                model.session = session;
+            }
             Msg::UrlChanged(page) => {
                 model.page = page;
-                cmd.update_view();
             },
             Msg::UrlRequest(page) => cmd.broadcast(
                 NewPage(Page::Account(page))
@@ -96,15 +114,40 @@ impl Spec for AccountSpec {
         }
     }
     fn view(&self, model: &Self::Model) -> Html<Self::Msg> {
+        let page = match &model.page {
+            AccountPage::Password => mixin!(
+                component(password::PasswordSpec {
+                    session: self.session.clone(),
+                })
+            ),
+            AccountPage::Users(sub) => mixin!(
+                component(users::UsersSpec {
+                    session: self.session.clone(),
+                    page: self.users_view.set(sub.clone()),
+                })
+            ),
+            AccountPage::Billing => mixin!(
+                component(billing::BillingSpec {
+                    session: self.session.clone(),
+                })
+            ),
+            _ => mixin!()
+        };
         markup!(
             width: "100%"
             height: "100%"
             display: "grid"
             grid_template_columns: "300px 1fr"
-            self.append(&[
-                navigation(&model.page),
-                body(&model.page)
-            ])
+            grid_column_gap: "20px"
+            padding_top: "22px"
+            padding_bottom: "100px"
+            if (model.session.is_none())(
+                
+            )
+            if (model.session.is_some())(
+                [navigation(&model.page)]
+                -page;
+            )
         )
     }
 }
@@ -188,11 +231,6 @@ pub fn navigation(page: &AccountPage) -> Html<Msg> {
                         text: "Password",
                         on_click: Msg::UrlRequest(AccountPage::Password),
                     },
-                    Link {
-                        active: page.is_email(),
-                        text: "Email",
-                        on_click: Msg::UrlRequest(AccountPage::Email),
-                    },
                 ],
             }),
             section(NavSestion {
@@ -201,7 +239,7 @@ pub fn navigation(page: &AccountPage) -> Html<Msg> {
                     Link {
                         active: page.is_users(),
                         text: "Users",
-                        on_click: Msg::UrlRequest(AccountPage::Users),
+                        on_click: Msg::UrlRequest(AccountPage::Users(UsersPage::Index)),
                     },
                     Link {
                         active: page.is_billing(),
@@ -214,22 +252,7 @@ pub fn navigation(page: &AccountPage) -> Html<Msg> {
     )
 }
 
-pub fn body(page: &AccountPage) -> Html<Msg> {
-    match page {
-        AccountPage::Password => markup!(main|
-            
-        ),
-        AccountPage::Email => markup!(main|
-            
-        ),
-        AccountPage::Users => markup!(main|
-            
-        ),
-        AccountPage::Billing => markup!(main|
-            
-        ),
-    }
-}
+
 
 #[derive(Debug, Clone)]
 pub enum ChildPos {

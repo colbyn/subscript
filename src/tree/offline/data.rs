@@ -98,6 +98,16 @@ pub struct StyleNode {
     pub self_pseudo_selectors: Vec<SelfPseudoDeclaration>,
 }
 
+impl StyleNode {
+    pub fn new() -> Self {
+        StyleNode {
+            self_rules: Vec::new(),
+            self_media_queries: Vec::new(),
+            self_pseudo_selectors: Vec::new(),
+        }
+    }
+}
+
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Hash)]
 pub struct Rule {
@@ -151,4 +161,15 @@ pub struct NodeBuild<Msg> {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// HTML MIXINS
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct Mixin<Msg> {
+    pub attributes: BTreeMap<String, Either<bool, String>>,
+    pub events: BTreeMap<EventType, Callback<Msg>>,
+    pub styling: StyleNode,
+    pub nodes: Vec<HtmlBuild<Msg>>,
+}
 

@@ -51,7 +51,8 @@ pub struct ProcessInstance<S: Spec> {
     pub process_name: Option<String>,
     pub process_id: ProcessId,
     pub spec: S,
-    pub model: RefCell<S::Model>,
+    pub offline_model: RefCell<S::Model>,
+    pub online_model: RefCell<S::Model>,
     pub subs: Subscriptions<S::Msg>,
     pub offline_html: RefCell<HtmlBuild<S::Msg>>,
     pub online_html: LiveHtml<S::Msg>,
@@ -84,7 +85,8 @@ impl<S: Spec> Process<S> {
                 process_name: None,
                 process_id: format!("pid-{}", rand::random::<u16>()),
                 spec: spec,
-                model: RefCell::new(model),
+                offline_model: RefCell::new(model.clone()),
+                online_model: RefCell::new(model),
                 subs: subs,
                 offline_html: RefCell::new(offline_html),
                 online_html: online_html,
@@ -112,28 +114,32 @@ impl<S: Spec> ProcessHandle for Process<S> {
         let messages = {
             // SETUP
             let mut xs: Vec<S::Msg> = Vec::new();
-            // SUBSCRIPTIONS
-            self.0.subs.tick(&mut xs, global_events);
-            // HTML DOM EVENTS
+            // FIRST - HTML DOM EVENTS
             self.0.online_html.tick(&mut xs, global_events);
+            // SECOND - SUBSCRIPTIONS
+            self.0.subs.tick(&mut xs, global_events);
             // DONE
             xs
         };
         if !messages.is_empty() {
             // PROCESS EVENTS
             let ref cmd = Cmd {
-                update_view: Rc::new(Cell::new(false)),
                 queued_commands: self.0.queued_commands.clone(),
             };
             for msg in messages {
-                self.0.spec.update(&mut self.0.model.borrow_mut(), msg, cmd);
+                self.0.spec.update(&mut self.0.online_model.borrow_mut(), msg, cmd);
             }
             // PROCESS VIEW
-            if cmd.update_view.get() {
+            let unchanged = {
+                *self.0.online_model.borrow() == *self.0.offline_model.borrow()
+            };
+            if !unchanged {
                 self.0.offline_html.replace(
-                    self.0.spec.view(&self.0.model.borrow())
+                    self.0.spec.view(&self.0.online_model.borrow())
                 );
                 self.0.online_html.sync(&self.0.offline_html.borrow());
+                self.0.offline_model
+                    .replace(self.0.online_model.borrow().clone());
             }
             // PROCESS COMMANDS
             let queued_commands = self.0.queued_commands
@@ -157,7 +163,7 @@ impl<S: Spec> ProcessHandle for Process<S> {
                                 .expect("pushState failed");
                         }
                         CmdRequest::Save => {
-                            save_model::<S>(&self.0.model.borrow());
+                            save_model::<S>(&self.0.offline_model.borrow());
                         }
                         CmdRequest::Broadcast(value) => {
                             GLOBAL_REGISTRY.with(|reg| {

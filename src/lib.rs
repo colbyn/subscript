@@ -13,6 +13,8 @@ pub mod process;
 pub mod effect;
 pub mod extras;
 
+pub mod toolkit;
+
 pub mod dev;
 
 

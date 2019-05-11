@@ -19,6 +19,7 @@ im = {version="12.3.4", features = ["serde"]}
 either = "1.5.2"
 rand = {version="0.6.5", features = ["wasm-bindgen"]}
 lazy_static = "1.3.0"
+itertools = "0.8.0"
 
 ###############################################################################
 # RUST-WASM

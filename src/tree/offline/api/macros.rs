@@ -26,7 +26,20 @@ use crate::process::online::*;
 
 #[macro_export]
 macro_rules! markup_argument {
+    // INLINE MIXIN EXPRESSIONS
+    ($parent:expr; - $mixin:expr ;) => {{
+        $parent.merge_mixin($mixin.clone());
+    }};
     // EXPRESSION
+    ($parent:expr; [$($value:expr),*  $(,)*]) => {{
+        let mut xs = Vec::new();
+        $(
+            xs.push($value.clone());
+        )*
+        for value in xs {
+            $parent.add_child(value);
+        }
+    }};
     ($parent:expr; {$value:expr}) => {
         $parent.add_child($value.clone());
     };
@@ -130,6 +143,21 @@ macro_rules! markup_argument {
         $parent.add_event(stringify!($event_name), Rc::new($body));
     }};
     // CHILDREN
+    ($parent:expr; mixin ($($mixins:expr),*)) => {{
+        let mut xs = Vec::new();
+        $(
+            xs.push($mixins);
+        )*
+        for mixin in xs {
+            $parent.merge_mixin(mixin.clone());
+        }
+    }};
+    ($parent:expr; mixin ($mixin:expr)) => {{
+        $parent.merge_mixin($mixin.clone());
+    }};
+    ($parent:expr; component ($value:expr)) => {{
+        $parent.add_child(HtmlBuild::new_component($value));
+    }};
     ($parent:expr; text ($value:expr)) => {{
         $parent.add_child(HtmlBuild::new_text($value));
     }};
@@ -138,11 +166,19 @@ macro_rules! markup_argument {
         markup_arguments!(child_node; $($inner_tks)*);
         $parent.add_child(child_node);
     }};
+    // ($parent:expr; $path:path) => {{
+    // 
+    // }};
 }
 
 #[macro_export]
 macro_rules! markup_arguments {
     ($parent:expr;) => {};
+    // INLINE MIXIN EXPRESSIONS
+    ($parent:expr; - $x1:expr;  $($rest:tt)*) => {{
+        markup_argument!($parent; -$x1;);
+        markup_arguments!($parent; $($rest)*);
+    }};
     // CONDITIONALS
     ($parent:expr; if(let $l:pat = $r:expr)($($x:tt)*) $($rest:tt)*) => {{
         if let $l = $r {
@@ -157,6 +193,10 @@ macro_rules! markup_arguments {
         markup_arguments!($parent; $($rest)*);
     }};
     // EXPRESSION
+    ($parent:expr; [$($args:tt)*] $($rest:tt)*) => {{
+        markup_argument!($parent; [$($args)*]);
+        markup_arguments!($parent; $($rest)*);
+    }};
     ($parent:expr; {$value:expr} $($rest:tt)*) => {{
         markup_argument!($parent; {$value});
         markup_arguments!($parent; $($rest)*);
@@ -215,8 +255,8 @@ macro_rules! markup_arguments {
         markup_arguments!($parent; $($rest)*);
     }};
     // CHILDREN
-    ($parent:expr; $tag:tt $body:tt $($rest:tt)*) => {{
-        markup_argument!($parent; $tag $body);
+    ($parent:expr; $ident:ident $body:tt $($rest:tt)*) => {{
+        markup_argument!($parent; $ident $body);
         markup_arguments!($parent; $($rest)*);
     }};
 }
@@ -278,7 +318,10 @@ macro_rules! markup {
         use ::either::Either;
         use crate::browser::*;
         use crate::tree::offline::data::*;
-        use crate::process::data::*;
+        
+        use crate::process::app::*;
+        use crate::process::basics::*;
+        use crate::process::online::*;
         
         let mut node = HtmlBuild::new_node("div");
         node
@@ -345,38 +388,67 @@ macro_rules! markup {
     }};
 }
 
-pub fn dev() {
-    #[derive(Debug, Clone)]
-    pub enum AppMsg {
-        NoOp,
-    }
-    
-    let x: HtmlBuild<AppMsg> = markup!(nav.ul|
-        display: "flex"
-        @media [min_width: "900px"] (
-            
-        )
-        .click(move |_| AppMsg::NoOp)
-        li(
-            :hover (
-                
-            )
-            display: "flex"
-            color: "#000"
-            a(
-                href="/"
-                text("Hello World")
-            )
-        )
-        li(
-            display: "flex"
-            color: "#000"
-            a(
-                href="/"
-                text("Hello World")
-            )
-        )
-    );
+
+///////////////////////////////////////////////////////////////////////////////
+// EXTERNAL - MIXINS
+///////////////////////////////////////////////////////////////////////////////
+
+#[macro_export]
+macro_rules! mixin {
+    () => {{
+        use ::either::Either;
+        use crate::browser::*;
+        use crate::tree::offline::data::*;
+        
+        use crate::process::app::*;
+        use crate::process::basics::*;
+        use crate::process::online::*;
+        
+        Mixin {
+            attributes: BTreeMap::new(),
+            events: BTreeMap::new(),
+            styling: StyleNode::new(),
+            nodes: Vec::new(),
+        }
+    }};
+    ($($x:tt)*) => {{
+        use ::either::Either;
+        use crate::browser::*;
+        use crate::tree::offline::data::*;
+        
+        use crate::process::app::*;
+        use crate::process::basics::*;
+        use crate::process::online::*;
+        
+        let mut node = HtmlBuild::new_node("div");
+        markup_arguments!(node; $($x)*);
+        
+        if let Some(node) = node.unpack_node_own() {
+            Mixin {
+                attributes: node.attributes,
+                events: node.events,
+                styling: node.styling,
+                nodes: node.children,
+            }
+        } else {
+            panic!("mixin macro failed")
+        }
+    }};
 }
+
+#[macro_export]
+macro_rules! mixin_fn {
+    ($name:ident|) => {
+        pub fn $name <T: Clone + Debug> () -> Mixin<T> {
+            mixin!()
+        }
+    };
+    ($name:ident| $($x:tt)*) => {
+        pub fn $name <T: Clone + Debug> () -> Mixin<T> {
+            mixin!($($x)*)
+        }
+    };
+}
+
 
 

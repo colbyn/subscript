@@ -9,14 +9,15 @@ module.exports = {
     entry: "./index.js",
     output: {
         path: dist,
-        filename: "bundle.js"
+        filename: "./bundle.js",
+        publicPath: '/'
     },
     devServer: {
-        historyApiFallback: true
+        historyApiFallback: true,
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: 'index.html'
+            template: './index.html'
         }),
         new WasmPackPlugin({
             crateDirectory: path.resolve(__dirname, "."),
