@@ -1,5 +1,8 @@
 [workspace]
 members = [
+    "insertion-types",
+    "web-utils",
     "core",
     "css-dsl",
+    "html-dsl",
 ]

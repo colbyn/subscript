@@ -1,0 +1,8 @@
+[package]
+name = "insertion-types"
+version = "0.1.0"
+authors = ["Colbyn Wadman <hello@colbyn.com>"]
+edition = "2018"
+
+[dependencies]
+either = "1.5.2"
