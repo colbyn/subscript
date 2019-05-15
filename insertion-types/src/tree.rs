@@ -5,7 +5,7 @@ use either::Either;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// TREE
+// TREE - DATA
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct Interface<N1, L1, N2, L2> {
@@ -20,8 +20,8 @@ pub struct Interface<N1, L1, N2, L2> {
 }
 
 pub struct ITreeApi<N1, L1, N2, L2> {
-    current: ITree<N2, L2>,
-    api: Interface<N1, L1, N2, L2>,
+    pub current: ITree<N2, L2>,
+    pub api: Interface<N1, L1, N2, L2>,
 }
 
 pub enum ITree<N, L> {
@@ -34,6 +34,12 @@ pub enum ITree<N, L> {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// TREE - API
+///////////////////////////////////////////////////////////////////////////////
+
+
+
 impl<N1, L1, N2, L2> ITreeApi<N1, L1, N2, L2>
 where
     N1: PartialEq,
@@ -42,12 +48,74 @@ where
     L2: PartialEq,
 {
     pub fn sync(mut self, value: ITree<N1, L1>) {
-        let unchanged = value.unchanged(&self.current, &self.api);
-        if !unchanged {
-            
+        self.current = value.sync(self.current, &self.api);
+    }
+}
+
+impl<N, L> ITree<N, L> {
+    pub fn update_leaf(&mut self, f: &Fn(&mut L)) {
+        if let Some(x) = self.unpack_leaf_mut() {
+            f(x);
+        }
+    }
+    pub fn update_node(&mut self, f: &Fn(&mut N)) {
+        if let Some((x, _)) = self.unpack_node_mut() {
+            f(x);
+        }
+    }
+    pub fn add_child(&mut self, child: ITree<N, L>) {
+        if let Some((_, xs)) = self.unpack_node_mut() {
+            xs.push(child);
+        }
+    }
+    pub fn all(&self, pred: &Fn(Either<&N, &L>)->bool) -> bool {
+        match self {
+            ITree::Leaf{data} => pred(Either::Right(&data)),
+            ITree::Node{data, children} => {
+                if pred(Either::Left(&data)) {
+                    let mut result = true;
+                    for child in children {
+                        if result {
+                            result = child.all(pred);
+                        }
+                    }
+                    result
+                } else {
+                    false
+                }
+            },
+        }
+    }
+    pub fn traverse(&self, f: &Fn(&ITree<N, L>)) {
+        match self {
+            x @ ITree::Leaf{..} => f(x),
+            ITree::Node{data, children} => {
+                for child in children {
+                    f(child);
+                }
+                f(self);
+            },
+        }
+    }
+    pub fn traverse_mut(&self, f: &Fn(&ITree<N, L>)) {
+        match self {
+            x @ ITree::Leaf{..} => f(x),
+            ITree::Node{data, children} => {
+                for child in children {
+                    f(child);
+                }
+                f(self);
+            },
         }
     }
 }
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// TREE - INTERNAL
+///////////////////////////////////////////////////////////////////////////////
+
 
 /// Helper function
 fn remove_matching_item<N1, L1, N2, L2>(
@@ -248,46 +316,10 @@ where
             _ => false,
         }
     }
-    pub fn all(&self, pred: &Fn(Either<&N1, &L1>)->bool) -> bool {
-        match self {
-            ITree::Leaf{data} => pred(Either::Right(&data)),
-            ITree::Node{data, children} => {
-                if pred(Either::Left(&data)) {
-                    let mut result = true;
-                    for child in children {
-                        if result {
-                            result = child.all(pred);
-                        }
-                    }
-                    result
-                } else {
-                    false
-                }
-            },
-        }
-    }
-    pub fn traverse(&self, f: &Fn(&ITree<N1, L1>)) {
-        match self {
-            x @ ITree::Leaf{..} => f(x),
-            ITree::Node{data, children} => {
-                for child in children {
-                    f(child);
-                }
-                f(self);
-            },
-        }
-    }
-    pub fn traverse_mut(&self, f: &Fn(&ITree<N1, L1>)) {
-        match self {
-            x @ ITree::Leaf{..} => f(x),
-            ITree::Node{data, children} => {
-                for child in children {
-                    f(child);
-                }
-                f(self);
-            },
-        }
-    }
+}
+
+
+impl<N1, L1> ITree<N1, L1> {
     pub fn unpack_leaf(&self) -> Option<&L1> {
         match self {
             ITree::Leaf{data} => Some(&data),
@@ -313,7 +345,6 @@ where
         }
     }
 }
-
 
 
 

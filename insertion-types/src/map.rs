@@ -14,22 +14,38 @@ fn calculate_hash<T: Hash>(t: &T) -> u64 {
     s.finish()
 }
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
-// MAP
+// MAP - CORE
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct IMap<K, V1, V2> {
-    current: HashMap<K, V2>,
+pub struct IMap<K, V> {
+    current: HashMap<K, V>,
+}
+
+impl<K: Hash + Eq, V> IMap<K, V> {
+    pub fn new() -> Self {
+        IMap {
+            current: HashMap::new(),
+        }
+    }
+    pub fn insert(&mut self, k: K, v: V) {
+        self.current.insert(k, v);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// MAP SYNC API
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct IMapApi<K, V1, V2> {
     for_added: fn(&K, V1)->V2,
     for_modified: fn(&K, &mut V2, V1),
     for_removed: fn(K, V2),
     is_unchanged: fn(&V2, &V1,)->bool,
 }
 
-impl<K: Hash + Eq + Clone, A: Hash, B: Hash> IMap<K, A, B> {
-    pub fn sync(mut self, values: HashMap<K, A>) -> Self {
+impl<K: Hash + Eq + Clone, V2: Hash> IMap<K, V2> {
+    pub fn sync<V1: Hash>(mut self, values: HashMap<K, V1>, api: IMapApi<K, V1, V2>) -> Self {
         let unchanged = {
             if self.current.len() == values.len() {
                 let eq_keys = {
@@ -48,7 +64,7 @@ impl<K: Hash + Eq + Clone, A: Hash, B: Hash> IMap<K, A, B> {
                             let v2 = values.get(k1);
                             assert!(v2.is_some());
                             let v2 = v2.unwrap();
-                            (self.is_unchanged)(v1, v2)
+                            (api.is_unchanged)(v1, v2)
                         })
                 } else {
                     false
@@ -66,7 +82,7 @@ impl<K: Hash + Eq + Clone, A: Hash, B: Hash> IMap<K, A, B> {
                     zip(values.into_iter());
                 for ((k1, v1), (k2, v2)) in stream {
                     assert!(k1 == &k2);
-                    (self.for_modified)(k1, v1, v2);
+                    (api.for_modified)(k1, v1, v2);
                 }
                 self
             } else {
@@ -77,12 +93,12 @@ impl<K: Hash + Eq + Clone, A: Hash, B: Hash> IMap<K, A, B> {
                         None => {
                             self.current.insert(
                                 new_key.clone(),
-                                (self.for_added)(&new_key, new_value)
+                                (api.for_added)(&new_key, new_value)
                             );
                             new_keys.push(new_key);
                         }
                         Some(old_value) => {
-                            (self.for_modified)(
+                            (api.for_modified)(
                                 &new_key, old_value, new_value
                             );
                         }
@@ -98,7 +114,7 @@ impl<K: Hash + Eq + Clone, A: Hash, B: Hash> IMap<K, A, B> {
                     let old_value = self.current.remove(&old_key);
                     assert!(old_value.is_some());
                     if let Some(old_value) = old_value {
-                        (self.for_removed)(old_key, old_value);
+                        (api.for_removed)(old_key, old_value);
                     }
                 }
                 self
