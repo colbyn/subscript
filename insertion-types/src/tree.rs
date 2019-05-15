@@ -1,5 +1,3 @@
-pub mod basic;
-
 use std::hash::{Hash, Hasher};
 use std::collections::*;
 use either::Either;
