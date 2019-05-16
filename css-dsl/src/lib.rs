@@ -5,3 +5,4 @@ pub mod values;
 pub mod properties;
 pub mod selectors;
 
+pub use crate::core::{Stylesheet, Style, MediaSelector, StateSelector};
