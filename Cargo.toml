@@ -4,5 +4,5 @@ members = [
     "web-utils",
     "core",
     "css-dsl",
-    "html-dsl",
+    "dom-tree",
 ]
