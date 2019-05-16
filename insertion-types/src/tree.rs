@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 use std::collections::*;
-use either::Either;
+use either::Either::{self, Left, Right};
 
 
 
@@ -8,20 +8,16 @@ use either::Either;
 // TREE - DATA
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct Interface<N1, L1, N2, L2> {
-    node_added: fn(N1)->N2,
-    node_modified: fn(N1, N2)->N2,
-    node_removed: fn(N2),
-    node_unchanged: fn(&N1, &N2)->bool,
-    leaf_added: fn(L1)->L2,
-    leaf_modified: fn(L1, L2)->L2,
-    leaf_removed: fn(L2),
-    leaf_unchanged: fn(&L1, &L2)->bool,
-}
-
 pub struct ITreeApi<N1, L1, N2, L2> {
-    pub current: ITree<N2, L2>,
-    pub api: Interface<N1, L1, N2, L2>,
+    pub node_added: fn(N1)->N2,
+    pub node_modified: fn(N1, N2)->N2,
+    pub node_removed: fn(N2),
+    pub node_unchanged: fn(&N1, &N2)->bool,
+    pub leaf_added: fn(L1)->L2,
+    pub leaf_modified: fn(L1, L2)->L2,
+    pub leaf_removed: fn(L2),
+    pub leaf_unchanged: fn(&L1, &L2)->bool,
+    pub adoptable: fn(Either<&L1, &L2>)->bool,
 }
 
 pub enum ITree<N, L> {
@@ -39,18 +35,6 @@ pub enum ITree<N, L> {
 ///////////////////////////////////////////////////////////////////////////////
 
 
-
-impl<N1, L1, N2, L2> ITreeApi<N1, L1, N2, L2>
-where
-    N1: PartialEq,
-    L1: PartialEq,
-    N2: PartialEq,
-    L2: PartialEq,
-{
-    pub fn sync(mut self, value: ITree<N1, L1>) {
-        self.current = value.sync(self.current, &self.api);
-    }
-}
 
 impl<N, L> ITree<N, L> {
     pub fn update_leaf(&mut self, f: &Fn(&mut L)) {
@@ -110,6 +94,19 @@ impl<N, L> ITree<N, L> {
     }
 }
 
+impl<N2, L2> ITree<N2, L2>
+where
+    N2: PartialEq,
+    L2: PartialEq,
+{
+    pub fn sync<N1, L1>(mut self, value: ITree<N1, L1>, api: &ITreeApi<N1, L1, N2, L2>)
+    where
+        N1: PartialEq,
+        L1: PartialEq,
+    {
+        self = value.sync_impl(self, api);
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,7 +118,7 @@ impl<N, L> ITree<N, L> {
 fn remove_matching_item<N1, L1, N2, L2>(
     old: &mut Vec<ITree<N2, L2>>,
     new: &ITree<N1, L1>,
-    api: &Interface<N1, L1, N2, L2>,
+    api: &ITreeApi<N1, L1, N2, L2>,
 ) -> Option<ITree<N2, L2>>
 where
     N1: PartialEq,
@@ -227,7 +224,7 @@ where
             _ => false
         }
     }
-    pub fn sync<N2, L2>(mut self, other: ITree<N2, L2>, api: &Interface<N1, L1, N2, L2>) -> ITree<N2, L2>
+    fn sync_impl<N2, L2>(mut self, other: ITree<N2, L2>, api: &ITreeApi<N1, L1, N2, L2>) -> ITree<N2, L2>
     where
         N2: PartialEq,
         L2: PartialEq,
@@ -265,7 +262,7 @@ where
                         ChildEntry::Changed(ix, new) => {
                             match remove_similar_tree(&mut current, &new) {
                                 None => new.added(&api.leaf_added, &api.node_added),
-                                Some(old) => new.sync(old, api)
+                                Some(old) => new.sync_impl(old, api)
                             }
                         }
                     }
@@ -297,7 +294,7 @@ where
             other
         }
     }
-    pub fn unchanged<N2, L2>(&self, other: &ITree<N2, L2>, api: &Interface<N1, L1, N2, L2>) -> bool {
+    pub fn unchanged<N2, L2>(&self, other: &ITree<N2, L2>, api: &ITreeApi<N1, L1, N2, L2>) -> bool {
         use ITree::*;
         match (self, other) {
             (Leaf{data: x}, Leaf{data: y}) => {
