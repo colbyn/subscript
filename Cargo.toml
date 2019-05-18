@@ -2,7 +2,8 @@
 members = [
     "insertion-types",
     "web-utils",
-    "core",
     "css-dsl",
     "dom-tree",
+    "subscript",
 ]
+

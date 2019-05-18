@@ -384,6 +384,28 @@ impl Document {
             body: Body::new()
         }
     }
+    pub fn crate_text_node(&self, initial_value: &str) -> Text {
+        let dom_ref_as_text: web_sys::Text = core::new_text(initial_value);
+        let dom_ref: JsValue = From::from(dom_ref_as_text.clone());
+        let dom_ref_as_node: web_sys::Node = From::from(dom_ref.clone());
+        Text {dom_ref_as_text, dom_ref, dom_ref_as_node}
+    }
+    pub fn crate_element(&self, tag: &str) -> Tag {
+        let element = {
+            if tag::is_svg(tag) {
+                core::new_svg_element(tag)
+            } else {
+                core::new_svg_element(tag)
+            }
+        };
+        let dom_ref: JsValue = From::from(element.clone());
+        Tag {
+            tag: String::from(tag),
+            dom_ref_as_node: From::from(dom_ref.clone()),
+            dom_ref,
+            dom_ref_as_element: element,
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

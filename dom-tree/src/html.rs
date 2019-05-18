@@ -15,8 +15,8 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
 use web_utils::dom;
 use web_utils::js::{self, console, EventCallback};
-use insertion_types::map::{self, IMap};
-use insertion_types::tree::{self, ITree};
+use insertion_types::tree::*;
+use insertion_types::tree::map::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@ use insertion_types::tree::{self, ITree};
 ///////////////////////////////////////////////////////////////////////////////
 
 pub type NodeId = String;
-pub type Html<Msg> = ITree<Node<Msg>, Leaf>;
-pub type Svg<Msg> = ITree<Node<Msg>, Leaf>;
+pub type Html<Msg> = ViewTree<Msg>;
+pub type Svg<Msg> = ViewTree<Msg>;
 
 
 
@@ -33,7 +33,8 @@ pub type Svg<Msg> = ITree<Node<Msg>, Leaf>;
 // COMPONENTS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub trait Component {
+pub trait Component
+{
     fn spec_type_id(&self) -> TypeId;
     fn box_clone(&self) -> Box<Component>;
     fn spawn(&self) -> Box<()>;
@@ -46,23 +47,66 @@ impl Clone for Box<Component>
     }
 }
 
+impl PartialEq for Component {
+    fn eq(&self, other: &Component) -> bool {
+        self.spec_type_id() == other.spec_type_id()
+    }
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // HTML TREE
 ///////////////////////////////////////////////////////////////////////////////
 
+pub type ViewTree<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
 
-pub enum Leaf {
+pub enum ViewLeaf {
     Text(String),
     Component(Box<Component>),
 }
 
-pub struct Node<Msg> {
+impl PartialEq for ViewLeaf {
+    fn eq(&self, other: &ViewLeaf) -> bool {
+        match (self, other) {
+            (ViewLeaf::Text(x), ViewLeaf::Text(y)) => {x == y}
+            (ViewLeaf::Component(x), ViewLeaf::Component(y)) => {x == y}
+            _ => false
+        }
+    }
+}
+
+impl ViewLeaf {
+    pub fn is_text(&self) -> bool {
+        match self {
+            ViewLeaf::Text(_) => true,
+            _ => false,
+        }
+    }
+    pub fn is_component(&self) -> bool {
+        match self {
+            ViewLeaf::Component(_) => true,
+            _ => false,
+        }
+    }
+}
+
+
+#[derive(PartialEq)]
+pub struct ViewNode<Msg: PartialEq> {
     pub tag: String,
     pub attributes: IMap<String, attributes::Attribute>,
     pub events: IMap<events::EventType, events::EventHandler<Msg>>,
-    pub styling: css_dsl::Stylesheet,
+}
+
+impl<Msg: PartialEq> ViewNode<Msg> {
+    pub fn new(tag: &str) -> Self {
+        ViewNode {
+            tag: String::from(tag),
+            attributes: IMap::new(),
+            events: IMap::new(),
+        }
+    }
 }
 
 
@@ -70,10 +114,9 @@ pub struct Node<Msg> {
 // MIXINS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct Mixin<Msg> {
+pub struct Mixin<Msg: PartialEq> {
     pub attributes: IMap<String, attributes::Attribute>,
     pub events: IMap<events::EventType, events::EventHandler<Msg>>,
-    pub styling: css_dsl::Stylesheet,
 }
 
 
@@ -82,7 +125,7 @@ pub struct Mixin<Msg> {
 // DOM TREE EXTENSIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub trait Viewable<Msg> {
+pub trait Viewable<Msg: PartialEq> {
     fn normalize(&self) -> Mixin<Msg>;
 }
 

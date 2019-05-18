@@ -1,0 +1,55 @@
+[package]
+name = "subscript"
+version = "0.1.0"
+authors = ["Colbyn Wadman <hello@colbyn.com>"]
+edition = "2018"
+
+[lib]
+crate-type=["cdylib", "rlib"]
+
+[dependencies]
+serde = {version = "1.0.89", features = ["derive"]}
+either = "1.5.2"
+Inflector = "0.11.4"
+web-utils = {path = "../web-utils"}
+css-dsl = {path = "../css-dsl"}
+insertion-types = {path = "../insertion-types"}
+dom-tree = {path = "../dom-tree"}
+
+###############################################################################
+# RUST-WASM
+###############################################################################
+js-sys = "*"
+wasm-bindgen = "0.2.43"
+console_error_panic_hook = "*"
+
+
+[dependencies.web-sys]
+version = "0.3.20"
+features = [
+    "console",
+    "Comment",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlFormElement",
+    "EventTarget",
+    "Event",
+    "HtmlCollection",
+    "Node",
+    "NodeList",
+    "Text",
+    "CharacterData",
+    "Window",
+    "History",
+    "Location",
+    "StyleSheet",
+    "HtmlStyleElement",
+    "CssRule",
+    "CssRuleList",
+    "CssStyleRule",
+    "CssStyleSheet",
+    "Storage",
+]
+

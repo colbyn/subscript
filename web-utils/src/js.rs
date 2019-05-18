@@ -196,15 +196,15 @@ impl<Msg> EventCallback<Msg> {
         };
         queue_callback
     }
-    pub fn drain(&self) -> Vec<Msg> {
-        let xs: Vec<Msg> = self.i_events.borrow_mut()
-            .drain(..)
-            .map(|event| {
-                self.i_handler.as_ref().handler(event)
-            })
-            .collect();
-        xs
-    }
+    // pub fn drain(&self) -> Vec<Msg> {
+    //     let xs: Vec<Msg> = self.i_events.borrow_mut()
+    //         .drain(..)
+    //         .map(|event| {
+    //             self.i_handler.as_ref().handler(event)
+    //         })
+    //         .collect();
+    //     xs
+    // }
 }
 
 impl<Msg> Debug for EventCallback<Msg> {

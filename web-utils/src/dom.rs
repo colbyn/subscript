@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
 
@@ -173,12 +174,12 @@ pub trait DomNode: DomRef {
     fn dom_ref_as_node(&self) -> &web_sys::Node;
     fn dom_ref_as_element(&self) -> &web_sys::Element;
     
-    fn add_event_listener(&self, event_name: &str, callback: &js_sys::Function) {
-        self.dom_ref_as_node().add_event_listener_with_callback(event_name, &callback)
+    fn add_event_listener(&self, event_name: &str, cb: &Callback) {
+        self.dom_ref_as_node().add_event_listener_with_callback(event_name, cb.as_js_function())
             .expect("addEventListener failed");
     }
-    fn remove_event_listener(&self, event_name: &str, callback: &js_sys::Function) {
-        self.dom_ref_as_node().remove_event_listener_with_callback(event_name, &callback)
+    fn remove_event_listener(&self, event_name: &str, cb: &Callback) {
+        self.dom_ref_as_node().remove_event_listener_with_callback(event_name, cb.as_js_function())
             .expect("removeEventListener failed");
     }
     fn set_attribute(&self, key: &str, value: &str) {
@@ -211,14 +212,24 @@ pub trait DomNode: DomRef {
 // WINDOW
 ///////////////////////////////////////////////////////////////////////////////
 
-unsafe impl Send for Window {}
-unsafe impl Sync for Window {}
 
-cached!{
-    WINDOW;
-    fn window() -> Window = {
-        Window::new()
-    }
+thread_local! {
+    pub static GLOBAL_WINDOW: Window = {
+        let window = Window {
+            instance: core::get_window(),
+            local_storage: Storage::new(),
+            document: Document::new(),
+            location: Location::new(),
+            history: History::new(),
+        };
+        window
+    };
+}
+
+
+pub fn window() -> Window {
+    let win = GLOBAL_WINDOW.with(|win| win.clone());
+    win
 }
 
 
@@ -232,16 +243,6 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new() -> Self {
-        let window = core::get_window();
-        Window {
-            instance: window,
-            local_storage: Storage::new(),
-            document: Document::new(),
-            location: Location::new(),
-            history: History::new(),
-        }
-    }
     pub fn device_pixel_ratio(&self) -> f64 {
         self.instance.device_pixel_ratio()
     }
@@ -262,7 +263,7 @@ impl Window {
 ///////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, Debug)]
 pub struct Location {
-    instance: web_sys::Location
+    pub instance: web_sys::Location
 }
 
 impl Location {
@@ -287,7 +288,7 @@ impl Location {
 
 #[derive(Clone, Debug)]
 pub struct History {
-    instance: web_sys::History
+    pub instance: web_sys::History
 }
 
 impl History {
@@ -315,7 +316,7 @@ impl History {
 
 #[derive(Clone, Debug)]
 pub struct Storage {
-    instance: web_sys::Storage
+    pub instance: web_sys::Storage
 }
 
 impl Storage {
@@ -364,13 +365,39 @@ impl Storage {
 
 #[derive(Clone, Debug)]
 pub struct Document {
-    body: Body
+    pub body: Body
 }
 
 impl Document {
     pub fn new() -> Self {
         Document {
             body: Body::new()
+        }
+    }
+    pub fn create_element(&self, tag: &str) -> Tag {
+        let element = {
+            if tag::is_svg(tag) {
+                core::new_svg_element(tag)
+            } else {
+                core::new_svg_element(tag)
+            }
+        };
+        let dom_ref: JsValue = From::from(element.clone());
+        Tag {
+            tag: String::from(tag),
+            dom_ref_as_node: From::from(dom_ref.clone()),
+            dom_ref: dom_ref,
+            dom_ref_as_element: element,
+        }
+    }
+    pub fn create_text_node(&self, initial_value: &str) -> Text {
+        let dom_ref_as_text: web_sys::Text = core::new_text(initial_value);
+        let dom_ref: JsValue = From::from(dom_ref_as_text.clone());
+        let dom_ref_as_node: web_sys::Node = From::from(dom_ref.clone());
+        Text {
+            dom_ref_as_text: dom_ref_as_text,
+            dom_ref: dom_ref,
+            dom_ref_as_node: dom_ref_as_node,
         }
     }
 }
@@ -381,7 +408,7 @@ impl Document {
 
 #[derive(Clone, Debug)]
 pub struct Head {
-    
+
 }
 
 
@@ -392,14 +419,35 @@ pub struct Head {
 
 #[derive(Clone, Debug)]
 pub struct Body {
-    
+    pub i_dom_ref: JsValue,
+    pub i_dom_ref_as_node: web_sys::Node,
+    pub i_dom_ref_as_element: web_sys::Element,
 }
 
 impl Body {
     pub fn new() -> Self {
-        Body {}
+        let i_dom_ref_as_element = core::get_body();
+        let i_dom_ref: JsValue = From::from(i_dom_ref_as_element.clone());
+        let i_dom_ref_as_node: web_sys::Node = From::from(i_dom_ref.clone());
+        Body {i_dom_ref, i_dom_ref_as_element, i_dom_ref_as_node}
     }
 }
+
+impl DomRef for Body {
+    fn dom_ref(&self) -> &JsValue {
+        &self.i_dom_ref
+    }
+}
+
+impl DomNode for Body {
+    fn dom_ref_as_node(&self) -> &web_sys::Node {
+        &self.i_dom_ref_as_node
+    }
+    fn dom_ref_as_element(&self) -> &web_sys::Element {
+        &self.i_dom_ref_as_element
+    }
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -407,6 +455,7 @@ impl Body {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone, Debug)]
+/// Generic HTML tag
 pub struct Tag {
     pub tag: String,
     pub dom_ref: JsValue,

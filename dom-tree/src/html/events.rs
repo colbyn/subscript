@@ -21,9 +21,6 @@ use web_utils::dom;
 pub fn on_click<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
     unimplemented!()
 }
-pub fn on_double_click<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
-}
 pub fn on_mouse_down<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
     unimplemented!()
 }
@@ -69,10 +66,41 @@ pub struct EventHandlers<Msg>(pub(crate) BTreeMap<EventType, EventHandler<Msg>>)
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct EventHandler<Msg>(pub(crate) IEventHandler<Msg>);
 
+impl<Msg> EventHandler<Msg> {
+    pub fn event_name(&self) -> EventType {
+        match self {
+            EventHandler(IEventHandler::OnClick(_)) => 
+                EventType::OnClick,
+            EventHandler(IEventHandler::OnMouseDown(_)) => 
+                EventType::OnMouseDown,
+            EventHandler(IEventHandler::OnMouseUp(_)) => 
+                EventType::OnMouseUp,
+            EventHandler(IEventHandler::OnMouseEnter(_)) => 
+                EventType::OnMouseEnter,
+            EventHandler(IEventHandler::OnMouseLeave(_)) => 
+                EventType::OnMouseLeave,
+            EventHandler(IEventHandler::OnMouseOver(_)) => 
+                EventType::OnMouseOver,
+            EventHandler(IEventHandler::OnMouseOut(_)) => 
+                EventType::OnMouseOut,
+            EventHandler(IEventHandler::OnInput(_)) => 
+                EventType::OnInput,
+            EventHandler(IEventHandler::OnCheck(_)) => 
+                EventType::OnCheck,
+            EventHandler(IEventHandler::OnSubmit(_)) => 
+                EventType::OnSubmit,
+            EventHandler(IEventHandler::OnBlur(_)) => 
+                EventType::OnBlur,
+            EventHandler(IEventHandler::OnFocus(_)) => 
+                EventType::OnFocus,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+/// DOM events enum.
 pub enum EventType {
     OnClick,
-    OnDoubleClick,
     OnMouseDown,
     OnMouseUp,
     OnMouseEnter,
@@ -86,10 +114,29 @@ pub enum EventType {
     OnFocus,
 }
 
+impl EventType {
+    /// Gets the event name as a string.
+    pub fn as_str(&self) -> &str {
+        match self {
+            EventType::OnClick => "click",
+            EventType::OnMouseDown => "mousedown",
+            EventType::OnMouseUp => "mouseup",
+            EventType::OnMouseEnter => "mouseenter",
+            EventType::OnMouseLeave => "mouseenter",
+            EventType::OnMouseOver => "mouseover",
+            EventType::OnMouseOut => "mouseout",
+            EventType::OnInput => "change",
+            EventType::OnCheck => "click",
+            EventType::OnSubmit => "submit",
+            EventType::OnBlur => "blur",
+            EventType::OnFocus => "focus",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum IEventHandler<Msg> {
     OnClick(OnClick<Msg>),
-    OnDoubleClick(OnDoubleClick<Msg>),
     OnMouseDown(OnMouseDown<Msg>),
     OnMouseUp(OnMouseUp<Msg>),
     OnMouseEnter(OnMouseEnter<Msg>),
@@ -106,9 +153,6 @@ pub enum IEventHandler<Msg> {
 // MOUSE
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct OnClick<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnDoubleClick<Msg>(pub fn()->Msg);
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct OnMouseDown<Msg>(pub fn()->Msg);
@@ -167,8 +211,6 @@ impl<Msg: Ord> EventHandlers<Msg> {
         let key = match &handler {
             EventHandler(IEventHandler::OnClick(_)) =>
                 EventType::OnClick,
-            EventHandler(IEventHandler::OnDoubleClick(_)) =>
-                EventType::OnDoubleClick,
             EventHandler(IEventHandler::OnMouseDown(_)) =>
                 EventType::OnMouseDown,
             EventHandler(IEventHandler::OnMouseUp(_)) =>
@@ -211,7 +253,6 @@ impl<Msg> js::Handler<Msg> for IEventHandler<Msg> {
     fn handler(&self, event: JsValue) -> Msg {
         match self {
             IEventHandler::OnClick(x) => x.handler(event),
-            IEventHandler::OnDoubleClick(x) => x.handler(event),
             IEventHandler::OnMouseDown(x) => x.handler(event),
             IEventHandler::OnMouseUp(x) => x.handler(event),
             IEventHandler::OnMouseEnter(x) => x.handler(event),
@@ -229,11 +270,6 @@ impl<Msg> js::Handler<Msg> for IEventHandler<Msg> {
 
 // MOUSE
 impl<Msg> js::Handler<Msg> for OnClick<Msg> {
-    fn handler(&self, event: JsValue) -> Msg {
-        self.0()
-    }
-}
-impl<Msg> js::Handler<Msg> for OnDoubleClick<Msg> {
     fn handler(&self, event: JsValue) -> Msg {
         self.0()
     }
