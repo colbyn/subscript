@@ -1,2 +1,2 @@
-pub use crate::dom::DomRef;
 pub use crate::dom::DomNode;
+pub use crate::dom::DomRef;

@@ -168,12 +168,8 @@ pub trait Callback {
 
 pub trait DomRef {
     fn dom_ref(&self) -> &JsValue;
-}
-
-pub trait DomNode: DomRef {
     fn dom_ref_as_node(&self) -> &web_sys::Node;
-    fn dom_ref_as_element(&self) -> &web_sys::Element;
-    
+
     fn add_event_listener(&self, event_name: &str, cb: &Callback) {
         self.dom_ref_as_node().add_event_listener_with_callback(event_name, cb.as_js_function())
             .expect("addEventListener failed");
@@ -182,6 +178,32 @@ pub trait DomNode: DomRef {
         self.dom_ref_as_node().remove_event_listener_with_callback(event_name, cb.as_js_function())
             .expect("removeEventListener failed");
     }
+    fn append_child(&self, child: &DomRef) {
+        self.dom_ref_as_node()
+            .append_child(&child.dom_ref_as_node())
+            .expect("appendChild failed");
+    }
+    fn remove_child(&self, child: &DomRef) {
+        self.dom_ref_as_node()
+            .remove_child(&child.dom_ref_as_node())
+            .expect("removeChild failed");
+    }
+    fn try_remove_child(&self, child: &DomRef) -> Result<(), JsValue> {
+        match self.dom_ref_as_node().remove_child(&child.dom_ref_as_node()) {
+            Err(x) => Err(x),
+            Ok(_) => Ok(())
+        }
+    }
+    fn replace_child(&self, new_child: &DomRef, old_child: &DomRef) {
+        self.dom_ref_as_node()
+            .replace_child(&new_child.dom_ref_as_node(), &old_child.dom_ref_as_node())
+            .expect("replacedNode failed");
+    }
+}
+
+pub trait DomNode: DomRef {
+    fn dom_ref_as_element(&self) -> &web_sys::Element;
+    
     fn set_attribute(&self, key: &str, value: &str) {
         self.dom_ref_as_element().set_attribute(key, value)
             .expect("setAttribute failed");
@@ -189,21 +211,6 @@ pub trait DomNode: DomRef {
     fn remove_attribute(&self, key: &str) {
         self.dom_ref_as_element().remove_attribute(key)
             .expect("removeAttribute failed");
-    }
-    fn append_child(&self, child: &DomNode) {
-        self.dom_ref_as_node()
-            .append_child(&child.dom_ref_as_node())
-            .expect("appendChild failed");
-    }
-    fn remove_child(&self, child: &DomNode) {
-        self.dom_ref_as_node()
-            .remove_child(&child.dom_ref_as_node())
-            .expect("removeChild failed");
-    }
-    fn replace_child(&self, new_child: &DomNode, old_child: &DomNode) {
-        self.dom_ref_as_node()
-            .replace_child(&new_child.dom_ref_as_node(), &old_child.dom_ref_as_node())
-            .expect("replacedNode failed");
     }
 }
 
@@ -379,7 +386,7 @@ impl Document {
             if tag::is_svg(tag) {
                 core::new_svg_element(tag)
             } else {
-                core::new_svg_element(tag)
+                core::new_element(tag)
             }
         };
         let dom_ref: JsValue = From::from(element.clone());
@@ -434,15 +441,15 @@ impl Body {
 }
 
 impl DomRef for Body {
+    fn dom_ref_as_node(&self) -> &web_sys::Node {
+        &self.i_dom_ref_as_node
+    }
     fn dom_ref(&self) -> &JsValue {
         &self.i_dom_ref
     }
 }
 
 impl DomNode for Body {
-    fn dom_ref_as_node(&self) -> &web_sys::Node {
-        &self.i_dom_ref_as_node
-    }
     fn dom_ref_as_element(&self) -> &web_sys::Element {
         &self.i_dom_ref_as_element
     }
@@ -469,7 +476,7 @@ impl Tag {
             if tag::is_svg(tag) {
                 core::new_svg_element(tag)
             } else {
-                core::new_svg_element(tag)
+                core::new_element(tag)
             }
         };
         let dom_ref: JsValue = From::from(element.clone());
@@ -483,15 +490,15 @@ impl Tag {
 }
 
 impl DomRef for Tag {
+    fn dom_ref_as_node(&self) -> &web_sys::Node {
+        &self.dom_ref_as_node
+    }
     fn dom_ref(&self) -> &JsValue {
         &self.dom_ref
     }
 }
 
 impl DomNode for Tag {
-    fn dom_ref_as_node(&self) -> &web_sys::Node {
-        &self.dom_ref_as_node
-    }
     fn dom_ref_as_element(&self) -> &web_sys::Element {
         &self.dom_ref_as_element
     }
@@ -527,6 +534,9 @@ impl Text {
 }
 
 impl DomRef for Text {
+    fn dom_ref_as_node(&self) -> &web_sys::Node {
+        &self.dom_ref_as_node
+    }
     fn dom_ref(&self) -> &JsValue {
         &self.dom_ref
     }

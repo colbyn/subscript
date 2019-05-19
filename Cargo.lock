@@ -509,6 +509,13 @@ version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "ss-trees"
+version = "0.1.0"
+dependencies = [
+ "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "subscript"
 version = "0.1.0"
 dependencies = [
