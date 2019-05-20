@@ -12,31 +12,73 @@ use either::Either::{self, Left, Right};
 ///////////////////////////////////////////////////////////////////////////////
 
 pub enum ChildUpdate<Parent, Current, Old, New> {
-    Replace {
+    RecycleReplace {
         parent: Option<Parent>,
         current_occupant: Current,
         old: Old,
         new: New,
     },
-    Append {
+    RecycleAppend {
         parent: Option<Parent>,
         old: Old,
+        new: New,
+    },
+    NewReplace {
+        parent: Option<Parent>,
+        current_occupant: Current,
+        new: New,
+    },
+    NewAppend {
+        parent: Option<Parent>,
         new: New,
     },
     Remove {
         parent: Option<Parent>,
         old: Old,
+    },
+    Inplace {
+        parent: Option<Parent>,
+        old: Old,
+        new: New,
     }
 }
 
-pub trait TreeApi<N1, L1, N2, L2> {
-    fn node_unchanged(&self, new: &N1, old: &N2) -> bool;
-    fn node_recyclable(&self, new: &N1, old: &N2) -> bool;
-    fn node_update(&self, op: ChildUpdate<&N2, Either<&N2, &L2>, Either<&mut N2, &mut L2>, N1>);
+pub enum ChildCreate<Parent, Current, New> {
+    NewReplace {
+        parent: Option<Parent>,
+        current_occupant: Current,
+        new: New,
+    },
+    NewAppend {
+        parent: Option<Parent>,
+        new: New,
+    },
+}
 
-    fn leaf_unchanged(&self, new: &L1, old: &L2) -> bool;
-    fn leaf_recyclable(&self, new: &L1, old: &L2) -> bool;
-    fn leaf_update(&self, op: ChildUpdate<&N2, Either<&N2, &L2>, Either<&mut N2, &mut L2>, L1>);
+pub enum Remount<Parent, T> {
+    RemountReplace {
+        parent: Option<Parent>,
+        current_occupant: T,
+        child: T,
+    },
+    RemountAppend {
+        parent: Option<Parent>,
+        child: T,
+    },
+}
+
+pub trait TreeApi<SN, SL, IN, IL> {
+    fn node_unchanged(&self, new: &IN, old: &SN) -> bool;
+    fn node_recyclable(&self, new: &IN, old: &SN) -> bool;
+    fn node_update(&self, op: ChildUpdate<&SN, Either<&SN, &SL>, Either<&mut SN, &mut SL>, IN>);
+    fn node_create(&self, op: ChildCreate<&SN, Either<&SN, &SL>, IN>) -> SN;
+
+    fn leaf_unchanged(&self, new: &IL, old: &SL) -> bool;
+    fn leaf_recyclable(&self, new: &IL, old: &SL) -> bool;
+    fn leaf_update(&self, op: ChildUpdate<&SN, Either<&SN, &SL>, Either<&mut SN, &mut SL>, IL>);
+    fn leaf_create(&self, op: ChildCreate<&SN, Either<&SN, &SL>, IL>) -> SL;
+
+    fn remount(&self, op: Remount<&SN, Either<&SN, &SL>>);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -107,6 +149,18 @@ impl<SN, SL, IN, IL> STree<SN, SL, IN, IL> {
             STree::Node(x) => Left(x),
         }
     }
+    pub fn to_either_inner(&self) -> Either<&SN, &SL> {
+        match self {
+            STree::Leaf(x) => Right(&x.data),
+            STree::Node(x) => Left(&x.data),
+        }
+    }
+    pub fn to_either_mut_inner(&mut self) -> Either<&mut SN, &mut SL> {
+        match self {
+            STree::Leaf(x) => Right(&mut x.data),
+            STree::Node(x) => Left(&mut x.data),
+        }
+    }
     pub fn unpack_leaf(&self) -> Option<(&SLeaf<SN, SL, IN, IL>)> {
         match self {
             STree::Leaf(x) => Some(x),
@@ -146,19 +200,28 @@ where
     IN: PartialEq,
     IL: PartialEq,
 {
-    pub fn unchanged(&self, api: impl TreeApi<SN, SL, IN, IL>, other: ITree<IN, IL>) -> bool {
+    pub fn unchanged(&self, api: &TreeApi<SN, SL, IN, IL>, other: &ITree<IN, IL>) -> bool {
         unimplemented!()
     }
-    pub fn recyclable(&self, api: impl TreeApi<SN, SL, IN, IL>, other: ITree<IN, IL>) -> bool {
+    pub fn recyclable(&self, api: &TreeApi<SN, SL, IN, IL>, other: &ITree<IN, IL>) -> bool {
         unimplemented!()
     }
-    pub fn sync(&mut self, api: impl TreeApi<SN, SL, IN, IL>, parent: Option<&SN>, new: ITree<IN, IL>) {
+    pub fn sync(&mut self, api: &TreeApi<SN, SL, IN, IL>, parent: Option<&SN>, new: ITree<IN, IL>) {
         match new {
             ITree::Leaf(new) => {
-
+                let update: ChildUpdate<&SN, Either<&SN, &SL>, Either<&mut SN, &mut SL>, IL> = ChildUpdate::Inplace {
+                    parent: parent,
+                    old: self.to_either_mut_inner(),
+                    new: new.0,
+                };
             }
             ITree::Node(new) => {
-
+                let INode{data: new, children: new_children} = new;
+                let update: ChildUpdate<&SN, Either<&SN, &SL>, Either<&mut SN, &mut SL>, IN> = ChildUpdate::Inplace {
+                    parent: parent,
+                    old: self.to_either_mut_inner(),
+                    new: new,
+                };
             }
         }
     }
@@ -172,13 +235,13 @@ where
     IN: PartialEq,
     IL: PartialEq,
 {
-    pub fn unchanged(&self, api: impl TreeApi<SN, SL, IN, IL>, other: ILeaf<IL>) -> bool {
+    pub fn unchanged(&self, api: &TreeApi<SN, SL, IN, IL>, other: &ILeaf<IL>) -> bool {
         unimplemented!()
     }
-    pub fn recyclable(&self, api: impl TreeApi<SN, SL, IN, IL>, other: ILeaf<IL>) -> bool {
+    pub fn recyclable(&self, api: &TreeApi<SN, SL, IN, IL>, other: &ILeaf<IL>) -> bool {
         unimplemented!()
     }
-    pub fn sync(&mut self, api: impl TreeApi<SN, SL, IN, IL>, parent: Option<&SN>, new: ILeaf<IL>) {
+    pub fn sync(&mut self, api: &TreeApi<SN, SL, IN, IL>, parent: Option<&SN>, new: ILeaf<IL>) {
         
     }
 }
@@ -190,16 +253,41 @@ where
     IN: PartialEq,
     IL: PartialEq,
 {
-    pub fn unchanged(&self, api: impl TreeApi<SN, SL, IN, IL>, other: INode<IN, IL>) -> bool {
+    pub fn unchanged(&self, api: &TreeApi<SN, SL, IN, IL>, other: &INode<IN, IL>) -> bool {
         unimplemented!()
     }
-    pub fn recyclable(&self, api: impl TreeApi<SN, SL, IN, IL>, other: INode<IN, IL>) -> bool {
+    pub fn recyclable(&self, api: &TreeApi<SN, SL, IN, IL>, other: &INode<IN, IL>) -> bool {
         unimplemented!()
     }
-    pub fn sync(&mut self, api: impl TreeApi<SN, SL, IN, IL>, parent: Option<&SN>, new: INode<IN, IL>) {
+    pub fn sync(&mut self, api: &TreeApi<SN, SL, IN, IL>, parent: Option<&SN>, new: INode<IN, IL>) {
 
     }
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+// SYNC IMPLEMENTATION - CHILDREN
+///////////////////////////////////////////////////////////////////////////////
+
+enum EntryStatus<New, Old>{
+    Unchanged {
+        new_ix: usize,
+        old_ix: usize,
+        new: New,
+        old: Old,
+    },
+    Changed {
+        new_ix: usize,
+        old_ix: usize,
+        new: New,
+        old: Old,
+    },
+    New {
+        new_ix: usize,
+        new: New,
+    },
+}
+
 
 impl<SN, SL, IN, IL> SChildren<SN, SL, IN, IL>
 where
@@ -208,14 +296,282 @@ where
     IN: PartialEq,
     IL: PartialEq,
 {
-    pub fn unchanged(&self, api: impl TreeApi<SN, SL, IN, IL>, other: IChildren<IN, IL>) -> bool {
+    pub fn unchanged(&self, api: &TreeApi<SN, SL, IN, IL>, other: &IChildren<IN, IL>) -> bool {
         unimplemented!()
     }
-    pub fn recyclable(&self, api: impl TreeApi<SN, SL, IN, IL>, other: IChildren<IN, IL>) -> bool {
+    pub fn recyclable(&self, api: &TreeApi<SN, SL, IN, IL>, other: &IChildren<IN, IL>) -> bool {
         unimplemented!()
     }
-    pub fn sync(&mut self, api: impl TreeApi<SN, SL, IN, IL>, parent: &SN, new: IChildren<IN, IL>) {
-
+    pub fn sync(&mut self, api: &TreeApi<SN, SL, IN, IL>, parent: &SN, new: IChildren<IN, IL>) {
+        // HELPERS
+        fn get_matching_item<'a, SN, SL, IN, IL>(
+            old: &Vec<(usize, &'a mut STree<SN, SL, IN, IL>)>,
+            new: &ITree<IN, IL>,
+            api: &TreeApi<SN, SL, IN, IL>,
+        ) -> Option<(usize, &'a mut STree<SN, SL, IN, IL>)>
+        where
+            SN: PartialEq,
+            SL: PartialEq,
+            IN: PartialEq,
+            IL: PartialEq,
+        {
+            use ITree::*;
+            let mut return_ix = None;
+            for (entry_ix, entry) in old.into_iter() {
+                if entry.unchanged(api, new) {
+                    if return_ix.is_none() {
+                        return_ix = Some(entry_ix.clone());
+                    }
+                }
+            }
+            match return_ix {
+                None => None,
+                Some(return_ix) => {
+                    assert!(old.len() > return_ix);
+                    match old.get(return_ix) {
+                        Some((ix, x)) => Some((ix.clone(), unimplemented!())),
+                        None => panic!()
+                    }
+                }
+            }
+        }
+        fn get_similar_tree<'a, SN, SL, IN, IL>(
+            old: &Vec<(usize, &'a mut STree<SN, SL, IN, IL>)>,
+            new: &ITree<IN, IL>,
+            api: &TreeApi<SN, SL, IN, IL>,
+        ) -> Option<(usize, &'a mut STree<SN, SL, IN, IL>)>
+        where
+            SN: PartialEq,
+            SL: PartialEq,
+            IN: PartialEq,
+            IL: PartialEq,
+        {
+            use ITree::*;
+            let mut return_ix = None;
+            for (entry_ix, entry) in old.into_iter() {
+                if entry.recyclable(api, new) {
+                    if return_ix.is_none() {
+                        return_ix = Some(entry_ix.clone());
+                    }
+                }
+            }
+            match return_ix {
+                None => None,
+                Some(return_ix) => {
+                    assert!(old.len() > return_ix);
+                    match old.get(return_ix) {
+                        Some((ix, x)) => Some((ix.clone(), unimplemented!())),
+                        None => panic!()
+                    }
+                }
+            }
+        }
+        // SETUP
+        let mut old = self.data
+            .iter_mut()
+            .enumerate()
+            .map(|(ix, x)| -> (usize ,&mut STree<SN, SL, IN, IL>) {(ix, x)})
+            .collect::<Vec<(usize ,&mut STree<SN, SL, IN, IL>)>>();
+        let mut new = new.0
+            .into_iter()
+            .enumerate()
+            .collect::<Vec<(usize, ITree<IN, IL>)>>();
+        // SET CHANGED/UNCHANGED/NEW
+        let mut new = new
+            .into_iter()
+            .map(|(new_ix, new)| {
+                match get_matching_item(&old, &new, api) {
+                    Some((old_ix, old)) => {
+                        EntryStatus::Unchanged {
+                            new_ix,
+                            old_ix,
+                            new,
+                            old,
+                        }
+                    },
+                    None => {
+                        match get_similar_tree(&old, &new, api) {
+                            Some((old_ix, old)) => {
+                                EntryStatus::Changed {
+                                    new_ix,
+                                    old_ix,
+                                    new,
+                                    old,
+                                }
+                            }
+                            None => {
+                                EntryStatus::New {
+                                    new_ix,
+                                    new,
+                                }
+                            }
+                        }
+                    },
+                }
+            })
+            .collect::<Vec<EntryStatus<ITree<IN, IL>, &mut STree<SN, SL, IN, IL>>>>();
+        // PROCESS RESULTS
+        let current = old;
+        new .into_iter()
+            .map(|entry| {
+                match entry {
+                    EntryStatus::Unchanged{new_ix, old_ix, new, old} => {
+                        // MAYBE REMOUNT
+                        if !old_ix == new_ix {
+                            if let Some((_, current_node)) = current.get(new_ix) {
+                                let op = Remount::RemountReplace {
+                                    parent: Some(parent),
+                                    current_occupant: current_node.to_either_inner(),
+                                    child: old.to_either_inner(),
+                                };
+                                api.remount(op);
+                            } else {
+                                let op = Remount::RemountAppend {
+                                    parent: Some(parent),
+                                    child: old.to_either_inner(),
+                                };
+                                api.remount(op);
+                            }
+                        }
+                        // DONE
+                        old
+                    }
+                    EntryStatus::Changed{new_ix, old_ix, new, old} => {
+                        let do_inplace = new_ix == old_ix;
+                        if let Some((_, current_node)) = current.get(new_ix) {
+                            match new {
+                                ITree::Leaf(leaf) => {
+                                    let op = if do_inplace {
+                                        ChildUpdate::Inplace {
+                                            parent: Some(parent),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    } else {
+                                        ChildUpdate::RecycleReplace {
+                                            parent: Some(parent),
+                                            current_occupant: current_node.to_either_inner(),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    };
+                                    api.leaf_update(op);
+                                    old
+                                }
+                                ITree::Node(node) => {
+                                    let op = if do_inplace {
+                                        ChildUpdate::Inplace {
+                                            parent: Some(parent),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    } else {
+                                        ChildUpdate::RecycleReplace {
+                                            parent: Some(parent),
+                                            current_occupant: current_node.to_either_inner(),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    };
+                                    api.node_update(op);
+                                    old
+                                }
+                            }
+                        } else {
+                            match new {
+                                ITree::Leaf(leaf) => {
+                                    let op = if do_inplace {
+                                        ChildUpdate::Inplace {
+                                            parent: Some(parent),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    } else {
+                                        ChildUpdate::RecycleAppend {
+                                            parent: Some(parent),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    };
+                                    api.leaf_update(op);
+                                    old
+                                }
+                                ITree::Node(node) => {
+                                    let op = if do_inplace {
+                                        ChildUpdate::Inplace {
+                                            parent: Some(parent),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    } else {
+                                        ChildUpdate::RecycleAppend {
+                                            parent: Some(parent),
+                                            old: unimplemented!(),
+                                            new: unimplemented!(),
+                                        }
+                                    };
+                                    api.node_update(op);
+                                    old
+                                }
+                            }
+                        }
+                    }
+                    EntryStatus::New{new_ix, new} => {
+                        if let Some((current_ix, current_node)) = current.get(new_ix) {
+                            match new {
+                                ITree::Leaf(leaf) => {
+                                    let op = ChildCreate::NewReplace {
+                                        parent: Some(parent),
+                                        current_occupant: current_node.to_either_inner(),
+                                        new: unimplemented!(),
+                                    };
+                                    &mut STree::Leaf(SLeaf {
+                                        mark: PhantomData,
+                                        data: api.leaf_create(op)
+                                    })
+                                }
+                                ITree::Node(node) => {
+                                    let op = ChildCreate::NewReplace {
+                                        parent: Some(parent),
+                                        current_occupant: current_node.to_either_inner(),
+                                        new: unimplemented!(),
+                                    };
+                                    &mut STree::Node(SNode {
+                                        mark: PhantomData,
+                                        data: api.node_create(op),
+                                        children: unimplemented!()
+                                    })
+                                }
+                            }
+                        } else {
+                            match new {
+                                ITree::Leaf(leaf) => {
+                                    let op = ChildCreate::NewAppend {
+                                        parent: Some(parent),
+                                        new: unimplemented!(),
+                                    };
+                                    &mut STree::Leaf(SLeaf {
+                                        mark: PhantomData,
+                                        data: api.leaf_create(op)
+                                    })
+                                }
+                                ITree::Node(node) => {
+                                    let op = ChildCreate::NewAppend {
+                                        parent: Some(parent),
+                                        new: unimplemented!(),
+                                    };
+                                    &mut STree::Node(SNode {
+                                        mark: PhantomData,
+                                        data: api.node_create(op),
+                                        children: unimplemented!()
+                                    })
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .collect::<Vec<&mut STree<SN, SL, IN, IL>>>();
     }
 }
 
