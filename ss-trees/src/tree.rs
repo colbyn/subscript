@@ -103,6 +103,30 @@ pub struct INode<N, L> {
 #[derive(PartialEq)]
 pub struct IChildren<N, L>(pub Vec<ITree<N, L>>);
 
+///////////////////////////////////////////////////////////////////////////////
+// INSERTION TREE HELPERS
+///////////////////////////////////////////////////////////////////////////////
+
+// impl<N, L> ITree<N, L> {
+//     pub fn unpack(self) -> (Either<N, L>, Option<IChildren<N, L>>) {
+//         match self {
+//             ITree::Leaf(x) => (Right(x.0), None),
+//             ITree::Node(x) => (Left(x.data), Some(x.children)),
+//         }
+//     }
+//     pub fn to_either_inner_own(self) -> Either<(N, IChildren<N, L>), L> {
+//         match self {
+//             ITree::Leaf(x) => Right(x.0),
+//             ITree::Node(x) => Left((x.data, x.children)),
+//         }
+//     }
+//     pub fn to_either_inner(&self) -> Either<&N, &L> {
+//         match self {
+//             ITree::Leaf(x) => Right(&x.0),
+//             ITree::Node(x) => Left(&x.data),
+//         }
+//     }
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 // SYNC TREE
@@ -132,6 +156,7 @@ pub struct SChildren<SN, SL, IN, IL> {
     data: Vec<STree<SN, SL, IN, IL>>,
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // SYNC TREE HELPERS 
 ///////////////////////////////////////////////////////////////////////////////
@@ -155,7 +180,7 @@ impl<SN, SL, IN, IL> STree<SN, SL, IN, IL> {
             STree::Node(x) => Left(&x.data),
         }
     }
-    pub fn to_either_mut_inner(&mut self) -> Either<&mut SN, &mut SL> {
+    pub fn to_either_inner_mut(&mut self) -> Either<&mut SN, &mut SL> {
         match self {
             STree::Leaf(x) => Right(&mut x.data),
             STree::Node(x) => Left(&mut x.data),
@@ -211,7 +236,7 @@ where
             ITree::Leaf(new) => {
                 let update: ChildUpdate<&SN, Either<&SN, &SL>, Either<&mut SN, &mut SL>, IL> = ChildUpdate::Inplace {
                     parent: parent,
-                    old: self.to_either_mut_inner(),
+                    old: self.to_either_inner_mut(),
                     new: new.0,
                 };
             }
@@ -219,7 +244,7 @@ where
                 let INode{data: new, children: new_children} = new;
                 let update: ChildUpdate<&SN, Either<&SN, &SL>, Either<&mut SN, &mut SL>, IN> = ChildUpdate::Inplace {
                     parent: parent,
-                    old: self.to_either_mut_inner(),
+                    old: self.to_either_inner_mut(),
                     new: new,
                 };
             }
@@ -305,6 +330,7 @@ where
     pub fn sync(&mut self, api: &TreeApi<SN, SL, IN, IL>, parent: &SN, new: IChildren<IN, IL>) {
         // HELPERS
         fn get_matching_item<'a, SN, SL, IN, IL>(
+            free_old_ixs: &mut HashSet<usize>,
             old: &Vec<(usize, &'a mut STree<SN, SL, IN, IL>)>,
             new: &ITree<IN, IL>,
             api: &TreeApi<SN, SL, IN, IL>,
@@ -318,10 +344,9 @@ where
             use ITree::*;
             let mut return_ix = None;
             for (entry_ix, entry) in old.into_iter() {
-                if entry.unchanged(api, new) {
-                    if return_ix.is_none() {
-                        return_ix = Some(entry_ix.clone());
-                    }
+                if return_ix.is_none() && free_old_ixs.contains(&entry_ix) && entry.unchanged(api, new) {
+                    return_ix = Some(entry_ix.clone());
+                    free_old_ixs.remove(&entry_ix);
                 }
             }
             match return_ix {
@@ -336,6 +361,7 @@ where
             }
         }
         fn get_similar_tree<'a, SN, SL, IN, IL>(
+            free_old_ixs: &mut HashSet<usize>,
             old: &Vec<(usize, &'a mut STree<SN, SL, IN, IL>)>,
             new: &ITree<IN, IL>,
             api: &TreeApi<SN, SL, IN, IL>,
@@ -349,10 +375,9 @@ where
             use ITree::*;
             let mut return_ix = None;
             for (entry_ix, entry) in old.into_iter() {
-                if entry.recyclable(api, new) {
-                    if return_ix.is_none() {
-                        return_ix = Some(entry_ix.clone());
-                    }
+                if return_ix.is_none() && free_old_ixs.contains(&entry_ix) && entry.recyclable(api, new) {
+                    return_ix = Some(entry_ix.clone());
+                    free_old_ixs.remove(&entry_ix);
                 }
             }
             match return_ix {
@@ -372,6 +397,10 @@ where
             .enumerate()
             .map(|(ix, x)| -> (usize ,&mut STree<SN, SL, IN, IL>) {(ix, x)})
             .collect::<Vec<(usize ,&mut STree<SN, SL, IN, IL>)>>();
+        let mut free_old_ixs = old
+            .iter()
+            .map(|(ix, _)| ix.clone())
+            .collect::<HashSet<usize>>();
         let mut new = new.0
             .into_iter()
             .enumerate()
@@ -380,7 +409,7 @@ where
         let mut new = new
             .into_iter()
             .map(|(new_ix, new)| {
-                match get_matching_item(&old, &new, api) {
+                match get_matching_item(&mut free_old_ixs, &old, &new, api) {
                     Some((old_ix, old)) => {
                         EntryStatus::Unchanged {
                             new_ix,
@@ -390,7 +419,7 @@ where
                         }
                     },
                     None => {
-                        match get_similar_tree(&old, &new, api) {
+                        match get_similar_tree(&mut free_old_ixs, &old, &new, api) {
                             Some((old_ix, old)) => {
                                 EntryStatus::Changed {
                                     new_ix,
@@ -412,7 +441,7 @@ where
             .collect::<Vec<EntryStatus<ITree<IN, IL>, &mut STree<SN, SL, IN, IL>>>>();
         // PROCESS RESULTS
         let current = old;
-        new .into_iter()
+        let new = new .into_iter()
             .map(|entry| {
                 match entry {
                     EntryStatus::Unchanged{new_ix, old_ix, new, old} => {
@@ -444,33 +473,34 @@ where
                                     let op = if do_inplace {
                                         ChildUpdate::Inplace {
                                             parent: Some(parent),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: leaf.0,
                                         }
                                     } else {
                                         ChildUpdate::RecycleReplace {
                                             parent: Some(parent),
                                             current_occupant: current_node.to_either_inner(),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: leaf.0,
                                         }
                                     };
                                     api.leaf_update(op);
                                     old
                                 }
                                 ITree::Node(node) => {
+                                    let INode{data, children} = node;
                                     let op = if do_inplace {
                                         ChildUpdate::Inplace {
                                             parent: Some(parent),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: data,
                                         }
                                     } else {
                                         ChildUpdate::RecycleReplace {
                                             parent: Some(parent),
                                             current_occupant: current_node.to_either_inner(),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: data,
                                         }
                                     };
                                     api.node_update(op);
@@ -483,31 +513,32 @@ where
                                     let op = if do_inplace {
                                         ChildUpdate::Inplace {
                                             parent: Some(parent),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: leaf.0,
                                         }
                                     } else {
                                         ChildUpdate::RecycleAppend {
                                             parent: Some(parent),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: leaf.0,
                                         }
                                     };
                                     api.leaf_update(op);
                                     old
                                 }
                                 ITree::Node(node) => {
+                                    let INode{data, children} = node;
                                     let op = if do_inplace {
                                         ChildUpdate::Inplace {
                                             parent: Some(parent),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: data,
                                         }
                                     } else {
                                         ChildUpdate::RecycleAppend {
                                             parent: Some(parent),
-                                            old: unimplemented!(),
-                                            new: unimplemented!(),
+                                            old: old.to_either_inner_mut(),
+                                            new: data,
                                         }
                                     };
                                     api.node_update(op);
@@ -523,18 +554,20 @@ where
                                     let op = ChildCreate::NewReplace {
                                         parent: Some(parent),
                                         current_occupant: current_node.to_either_inner(),
-                                        new: unimplemented!(),
+                                        new: leaf.0,
                                     };
-                                    &mut STree::Leaf(SLeaf {
+                                    let mut r: STree<SN, SL, IN, IL> = STree::Leaf(SLeaf {
                                         mark: PhantomData,
                                         data: api.leaf_create(op)
-                                    })
+                                    });
+                                    unimplemented!()
                                 }
                                 ITree::Node(node) => {
+                                    let INode{data, children} = node;
                                     let op = ChildCreate::NewReplace {
                                         parent: Some(parent),
                                         current_occupant: current_node.to_either_inner(),
-                                        new: unimplemented!(),
+                                        new: data,
                                     };
                                     &mut STree::Node(SNode {
                                         mark: PhantomData,
@@ -548,17 +581,19 @@ where
                                 ITree::Leaf(leaf) => {
                                     let op = ChildCreate::NewAppend {
                                         parent: Some(parent),
-                                        new: unimplemented!(),
+                                        new: leaf.0,
                                     };
-                                    &mut STree::Leaf(SLeaf {
+                                    let r: STree<SN, SL, IN, IL> = STree::Leaf(SLeaf {
                                         mark: PhantomData,
                                         data: api.leaf_create(op)
-                                    })
+                                    });
+                                    unimplemented!()
                                 }
                                 ITree::Node(node) => {
+                                    let INode{data, children} = node;
                                     let op = ChildCreate::NewAppend {
                                         parent: Some(parent),
-                                        new: unimplemented!(),
+                                        new: data,
                                     };
                                     &mut STree::Node(SNode {
                                         mark: PhantomData,
