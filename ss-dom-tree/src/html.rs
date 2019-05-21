@@ -15,8 +15,8 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
 use web_utils::dom;
 use web_utils::js::{self, console, EventCallback};
-use insertion_types::tree::*;
-use insertion_types::tree::map::*;
+use ss_trees::tree::*;
+use ss_trees::map::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////

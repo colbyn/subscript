@@ -1,13 +1,13 @@
 use either::{Either, Left, Right};
 use ::web_utils::dom;
 use ::web_utils::prelude::*;
-use ::insertion_types::tree::*;
-use ::insertion_types::tree::map::*;
 use ::web_utils::js::{self, console};
-use ::dom_tree::html::*;
-use ::dom_tree::html::attributes::*;
-use ::dom_tree::html::events::*;
-use ::dom_tree::live::*;
+use ss_trees::tree::*;
+use ss_trees::map::*;
+use ss_dom_tree::html::*;
+use ss_dom_tree::html::attributes::*;
+use ss_dom_tree::html::events::*;
+use ss_dom_tree::live::*;
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -15,15 +15,15 @@ pub enum Msg {
     NoOp
 }
 
-pub fn view() -> Html<Msg> {
-    let mut root = ITree::new(Right(ViewNode::new("div")));
-    root.add_child({
-    	let mut h1 = ITree::new(Right(ViewNode::new("h1")));
-    	h1.add_child(ITree::new(Left(ViewLeaf::Text(String::from("Hello World")))));
-    	h1
-    });
-    root
-}
+// pub fn view() -> Html<Msg> {
+//     let mut root = ITree::new(Right(ViewNode::new("div")));
+//     root.add_child({
+//     	let mut h1 = ITree::new(Right(ViewNode::new("h1")));
+//     	h1.add_child(ITree::new(Left(ViewLeaf::Text(String::from("Hello World")))));
+//     	h1
+//     });
+//     root
+// }
 
 
 pub fn main() {

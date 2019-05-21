@@ -109,22 +109,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dom-tree"
-version = "0.1.0"
-dependencies = [
- "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "console_error_panic_hook 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "css-dsl 0.1.0",
- "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "insertion-types 0.1.0",
- "js-sys 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-bindgen 0.2.43 (registry+https://github.com/rust-lang/crates.io-index)",
- "web-sys 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
- "web-utils 0.1.0",
-]
-
-[[package]]
 name = "either"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -180,13 +164,6 @@ version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "insertion-types"
-version = "0.1.0"
-dependencies = [
- "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -517,6 +494,22 @@ version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "ss-dom-tree"
+version = "0.1.0"
+dependencies = [
+ "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "console_error_panic_hook 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "css-dsl 0.1.0",
+ "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "js-sys 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ss-trees 0.1.0",
+ "wasm-bindgen 0.2.43 (registry+https://github.com/rust-lang/crates.io-index)",
+ "web-sys 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "web-utils 0.1.0",
+]
+
+[[package]]
 name = "ss-trees"
 version = "0.1.0"
 dependencies = [
@@ -531,11 +524,11 @@ dependencies = [
  "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "console_error_panic_hook 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "css-dsl 0.1.0",
- "dom-tree 0.1.0",
  "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "insertion-types 0.1.0",
  "js-sys 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ss-dom-tree 0.1.0",
+ "ss-trees 0.1.0",
  "wasm-bindgen 0.2.43 (registry+https://github.com/rust-lang/crates.io-index)",
  "web-sys 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "web-utils 0.1.0",

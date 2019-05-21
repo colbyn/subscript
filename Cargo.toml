@@ -1,10 +1,9 @@
 [workspace]
 members = [
 	"ss-trees",
-    "insertion-types",
+    "ss-dom-tree",
     "web-utils",
     "css-dsl",
-    "dom-tree",
     "subscript",
 ]
 
