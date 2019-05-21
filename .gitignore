@@ -6,3 +6,4 @@
 .commands.out.sh
 rls.toml
 /pkg
+.DS_Store
