@@ -4,6 +4,7 @@ use std::cell::*;
 use std::hash::{Hash, Hasher};
 use std::collections::*;
 use either::Either::{self, Left, Right};
+use itertools::Itertools;
 
 
 
@@ -11,59 +12,44 @@ use either::Either::{self, Left, Right};
 // CLIENT API
 ///////////////////////////////////////////////////////////////////////////////
 
-pub enum ChildInsert<M> {
-    Replace {
-        parent: M,
-        current_occupant: M,
+#[derive(Debug, Clone)]
+pub enum InsertOp<M> {
+    InsertBefore {
+        current: Vec<M>,
+        target: M,
+    },
+    InsertAfter {
+        current: Vec<M>,
+        target: M,
     },
     Swap {
-        current_occupant: M,
-    },
-    Append {
         parent: M,
-    },
-    InsertBefore {
-        parent: M,
-    },
+        current: M,
+        target: M,
+    }
 }
 
-pub enum InternalChildUpdate<M, S, I> {
-    Create(ChildCreate<M, I>),
-    Update(ChildUpdate<M, S, I>),
-}
-
-pub struct ChildUpdate<M, S, I> {
-    insert_op: Option<ChildInsert<M>>,
+#[derive(Debug, Clone)]
+pub struct Update<S, I> {
     old: S,
     new: I,
 }
 
-pub struct ChildCreate<M, I> {
-    insert_op: Option<ChildInsert<M>>,
-    new: I,
-}
-
-pub struct ChildRemove<M, S> {
-    parent: M,
-    value: S,
-}
 
 pub trait TreeApi<M, SN, SL, IN, IL> {
     fn node_unchanged(&self, new: &IN, old: &SN) -> bool;
     fn node_recyclable(&self, new: &IN, old: &SN) -> bool;
-    fn node_update(&self, op: ChildUpdate<M, &mut SN, IN>);
-    fn node_create(&self, op: ChildCreate<M, IN>) -> SN;
-    fn node_remove(&self, value: ChildRemove<M, SN>);
+    fn node_update(&self, update: Update<&mut SN, IN>);
+    fn node_crate(&self, new: IN) -> SN;
 
     fn leaf_unchanged(&self, new: &IL, old: &SL) -> bool;
     fn leaf_recyclable(&self, new: &IL, old: &SL) -> bool;
-    fn leaf_update(&self, op: ChildUpdate<M, &mut SL, IL>);
-    fn leaf_create(&self, op: ChildCreate<M, IL>) -> SL;
-    fn leaf_remove(&self, value: ChildRemove<M, SL>);
+    fn leaf_update(&self, update: Update<&mut SL, IL>);
+    fn leaf_crate(&self, new: IL) -> SL;
 
-    // fn remount(&self, op: Remount<M, Either<&SN, &SL>>);
     fn get_meta(&self, value: Either<&SN, &SL>) -> M;
-    fn unmount(&self, value: M);
+    fn insert(&self, op: InsertOp<M>);
+    fn remove(&self, x: M);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,41 +221,14 @@ impl<M, SN, SL, IN, IL> STree<M, SN, SL, IN, IL> {
 
 impl<M, SN, SL, IN, IL> STree<M, SN, SL, IN, IL>
 where
-    M: Clone,
+    M: Clone + PartialEq,
     SN: PartialEq,
     SL: PartialEq,
     IN: PartialEq,
     IL: PartialEq,
 {
-    pub fn from(api: &TreeApi<M, SN, SL, IN, IL>, parent: Option<&SN>, new: ITree<IN, IL>) -> Self {
-        let insert_op = match parent {
-            None => None,
-            Some(parent) => Some(ChildInsert::Append {
-                parent: api.get_meta(Left(parent)),
-            }),
-        };
-        match new {
-            ITree::Node(node) => {
-                let INode{data, children: new_children} = node;
-                let op = ChildCreate {insert_op, new: data};
-                let data = api.node_create(op);
-                let children = new_children.0
-                    .into_iter()
-                    .map(|child| STree::from(api, Some(&data), child))
-                    .collect::<Vec<STree<M, SN, SL, IN, IL>>>();
-                let children = SChildren {
-                    data: children,
-                };
-                let mark = PhantomData;
-                STree::Node(SNode {mark, data, children})
-            }
-            ITree::Leaf(leaf) => {
-                let op = ChildCreate {insert_op, new: leaf.data};
-                let data = api.leaf_create(op);
-                let mark = PhantomData;
-                STree::Leaf(SLeaf {mark, data})
-            }
-        }
+    pub fn from(api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: ITree<IN, IL>) -> Self {
+        create_tree(api, parent, new)
     }
 }
 
@@ -280,95 +239,55 @@ where
 
 impl<M, SN, SL, IN, IL> STree<M, SN, SL, IN, IL>
 where
-    M: Clone,
+    M: Clone + PartialEq,
     SN: PartialEq,
     SL: PartialEq,
     IN: PartialEq,
     IL: PartialEq,
 {
     pub fn unchanged(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &ITree<IN, IL>) -> bool {
-        unimplemented!()
+        match (self, other) {
+            (STree::Node(old), ITree::Node(new)) => old.unchanged(api, new),
+            (STree::Leaf(old), ITree::Leaf(new)) => old.unchanged(api, new),
+            _ => false
+        }
     }
     pub fn recyclable(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &ITree<IN, IL>) -> bool {
-        unimplemented!()
+        match (self, other) {
+            (STree::Node(old), ITree::Node(new)) => old.recyclable(api, new),
+            (STree::Leaf(old), ITree::Leaf(new)) => old.recyclable(api, new),
+            _ => false
+        }
     }
-    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: Option<&SN>, new: ITree<IN, IL>) {
+    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: ITree<IN, IL>) {
         match new {
             ITree::Leaf(new) => {
                 match self {
+                    STree::Leaf(old) => {old.sync(api, parent, new)}
                     old @ STree::Node(_) => {
-                        let insert_op = match parent {
-                            None => Some(ChildInsert::Swap{
-                                current_occupant: old.get_meta(api),
-                            }),
-                            Some(parent) => Some(ChildInsert::Replace {
-                                parent: api.get_meta(Left(parent)),
-                                current_occupant: old.get_meta(api), 
-                            })
+                        let new_tree = create_tree(api, parent, ITree::Leaf(new));
+                        let insert_op = InsertOp::Swap {
+                            parent: parent.clone(),
+                            current: old.get_meta(api),
+                            target: new_tree.get_meta(api),
                         };
-                        let op = ChildCreate {
-                            insert_op: insert_op,
-                            new: new.data,
-                        };
-                        let data = api.leaf_create(op);
-                        let result: Self = STree::Leaf(SLeaf{
-                            data,
-                            mark: PhantomData,
-                        });
-                        *old = result;
-                    }
-                    STree::Leaf(old) => {
-                        let op = ChildUpdate {
-                            insert_op: None,
-                            old: &mut old.data,
-                            new: new.data,
-                        };
-                        api.leaf_update(op);
+                        api.insert(insert_op);
+                        *old = new_tree;
                     }
                 }
             }
             ITree::Node(new) => {
-                let INode{data: new_data, children: new_children} = new;
                 match self {
-                    STree::Node(old) => {
-                        let SNode{data: old_data, children: old_children, ..} = old;
-                        let mut old_data = old_data;
-                        let op = ChildUpdate {
-                            insert_op: None,
-                            old: old_data,
-                            new: new_data,
-                        };
-                        api.node_update(op);
-                        // let ref data = &old.data;
-                    }
+                    STree::Node(old) => {old.sync(api, parent, new)}
                     old @ STree::Leaf(_) => {
-                        let insert_op = match parent {
-                            None => Some(ChildInsert::Swap{
-                                current_occupant: old.get_meta(api),
-                            }),
-                            Some(parent) => Some(ChildInsert::Replace {
-                                parent: api.get_meta(Left(parent)),
-                                current_occupant: old.get_meta(api), 
-                            })
+                        let new_tree = create_tree(api, parent, ITree::Node(new));
+                        let insert_op = InsertOp::Swap {
+                            parent: parent.clone(),
+                            current: old.get_meta(api),
+                            target: new_tree.get_meta(api),
                         };
-                        let op = ChildCreate {
-                            insert_op: insert_op,
-                            new: new_data,
-                        };
-                        let data = api.node_create(op);
-                        let children = new_children.0
-                            .into_iter()
-                            .map(|child| STree::from(api, Some(&data), child))
-                            .collect::<Vec<STree<M, SN, SL, IN, IL>>>();
-                        let children = SChildren {
-                            data: children,
-                        };
-                        let result: Self = STree::Node(SNode{
-                            data,
-                            mark: PhantomData,
-                            children: children,
-                        });
-                        *old = result;
+                        api.insert(insert_op);
+                        *old = new_tree;
                     }
                 }
             }
@@ -379,39 +298,46 @@ where
 
 impl<M, SN, SL, IN, IL> SLeaf<M, SN, SL, IN, IL>
 where
-    M: Clone,
+    M: Clone + PartialEq,
     SN: PartialEq,
     SL: PartialEq,
     IN: PartialEq,
     IL: PartialEq,
 {
     pub fn unchanged(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &ILeaf<IL>) -> bool {
-        unimplemented!()
+        api.leaf_unchanged(&other.data, &self.data)
     }
     pub fn recyclable(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &ILeaf<IL>) -> bool {
-        unimplemented!()
+        api.leaf_recyclable(&other.data, &self.data)
     }
-    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: Option<&SN>, new: ILeaf<IL>) {
-        
+    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: ILeaf<IL>) {
+        api.leaf_update(Update {
+            old: &mut self.data,
+            new: new.data,
+        });
     }
 }
 
 impl<M, SN, SL, IN, IL> SNode<M, SN, SL, IN, IL>
 where
-    M: Clone,
+    M: Clone + PartialEq,
     SN: PartialEq,
     SL: PartialEq,
     IN: PartialEq,
     IL: PartialEq,
 {
     pub fn unchanged(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &INode<IN, IL>) -> bool {
-        unimplemented!()
+        api.node_unchanged(&other.data, &self.data) && self.children.unchanged(api, &other.children)
     }
     pub fn recyclable(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &INode<IN, IL>) -> bool {
-        unimplemented!()
+        api.node_recyclable(&other.data, &self.data)
     }
-    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: Option<&SN>, new: INode<IN, IL>) {
-
+    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: INode<IN, IL>) {
+        api.node_update(Update {
+            old: &mut self.data,
+            new: new.data,
+        });
+        self.children.sync(api, &api.get_meta(Left(&self.data)), new.children);
     }
 }
 
@@ -420,372 +346,371 @@ where
 // SYNC IMPLEMENTATION - CHILDREN
 ///////////////////////////////////////////////////////////////////////////////
 
-enum EntryStatus<New, Old>{
+#[derive(Debug, Clone, PartialEq)]
+pub enum ItemType {
+    Unchanged,
+    Changed,
+    New,
+}
+
+#[derive(Debug, Clone)]
+pub enum Item<S> {
+    Unchanged(S),
+    Changed(S),
+    New(S),
+}
+
+impl<S> Item<S> {
+    pub fn is_unchanged(&self) -> bool {
+        match self {
+            Item::Unchanged(_) => true,
+            _ => false
+        }
+    }
+    pub fn get_type(&self) -> ItemType {
+        match self {
+            Item::Unchanged(_) => ItemType::Unchanged,
+            Item::Changed(_) => ItemType::Changed,
+            Item::New(_) => ItemType::New,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ItemGroup<M, S> {
     Unchanged {
-        new_ix: usize,
-        old_ix: usize,
-        new: New,
-        old: Old,
+        items: Vec<S>,
     },
     Changed {
-        new_ix: usize,
-        old_ix: usize,
-        new: New,
-        old: Old,
-    },
-    Swap {
-        new_ix: usize,
-        old_ix: usize,
-        new: New,
-        old: Old,
+        items: Vec<S>,
     },
     New {
-        new_ix: usize,
-        new: New,
-    },
+        insert_op: InsertOp<M>,
+        items: Vec<S>,
+    }
+}
+
+impl<M, S> ItemGroup<M, S> {
+    pub fn extract_items(self) -> Vec<S> {
+        match self {
+            ItemGroup::Unchanged{items} => items,
+            ItemGroup::Changed{items} => items,
+            ItemGroup::New{items, ..} => items,
+        }
+    }
 }
 
 
 impl<M, SN, SL, IN, IL> SChildren<M, SN, SL, IN, IL>
 where
-    M: Clone,
+    M: Clone + PartialEq,
     SN: PartialEq,
     SL: PartialEq,
     IN: PartialEq,
     IL: PartialEq,
 {
     pub fn unchanged(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &IChildren<IN, IL>) -> bool {
-        unimplemented!()
+        if self.data.len() == other.0.len() {
+            self.data
+                .iter()
+                .zip(other.0.iter())
+                .all(|(x, y)| x.unchanged(api, y))
+        } else {
+            false
+        }
     }
     pub fn recyclable(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &IChildren<IN, IL>) -> bool {
-        unimplemented!()
+        if self.data.len() == other.0.len() {
+            self.data
+                .iter()
+                .zip(other.0.iter())
+                .all(|(x, y)| x.recyclable(api, y))
+        } else {
+            false
+        }
     }
-    pub fn sync(self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &SN, new: IChildren<IN, IL>) -> Self {
-        // HELPERS
-        fn get_matching_item<M, SN, SL, IN, IL>(
-            free_old_ixs: &mut HashSet<usize>,
-            old: &Vec<(usize, Rc<STree<M, SN, SL, IN, IL>>)>,
-            new: &ITree<IN, IL>,
-            api: &TreeApi<M, SN, SL, IN, IL>,
-        ) -> Option<(usize, Rc<STree<M, SN, SL, IN, IL>>)>
-        where
-            M: Clone,
-            SN: PartialEq,
-            SL: PartialEq,
-            IN: PartialEq,
-            IL: PartialEq,
-        {
-            use ITree::*;
-            let mut return_ix = None;
-            for (entry_ix, entry) in old.into_iter() {
-                if return_ix.is_none() && free_old_ixs.contains(&entry_ix) && entry.unchanged(api, new) {
-                    return_ix = Some(entry_ix.clone());
-                    free_old_ixs.remove(&entry_ix);
-                }
-            }
-            match return_ix {
-                None => None,
-                Some(return_ix) => {
-                    assert!(old.len() > return_ix);
-                    match old.get(return_ix) {
-                        Some((ix, x)) => Some((ix.clone(), x.clone())),
-                        None => panic!()
+    pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: IChildren<IN, IL>) {
+        let mut xs = new.0
+            .into_iter()
+            .map(|new| -> Item<STree<M, SN, SL, IN, IL>> {
+                let mut unchanged = |olds| remove_item_by(olds, |old| {
+                    match (&new, &old) {
+                        (ITree::Leaf(x), STree::Leaf(y)) => {
+                            api.leaf_unchanged(&x.data, &y.data)
+                        }
+                        (ITree::Node(x), STree::Node(y)) => {
+                            api.node_unchanged(&x.data, &y.data)
+                        }
+                        _ => false
+                    }
+                });
+                let mut changed = |olds| remove_item_by(olds, |old| {
+                    match (&new, &old) {
+                        (ITree::Leaf(x), STree::Leaf(y)) => {
+                            api.leaf_recyclable(&x.data, &y.data)
+                        }
+                        (ITree::Node(x), STree::Node(y)) => {
+                            api.node_recyclable(&x.data, &y.data)
+                        }
+                        _ => false
+                    }
+                });
+                if let Some(unchanged) = unchanged(&mut self.data) {
+                    Item::Unchanged(unchanged)
+                } else {
+                    if let Some(mut changed) = changed(&mut self.data) {
+                        changed.sync(api, parent, new);
+                        Item::Changed(changed)
+                    } else {
+                        Item::New(create_tree(api, parent, new))
                     }
                 }
-            }
-        }
-        fn get_similar_tree<M, SN, SL, IN, IL>(
-            free_old_ixs: &mut HashSet<usize>,
-            old: &Vec<(usize, Rc<STree<M, SN, SL, IN, IL>>)>,
-            new: &ITree<IN, IL>,
-            api: &TreeApi<M, SN, SL, IN, IL>,
-        ) -> Option<(usize, Rc<STree<M, SN, SL, IN, IL>>)>
-        where
-            M: Clone,
-            SN: PartialEq,
-            SL: PartialEq,
-            IN: PartialEq,
-            IL: PartialEq,
-        {
-            use ITree::*;
-            let mut return_ix = None;
-            for (entry_ix, entry) in old.into_iter() {
-                if return_ix.is_none() && free_old_ixs.contains(&entry_ix) && entry.recyclable(api, new) {
-                    return_ix = Some(entry_ix.clone());
-                    free_old_ixs.remove(&entry_ix);
-                }
-            }
-            match return_ix {
-                None => None,
-                Some(return_ix) => {
-                    assert!(old.len() > return_ix);
-                    match old.get(return_ix) {
-                        Some((ix, x)) => Some((ix.clone(), x.clone())),
-                        None => panic!()
-                    }
-                }
-            }
-        }
-        fn apply_internal_update<M, SN, SL, IN, IL>(
-            entry: InternalChildUpdate<M, Rc<STree<M, SN, SL, IN, IL>>, ITree<IN, IL>>,
-            api: &TreeApi<M, SN, SL, IN, IL>,
-        ) -> STree<M, SN, SL, IN, IL>
-        where
-            M: Clone,
-            SN: PartialEq,
-            SL: PartialEq,
-            IN: PartialEq,
-            IL: PartialEq,
-        {
-            match entry {
-                InternalChildUpdate::Update(ChildUpdate{insert_op, old, new}) => {
-                    let mut old = match Rc::try_unwrap(old) {
-                        Ok(x) => x,
-                        Err(_) => panic!(),
-                    };
-                    match new {
-                        ITree::Node(node) => {
-                            let old = old
-                                .unpack_node_mut()
-                                .expect("should be a node");
-                            let INode{data: new, children} = node;
-                            let op = ChildUpdate {insert_op, new, old: &mut old.data};
-                            api.node_update(op);
-                        }
-                        ITree::Leaf(leaf) => {
-                            let old = old
-                                .unpack_leaf_mut()
-                                .expect("should be a leaf");
-                            let op = ChildUpdate {insert_op, new: leaf.data, old: &mut old.data};
-                            api.leaf_update(op);
-                        }
-                    }
-                    old
-                }
-                InternalChildUpdate::Create(ChildCreate {insert_op, new}) => {
-                    match new {
-                        ITree::Node(node) => {
-                            let INode{data, children: new_children} = node;
-                            let op = ChildCreate {insert_op, new: data};
-                            let data = api.node_create(op);
-                            let mark = PhantomData;
-                            let children = new_children.0
-                                .into_iter()
-                                .map(|child| STree::from(api, Some(&data), child))
-                                .collect::<Vec<STree<M, SN, SL, IN, IL>>>();
-                            let children = SChildren {
-                                data: children,
-                            };
-                            STree::Node(SNode {mark, data, children})
-                        }
-                        ITree::Leaf(leaf) => {
-                            let op = ChildCreate {insert_op, new: leaf.data};
-                            let data = api.leaf_create(op);
-                            let mark = PhantomData;
-                            STree::Leaf(SLeaf {mark, data})
-                        }
-                    }
-                }
-            }
-        }
-        // SETUP
-        let mut current = self.data
+            })
+            .group_by(|x| x.get_type())
+            .into_iter()
+            .map(|(key, group)| -> (ItemType, Vec<Item<STree<M, SN, SL, IN, IL>>>) {
+                (key, group.collect_vec())
+            })
+            .collect_vec();
+        let mut ys: Vec<(ItemType, Vec<M>)> = xs
             .iter()
-            .enumerate()
-            .map(|(ix, x)| (ix, x.get_meta(api)))
-            .collect::<Vec<(usize , M)>>();
-        let mut old = self.data
-            .into_iter()
-            .enumerate()
-            .map(|(ix, x)| (ix, Rc::new(x)))
-            .collect::<Vec<(usize , Rc<STree<M, SN, SL, IN, IL>>)>>();
-        let mut free_old_ixs = old
-            .iter()
-            .map(|(ix, _)| ix.clone())
-            .collect::<HashSet<usize>>();
-        let mut new = new.0
-            .into_iter()
-            .enumerate()
-            .collect::<Vec<(usize, ITree<IN, IL>)>>();
-        // SET CHANGED/UNCHANGED/NEW
-        let new = new
-            .into_iter()
-            .map(|(new_ix, new)| -> EntryStatus<ITree<IN, IL>, Rc<STree<M, SN, SL, IN, IL>>> {
-                match get_matching_item(&mut free_old_ixs, unimplemented!(), &new, api) {
-                    Some((old_ix, old)) => {
-                        EntryStatus::Unchanged {
-                            new_ix,
-                            old_ix,
-                            new,
-                            old,
+            .map(|(key, group)| -> (ItemType, Vec<M>) {
+                let group_ms = group
+                    .iter()
+                    .map(|x| -> M {
+                        match x {
+                            Item::Unchanged(x) => api.get_meta(x.to_either_inner()),
+                            Item::Changed(x) => api.get_meta(x.to_either_inner()),
+                            Item::New(x) => api.get_meta(x.to_either_inner()),
                         }
+                    })
+                    .collect_vec();
+                (key.clone(), group_ms)
+            })
+            .collect_vec();
+        let mut xs = xs
+            .into_iter()
+            .enumerate()
+            .map(|(ix, (key, group))| -> ItemGroup<M, STree<M, SN, SL, IN, IL>> {
+                let group_ms: Vec<M> = group
+                    .iter()
+                    .map(|x| -> M {
+                        match x {
+                            Item::Unchanged(x) => api.get_meta(x.to_either_inner()),
+                            Item::Changed(x) => api.get_meta(x.to_either_inner()),
+                            Item::New(x) => api.get_meta(x.to_either_inner()),
+                        }
+                    })
+                    .collect_vec();
+                let insert_op: InsertOp<M> = {
+                    if ix <= 1 {
+                        match ys.get(ix + 1) {
+                            Some((_, after)) => {
+                                match after.first() {
+                                    Some(target) => InsertOp::InsertBefore{
+                                        current: group_ms,
+                                        target: target.clone(),
+                                    },
+                                    None => panic!()
+                                }
+                            }
+                            None => panic!()
+                        }
+                    } else {
+                        match ys.get(ix - 1) {
+                            Some((_, before)) => {
+                                match before.last() {
+                                    Some(target) => InsertOp::InsertAfter{
+                                        current: group_ms,
+                                        target: target.clone(),
+                                    },
+                                    None => panic!()
+                                }
+                            }
+                            None => match ys.get(ix + 1) {
+                                Some((_, after)) => {
+                                    match after.first() {
+                                        Some(target) => InsertOp::InsertBefore{
+                                            current: group_ms,
+                                            target: target.clone(),
+                                        },
+                                        None => panic!()
+                                    }
+                                }
+                                None => panic!()
+                            }
+                        }
+                    }
+                };
+                let items: Vec<STree<M, SN, SL, IN, IL>> = group
+                    .into_iter()
+                    .map(|x| {
+                        match x {
+                            Item::Unchanged(x) => x,
+                            Item::Changed(x) => x,
+                            Item::New(x) => x,
+                        }
+                    })
+                    .collect_vec();
+                match key {
+                    ItemType::Unchanged => ItemGroup::Unchanged{
+                        items,
                     },
-                    None => {
-                        match get_similar_tree(&mut free_old_ixs, unimplemented!(), &new, api) {
-                            Some((old_ix, old)) => {
-                                match (old.as_ref(), new) {
-                                    (STree::Leaf(_), ITree::Leaf(_)) => {
-                                        EntryStatus::Changed {
-                                            new_ix,
-                                            old_ix,
-                                            new,
-                                            old,
-                                        }
-                                    }
-                                    (STree::Node(_), ITree::Node(_)) => {
-                                        EntryStatus::Changed {
-                                            new_ix,
-                                            old_ix,
-                                            new,
-                                            old,
-                                        }
-                                    }
-                                    _ => {
-                                        EntryStatus::Swap {
-                                            new_ix,
-                                            old_ix,
-                                            new,
-                                            old,
-                                        }
-                                    }
-                                }
-                            }
-                            None => {
-                                EntryStatus::New {
-                                    new_ix,
-                                    new,
-                                }
-                            }
-                        }
+                    ItemType::Changed => ItemGroup::Changed{
+                        items,
+                    },
+                    ItemType::New => ItemGroup::New{
+                        insert_op: insert_op,
+                        items,
                     },
                 }
             })
-            .collect::<Vec<EntryStatus<ITree<IN, IL>, Rc<STree<M, SN, SL, IN, IL>>>>>();
-        // SET INSERT OPERATION
-        let new = new
-            .into_iter()
-            .rev() // NOTE: ...?
-            .map(|entry| {
-                let mut insert_op: Option<ChildInsert<M>> = None;
-                match entry {
-                    EntryStatus::Unchanged{new_ix, old_ix, ..} => {
-                        let do_inplace = new_ix == old_ix;
-                        if !do_inplace {
-                            if let Some((_, current_node)) = current.get(new_ix) {
-                                insert_op = Some(ChildInsert::Replace {
-                                    parent: api.get_meta(Left(parent)),
-                                    current_occupant: current_node.clone(),
-                                });
-                            } else {
-                                insert_op = Some(ChildInsert::Append {
-                                    parent: api.get_meta(Left(parent)),
-                                });
-                            }
-                        }
+            .map(|group| -> Vec<STree<M, SN, SL, IN, IL>> {
+                match &group {
+                    ItemGroup::New{insert_op, ..} => {
+                        api.insert(insert_op.clone());
                     }
-                    EntryStatus::Changed{new_ix, old_ix, ..} => {
-                        let do_inplace = new_ix == old_ix;
-                        if !do_inplace {
-                            if let Some((_, current_node)) = current.get(new_ix) {
-                                insert_op = Some(ChildInsert::Replace {
-                                    parent: api.get_meta(Left(parent)),
-                                    current_occupant: current_node.clone(),
-                                });
-                            } else {
-                                insert_op = Some(ChildInsert::Append {
-                                    parent: api.get_meta(Left(parent)),
-                                });
-                            }
-                        }
-                    }
-                    EntryStatus::Swap{new_ix, old_ix, ..} => {
-                        unimplemented!()
-                    }
-                    EntryStatus::New{new_ix, ..} => {
-                        if let Some((_, current_node)) = current.get(new_ix) {
-                            insert_op = Some(ChildInsert::Replace {
-                                parent: api.get_meta(Left(parent)),
-                                current_occupant: current_node.clone(),
-                            });
-                        } else {
-                            insert_op = Some(ChildInsert::Append {
-                                parent: api.get_meta(Left(parent)),
-                            });
-                        }
-                    }
+                    _ => {}
                 }
-                (insert_op, entry)
+                group.extract_items()
             })
-            .collect::<(Vec<(Option<ChildInsert<M>>, EntryStatus<ITree<IN, IL>, Rc<STree<M, SN, SL, IN, IL>>>)>)>();
-        let new = new
-            .into_iter()
-            .map(|(insert_op, entry)| {
-                match entry {
-                    EntryStatus::Unchanged{old, new, ..} => {
-                        InternalChildUpdate::Update(ChildUpdate{
-                            insert_op,
-                            new,
-                            old,
-                        })
-                    }
-                    EntryStatus::Swap{old, new, ..} => {
-                        InternalChildUpdate::Create(ChildCreate {
-                            insert_op: Some(ChildInsert::Swap{
-                                current_occupant: old.get_meta(api),
-                            }),
-                            new,
-                        })
-                    }
-                    EntryStatus::Changed{old, new, ..} => {
-                        InternalChildUpdate::Update(ChildUpdate{
-                            insert_op,
-                            new,
-                            old,
-                        })
-                    }
-                    EntryStatus::New{new, ..} => {
-                        InternalChildUpdate::Create(ChildCreate {
-                            insert_op,
-                            new,
-                        })
-                    }
-                }
-            })
-            .collect::<(Vec<(InternalChildUpdate<M, Rc<STree<M, SN, SL, IN, IL>>, ITree<IN, IL>>)>)>();
+            .collect_vec();
         // REMOVE UNUSED
-        // if current.len() > new.len() {
-        //     for (_, unused_entry) in old.into_iter().skip(new.len()) {
-        //         let unused_entry = match Rc::try_unwrap(unused_entry) {
-        //             Ok(x) => x,
-        //             Err(_) => panic!(),
-        //         };
-        //         match unused_entry {
-        //             STree::Leaf(leaf) => {
-        //                 api.leaf_remove(ChildRemove {
-        //                     parent: api.get_meta(Left(parent)),
-        //                     value: leaf.data,
-        //                 })
-        //             }
-        //             STree::Node(node) => {
-        //                 api.node_remove(ChildRemove {
-        //                     parent: api.get_meta(Left(parent)),
-        //                     value: node.data,
-        //                 })
-        //             }
-        //         }
-        //     }
-        // }
-        std::mem::forget(old);
-        // PASSES COMPLETE - PROCESS AND RETURN
-        let new = new
-            .into_iter()
-            .map(|(entry)| apply_internal_update(entry, api))
-            .collect::<(Vec<(STree<M, SN, SL, IN, IL>)>)>();
-        SChildren {
-            data: new,
+        let mut removed = Vec::new();
+        std::mem::swap(&mut self.data, &mut removed);
+        for r in removed {
+            api.remove(api.get_meta(r.to_either_inner()));
+        }
+        // SAVE CHANGES
+        for mut group in xs {
+            self.data.append(&mut group);
         }
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// SYNC IMPLEMENTATION - CHILDREN HELPERS
+///////////////////////////////////////////////////////////////////////////////
+
+pub fn remove_item_by<T: PartialEq>(xs: &mut Vec<T>, f: impl Fn(&T)->bool) -> Option<T> {
+    let pos = xs.iter().position(|x| f(x))?;
+    Some(xs.remove(pos))
+}
+
+pub fn unsafe_unpack_same_type<M, SN, SL, IN, IL>(
+    new: ITree<IN, IL>,
+    old: STree<M, SN, SL, IN, IL>
+) -> Either<(INode<IN, IL>, SNode<M, SN, SL, IN, IL>), (ILeaf<IL>, SLeaf<M, SN, SL, IN, IL>)>
+where
+    M: Clone + PartialEq,
+    SN: PartialEq,
+    SL: PartialEq,
+    IN: PartialEq,
+    IL: PartialEq,
+
+{
+    match new {
+        ITree::Leaf(new) => {
+            match old {
+                STree::Leaf(old) => {
+                    Either::Right((new, old))
+                }
+                old @ STree::Node(_) => {
+                    panic!()
+                }
+            }
+        }
+        ITree::Node(new) => {
+            match old {
+                STree::Node(old) => {
+                    Either::Left((new, old))
+                }
+                old @ STree::Leaf(_) => {
+                    panic!()
+                }
+            }
+        }
+    }   
+}
+
+pub fn create_tree<M, SN, SL, IN, IL>(api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: ITree<IN, IL>) -> STree<M, SN, SL, IN, IL>
+where
+    M: Clone + PartialEq,
+    SN: PartialEq,
+    SL: PartialEq,
+    IN: PartialEq,
+    IL: PartialEq,
+{
+    match new {
+        ITree::Leaf(leaf) => {
+            let data = api.leaf_crate(leaf.data);
+            STree::Leaf(SLeaf {
+                mark: PhantomData,
+                data,
+            })
+        }
+        ITree::Node(node) => {
+            let data = api.node_crate(node.data);
+            let children = node.children.0
+                .into_iter()
+                .map(|c| {
+                    STree::from(api, parent, c)
+                })
+                .collect_vec();
+            let children = SChildren{data: children};
+            STree::Node(SNode {
+                mark: PhantomData,
+                data,
+                children,
+            })
+        }
+    }
+}
+
+pub fn update_tree<M, SN, SL, IN, IL>(
+    api: &TreeApi<M, SN, SL, IN, IL>,
+    parent: &M,
+    new: ITree<IN, IL>,
+    old: &mut STree<M, SN, SL, IN, IL>
+) -> Result<(), ()>
+where
+    M: Clone + PartialEq,
+    SN: PartialEq,
+    SL: PartialEq,
+    IN: PartialEq,
+    IL: PartialEq,
+{
+    match new {
+        ITree::Leaf(new) => {
+            match old {
+                STree::Leaf(old) => {
+                    api.leaf_update(Update {
+                        old: &mut old.data,
+                        new: new.data
+                    });
+                    Ok(())
+                }
+                old @ STree::Node(_) => {
+                    Err(())
+                }
+            }
+        }
+        ITree::Node(new) => {
+            match old {
+                STree::Node(old) => {
+                    api.node_update(Update {
+                        old: &mut old.data,
+                        new: new.data
+                    });
+                    Ok(())
+                }
+                old @ STree::Leaf(_) => {
+                    Err(())
+                }
+            }
+        }
+    }
+}
 
 

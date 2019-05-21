@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 either = "1.5.2"
+itertools = "0.8.0"
