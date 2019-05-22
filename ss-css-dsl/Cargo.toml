@@ -1,5 +1,5 @@
 [package]
-name = "css-dsl"
+name = "ss-css-dsl"
 version = "0.1.0"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"

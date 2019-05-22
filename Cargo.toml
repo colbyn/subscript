@@ -3,8 +3,8 @@ members = [
 	"ss-trees",
     "ss-dom-tree",
     "ss-view-tree",
+    "ss-css-dsl",
     "web-utils",
-    "css-dsl",
     "subscript",
 ]
 

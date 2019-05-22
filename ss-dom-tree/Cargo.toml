@@ -12,7 +12,7 @@ serde = {version = "1.0.89", features = ["derive"]}
 either = "1.5.2"
 Inflector = "0.11.4"
 web-utils = {path = "../web-utils"}
-css-dsl = {path = "../css-dsl"}
+ss-css-dsl = {path = "../ss-css-dsl"}
 ss-trees = {path = "../ss-trees"}
 ss-view-tree = {path = "../ss-view-tree"}
 
