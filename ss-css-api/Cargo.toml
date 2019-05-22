@@ -1,0 +1,15 @@
+[package]
+name = "ss-css-api"
+version = "0.1.0"
+authors = ["Colbyn Wadman <hello@colbyn.com>"]
+edition = "2018"
+
+# [lib]
+# crate-type=["cdylib", "rlib"]
+
+[dependencies]
+serde = {version = "1.0.89", features = ["derive"]}
+either = "1.5.2"
+Inflector = "0.11.4"
+
+

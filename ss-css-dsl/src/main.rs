@@ -16,6 +16,7 @@ pub fn main() {
     let mut stylesheet = Stylesheet::new("id-text");
     stylesheet.add_locals(vec![
         display(flex()),
+        padding((0, 0, 0, 0)),
     ]);
     stylesheet.add_media(
         media(

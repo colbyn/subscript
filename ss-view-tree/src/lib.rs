@@ -4,6 +4,7 @@
 pub mod attributes;
 pub mod events;
 pub mod macros;
+pub mod css;
 
 use std::fmt::{self, Debug};
 use std::convert::From;
@@ -19,6 +20,8 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
 use ss_trees::tree::*;
 use ss_trees::map::*;
+use ss_css_dsl::core::*;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW TREE WRAPPER
