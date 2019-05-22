@@ -9,9 +9,9 @@ use std::any::*;
 use std::collections::*;
 use either::Either::{self, Left, Right};
 
-use web_utils::prelude::*;
-use web_utils::dom;
-use web_utils::js::{self, console, EventCallback};
+use ss_web_utils::prelude::*;
+use ss_web_utils::dom;
+use ss_web_utils::js::{self, console, EventCallback};
 use ss_trees::tree::*;
 use ss_trees::map::*;
 use ss_view_tree::*;
@@ -93,8 +93,8 @@ pub struct EventsLogic {}
 
 impl<Msg: PartialEq + 'static> IMapLogic<LiveNode<Msg>, EventType, EventHandler<Msg>, LiveEventHandler<Msg>> for EventsLogic {
     fn for_added(&self, attached: &LiveNode<Msg>, key: &EventType, new: EventHandler<Msg>) -> LiveEventHandler<Msg> {
-    	use web_utils::js::Handler;
-        use web_utils::dom::DomRef;
+    	use ss_web_utils::js::Handler;
+        use ss_web_utils::dom::DomRef;
 
         assert!({key == &new.event_name()});
         let x = dom::window();
@@ -107,8 +107,8 @@ impl<Msg: PartialEq + 'static> IMapLogic<LiveNode<Msg>, EventType, EventHandler<
         }
     }
     fn for_modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
-    	use web_utils::js::Handler;
-        use web_utils::dom::DomRef;
+    	use ss_web_utils::js::Handler;
+        use ss_web_utils::dom::DomRef;
 
         assert!(key == &old.event_name() && key == &new.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
@@ -122,7 +122,7 @@ impl<Msg: PartialEq + 'static> IMapLogic<LiveNode<Msg>, EventType, EventHandler<
         *old = result;
     }
     fn for_removed(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {
-        use web_utils::dom::DomRef;
+        use ss_web_utils::dom::DomRef;
 
     	assert_eq!(key, old.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
@@ -306,14 +306,14 @@ impl<Msg: 'static +  Clone + PartialEq> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, V
         new.tag == old.tag
     }
     fn node_update(&self, update: Update<&mut LiveNode<Msg>, ViewNode<Msg>>) {
-        use web_utils::dom::DomRef;
+        use ss_web_utils::dom::DomRef;
         let Update{new, old} = update;
         assert!(new.tag == old.tag);
         old.attributes.borrow_mut().sync::<LiveNode<Msg>, Attribute>(&old, new.attributes, &self.attributes_api);
         old.events.borrow_mut().sync::<LiveNode<Msg>, EventHandler<Msg>>(&old, new.events, &self.events_api);
     }
     fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
-        use web_utils::dom::DomRef;
+        use ss_web_utils::dom::DomRef;
         let dom_ref = self.window.document.create_element(new.tag.as_str());
         LiveNode {
             dom_ref: Rc::new(dom_ref),
@@ -353,7 +353,7 @@ impl<Msg: 'static +  Clone + PartialEq> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, V
         }
     }
     fn leaf_crate(&self, new: ViewLeaf) -> LiveLeaf {
-        use web_utils::dom::DomRef;
+        use ss_web_utils::dom::DomRef;
         match new {
             ViewLeaf::Text(value) => {
                 let dom_ref = self.window.document.create_text_node(value.as_str());

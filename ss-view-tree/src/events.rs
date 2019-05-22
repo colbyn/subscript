@@ -10,8 +10,8 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use either::Either;
 use wasm_bindgen::JsValue;
 
-use web_utils::js;
-use web_utils::dom;
+use ss_web_utils::js;
+use ss_web_utils::dom;
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::collections::*;
 use either::Either::{self, Left, Right};
 use itertools::Itertools;
-use web_utils::js::console;
+use ss_web_utils::js::console;
 
 
 ///////////////////////////////////////////////////////////////////////////////

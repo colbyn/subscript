@@ -4,7 +4,7 @@ members = [
     "ss-dom-tree",
     "ss-view-tree",
     "ss-css-dsl",
-    "web-utils",
+    "ss-web-utils",
     "subscript",
 ]
 

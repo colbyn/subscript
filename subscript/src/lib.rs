@@ -3,7 +3,7 @@
 pub mod dev;
 
 use wasm_bindgen::prelude::*;
-use web_utils::js::{self, console};
+use ss_web_utils::js::{self, console};
 
 #[wasm_bindgen]
 pub fn main() -> Result<(), wasm_bindgen::JsValue> {
