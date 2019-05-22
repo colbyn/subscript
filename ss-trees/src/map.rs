@@ -9,6 +9,7 @@ use either::Either;
 
 #[derive(PartialEq)]
 #[derive(Default)]
+#[derive(Debug)]
 pub struct IMap<K, V>
 where
     K: Eq + Hash,

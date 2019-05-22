@@ -22,17 +22,7 @@ use crate::html::attributes::*;
 // MISCELLANEOUS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub type LiveTree<Msg> = ITree<LiveNode<Msg>, LiveLeaf>;
-
-
-///////////////////////////////////////////////////////////////////////////////
-// LIVE DOM-REF
-///////////////////////////////////////////////////////////////////////////////
-
-pub enum DomRef {
-    Text(dom::Text),
-    Tag(dom::Tag),
-}
+pub type LiveTree<Msg> = STree<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf>;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -175,6 +165,7 @@ impl PartialEq for LiveComponent {
 ///////////////////////////////////////////////////////////////////////////////
 
 
+#[derive(Debug)]
 pub enum LiveLeaf {
     Text {
         dom_ref: Rc<dom::Text>,
@@ -198,6 +189,18 @@ impl PartialEq for LiveLeaf {
 }
 
 impl LiveLeaf {
+    pub fn get_meta(&self) -> Meta {
+        match self {
+            LiveLeaf::Text{dom_ref, ..} => {
+                let dom_ref = dom_ref.clone();
+                Meta::Text{dom_ref}
+            }
+            LiveLeaf::Component{dom_ref, ..} => {
+                let dom_ref = dom_ref.clone();
+                Meta::Tag{dom_ref}
+            }
+        }
+    }
     pub fn is_text(&self) -> bool {
         match self {
             LiveLeaf::Text{..} => true,
@@ -212,12 +215,19 @@ impl LiveLeaf {
     }
 }
 
-
+#[derive(Debug)]
 pub struct LiveNode<Msg: PartialEq> {
     pub dom_ref: Rc<dom::Tag>,
     pub tag: String,
     pub attributes: RefCell<IMap<String, attributes::Attribute>>,
     pub events: RefCell<IMap<events::EventType, LiveEventHandler<Msg>>>,
+}
+
+impl<Msg: PartialEq> LiveNode<Msg> {
+    pub fn get_meta(&self) -> Meta {
+        let dom_ref = self.dom_ref.clone();
+        Meta::Tag{dom_ref}
+    }
 }
 
 impl<Msg: PartialEq> PartialEq for LiveNode<Msg> {
@@ -233,7 +243,41 @@ impl<Msg: PartialEq> PartialEq for LiveNode<Msg> {
 // LOGIC
 ///////////////////////////////////////////////////////////////////////////////
 
-// use insertion_types::tree::map::*;
+#[derive(Debug, Clone, PartialEq)]
+pub enum DomRefType {
+    Text,
+    Tag,
+}
+
+#[derive(Debug, Clone)]
+pub enum Meta {
+    Text {
+        dom_ref: Rc<dom::Text>,
+    },
+    Tag {
+        dom_ref: Rc<dom::Tag>,
+    }
+}
+
+impl PartialEq for Meta {
+    fn eq(&self, other: &Meta) -> bool {
+        match (self, other) {
+            (Meta::Tag{..}, Meta::Tag{..}) => {true}
+            (Meta::Text{..}, Meta::Text{..}) => {true}
+            _ => false
+        }
+    }
+}
+
+
+impl Meta {
+    pub fn get_dom_ref(&self) -> Rc<dom::DomRef> {
+        match self {
+            Meta::Text{dom_ref} => dom_ref.clone(),
+            Meta::Tag{dom_ref} => dom_ref.clone(),
+        }
+    }
+}
 
 pub struct DomTreeLogic {
     pub window: dom::Window,
@@ -250,6 +294,161 @@ impl Default for DomTreeLogic {
         }
     }
 }
+
+impl<Msg: 'static +  Clone + PartialEq> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf> for DomTreeLogic {
+    fn node_unchanged(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
+        let attributes_unchanged = old.attributes.borrow().unchanged::<LiveNode<Msg>, Attribute>(&new.attributes, &self.attributes_api);
+        let events_unchanged = old.events.borrow().unchanged(&new.events, &self.events_api);
+        attributes_unchanged && events_unchanged && new.tag == old.tag
+    }
+    fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
+        new.tag == old.tag
+    }
+    fn node_update(&self, update: Update<&mut LiveNode<Msg>, ViewNode<Msg>>) {
+        use web_utils::dom::DomRef;
+        let Update{new, old} = update;
+        assert!(new.tag == old.tag);
+        old.attributes.borrow_mut().sync::<LiveNode<Msg>, Attribute>(&old, new.attributes, &self.attributes_api);
+        old.events.borrow_mut().sync::<LiveNode<Msg>, EventHandler<Msg>>(&old, new.events, &self.events_api);
+    }
+    fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
+        use web_utils::dom::DomRef;
+        let dom_ref = self.window.document.create_element(new.tag.as_str());
+        LiveNode {
+            dom_ref: Rc::new(dom_ref),
+            tag: new.tag,
+            attributes: RefCell::new(IMap::new()),
+            events: RefCell::new(IMap::new()),
+        }
+    }
+
+    fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
+        match (new, old) {
+            (ViewLeaf::Component(x), LiveLeaf::Component{value, ..}) => {
+                x.spec_type_id() == value.spec_type_id()
+            },
+            (ViewLeaf::Text(x), LiveLeaf::Text{value, ..}) => x == value,
+            _ => false
+        }
+    }
+    fn leaf_recyclable(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
+        match (new, old) {
+            (ViewLeaf::Text(_), LiveLeaf::Text{..}) => true,
+            (ViewLeaf::Component(_), LiveLeaf::Component{..}) => false,
+            _ => false
+        }
+    }
+    fn leaf_update(&self, update: Update<&mut LiveLeaf, ViewLeaf>) {
+        let Update{new, old} = update;
+        match (&new, old) {
+            (ViewLeaf::Text(x), LiveLeaf::Text{value, dom_ref}) => {
+                dom_ref.set_text_content(value.as_str());
+                *value = x.clone();
+            }
+            (ViewLeaf::Component(_), LiveLeaf::Component{value, dom_ref}) => {
+                panic!()
+            }
+            _ => panic!()
+        }
+    }
+    fn leaf_crate(&self, new: ViewLeaf) -> LiveLeaf {
+        use web_utils::dom::DomRef;
+        match new {
+            ViewLeaf::Text(value) => {
+                let dom_ref = self.window.document.create_text_node(value.as_str());
+                dom_ref.set_text_content(value.as_str());
+                LiveLeaf::Text {
+                    dom_ref: Rc::new(dom_ref),
+                    value,
+                }
+            }
+            ViewLeaf::Component(value) => {
+                let dom_ref = self.window.document.create_element("div");
+                LiveLeaf::Component {
+                    dom_ref: Rc::new(dom_ref),
+                    value
+                }
+            }
+        }
+    }
+
+    fn get_meta(&self, value: Either<&LiveNode<Msg>, &LiveLeaf>) -> Meta {
+        match value {
+            Left(node) => {
+                node.get_meta()
+            }
+            Right(leaf) => {
+                leaf.get_meta()
+            }
+        }
+    }
+    fn insert(&self, op: InsertOp<Meta>) {
+        fn init_fragment(new: Vec<Meta>) -> web_sys::DocumentFragment {
+            let fragment = web_sys::DocumentFragment::new()
+                .expect("new DocumentFragment failed");
+            for x in new {
+                match x {
+                    Meta::Text{dom_ref} => {
+                        // fragment.append_with_node_1(dom_ref.dom_ref_as_node())
+                        //     .expect("DocumentFragment.append failed");
+                        fragment.append_child(dom_ref.dom_ref_as_node())
+                            .expect("DocumentFragment.append failed");
+                    }
+                    Meta::Tag{dom_ref} => {
+                        // fragment.append_with_node_1(dom_ref.dom_ref_as_node())
+                        //     .expect("DocumentFragment.append failed");
+                        fragment.append_child(dom_ref.dom_ref_as_node())
+                            .expect("DocumentFragment.append failed");
+                    }
+                }
+            }
+            fragment
+        }
+        match op {
+            InsertOp::InsertBefore {old, new} => {
+                console::log(format!("dom-tree: {:#?}", (&old, &new)));
+                let new = init_fragment(new);
+                let new: wasm_bindgen::JsValue = From::from(new);
+                let new: web_sys::Node = web_sys::Node::from(new);
+                
+                let old: wasm_bindgen::JsValue = old.get_dom_ref().dom_ref().clone();
+                let old: web_sys::Element = web_sys::Element::from(old);
+                old.before_with_node_1(&new);
+            }
+            InsertOp::InsertAfter {old, new} => {
+                console::log(format!("dom-tree: {:#?}", (&old, &new)));
+                let new = init_fragment(new);
+                let new: wasm_bindgen::JsValue = From::from(new);
+                let new: web_sys::Node = web_sys::Node::from(new);
+                
+                let old: wasm_bindgen::JsValue = old.get_dom_ref().dom_ref().clone();
+                let old: web_sys::Element = web_sys::Element::from(old);
+                old.after_with_node_1(&new);
+            }
+            InsertOp::Swap {parent, current, target} => {
+                parent
+                    .get_dom_ref()
+                    .replace_child(target.get_dom_ref().as_ref(), current.get_dom_ref().as_ref());
+            }
+            InsertOp::Append {parent, new} => {
+                let new = init_fragment(new);
+                let new: wasm_bindgen::JsValue = From::from(new);
+                let new: web_sys::Node = web_sys::Node::from(new);
+                parent
+                    .get_dom_ref()
+                    .dom_ref_as_node()
+                    .append_child(&new)
+                    .expect("Node.appendChild failed");
+            }
+        }
+    }
+    fn remove(&self, x: Meta) {
+        let x: wasm_bindgen::JsValue = x.get_dom_ref().dom_ref().clone();
+        let x: web_sys::Element = web_sys::Element::from(x);
+        x.remove();
+    }
+}
+
 
 
 

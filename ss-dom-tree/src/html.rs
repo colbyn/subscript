@@ -46,10 +46,14 @@ impl Clone for Box<Component>
         self.box_clone()
     }
 }
-
 impl PartialEq for Component {
     fn eq(&self, other: &Component) -> bool {
         self.spec_type_id() == other.spec_type_id()
+    }
+}
+impl Debug for Component {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> fmt::Result {
+        write!(f, "QueueCallback")
     }
 }
 
@@ -61,6 +65,7 @@ impl PartialEq for Component {
 
 pub type ViewTree<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
 
+#[derive(Debug)]
 pub enum ViewLeaf {
     Text(String),
     Component(Box<Component>),
@@ -93,6 +98,7 @@ impl ViewLeaf {
 
 
 #[derive(PartialEq)]
+#[derive(Debug)]
 pub struct ViewNode<Msg: PartialEq> {
     pub tag: String,
     pub attributes: IMap<String, attributes::Attribute>,

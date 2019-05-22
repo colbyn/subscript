@@ -50,6 +50,7 @@ features = [
     "CssStyleRule",
     "CssStyleSheet",
     "Storage",
+    "DocumentFragment",
 ]
 
 
