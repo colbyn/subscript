@@ -25,6 +25,11 @@ impl<K: Hash + Eq, V: PartialEq> IMap<K, V>
             current: HashMap::new(),
         }
     }
+    pub fn union(&mut self, other: Self) {
+        for (k, v) in other.current.into_iter() {
+            self.current.insert(k, v);
+        }
+    }
     pub fn insert(&mut self, k: K, v: V) {
         self.current.insert(k, v);
     }

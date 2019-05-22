@@ -20,6 +20,37 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use ss_trees::tree::*;
 use ss_trees::map::*;
 
+///////////////////////////////////////////////////////////////////////////////
+// VIEW TREE WRAPPER
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct View<Msg: PartialEq>(pub(crate) ITree<ViewNode<Msg>, ViewLeaf>);
+
+impl<Msg: PartialEq> View<Msg> {
+    pub fn new_tag(tag: &str) -> Self {
+        let view_node = ViewNode {
+            tag: String::from(tag),
+            attributes: IMap::new(),
+            events: IMap::new(),
+        };
+        View(ITree::new(Left(view_node)))
+    }
+    pub fn new_text(value: &str) -> Self {
+        let view_leaf = ViewLeaf::Text(String::from(value));
+        View(ITree::new(Right(view_leaf)))
+    }
+    pub fn append(&mut self, entry: impl Viewable<Msg>) {
+        let Mixin{attributes, events, children} = entry.normalize();
+        for child in children {
+            self.0.add_child(child.0);
+        }
+        if let Some(node) = self.0.get_node_mut() {
+            node.attributes.union(attributes);
+            node.events.union(events);
+        }
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS
@@ -58,10 +89,85 @@ impl Debug for Component {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// MIXINS
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct Mixin<Msg: PartialEq> {
+    attributes: IMap<String, attributes::Attribute>,
+    events: IMap<events::EventType, events::EventHandler<Msg>>,
+    children: Vec<View<Msg>>,
+}
+
+impl<Msg: PartialEq> Default for Mixin<Msg> {
+    fn default() -> Self {
+        Mixin {
+            attributes: IMap::new(),
+            events: IMap::new(),
+            children: Vec::new(),
+        }
+    }
+}
+
+impl<Msg: PartialEq> Mixin<Msg> {
+    pub fn add_attribute(&mut self, key: &str, value: attributes::Attribute) {
+        self.attributes.insert(key.to_string(), value);
+    }
+    pub fn add_event_handler(&mut self, handler: events::EventHandler<Msg>) {
+        let event_name = handler.event_name();
+        self.events.insert(event_name, handler);
+    }
+    pub fn add_child(&mut self, child: View<Msg>) {
+        self.children.push(child);
+    }
+    pub fn add_children(&mut self, xs: Vec<View<Msg>>) {
+        let mut xs = xs;
+        self.children.append(&mut xs);
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// HTML TREE
+// VIEW TREE EXTENSIONS
+///////////////////////////////////////////////////////////////////////////////
+
+pub trait Viewable<Msg: PartialEq> {
+    fn normalize(self) -> Mixin<Msg>;
+}
+
+
+impl<Msg: PartialEq> Viewable<Msg> for View<Msg> {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_child(self);
+        mixin
+    }
+}
+impl<Msg: PartialEq> Viewable<Msg> for Vec<View<Msg>> {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_children(self);
+        mixin
+    }   
+}
+impl<Msg: PartialEq> Viewable<Msg> for (&str, attributes::Attribute) {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_attribute(self.0, self.1);
+        mixin
+    }
+}
+impl<Msg: PartialEq> Viewable<Msg> for events::EventHandler<Msg> {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_event_handler(self);
+        mixin
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// INTERNAL ITREE TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug)]
@@ -113,29 +219,5 @@ impl<Msg: PartialEq> ViewNode<Msg> {
         }
     }
 }
-
-
-///////////////////////////////////////////////////////////////////////////////
-// MIXINS
-///////////////////////////////////////////////////////////////////////////////
-
-pub struct Mixin<Msg: PartialEq> {
-    pub attributes: IMap<String, attributes::Attribute>,
-    pub events: IMap<events::EventType, events::EventHandler<Msg>>,
-    pub children: ViewNode<Msg>,
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// VIEW TREE EXTENSIONS
-///////////////////////////////////////////////////////////////////////////////
-
-pub trait Viewable<Msg: PartialEq> {
-    fn normalize(&self) -> Mixin<Msg>;
-}
-
-
-
 
 

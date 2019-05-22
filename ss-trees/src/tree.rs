@@ -132,6 +132,12 @@ impl<N, L> ITree<N, L> {
             node.children.0.push(value);
         }
     }
+    pub fn get_node_mut(&mut self) -> Option<&mut N> {
+        match self {
+            ITree::Node(node) => Some(&mut node.data),
+            _ => None
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
