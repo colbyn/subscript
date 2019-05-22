@@ -1,3 +1,6 @@
+#![allow(dead_code, unused, unused_variables)]
+
+
 pub mod attributes;
 pub mod events;
 
@@ -13,8 +16,6 @@ use std::marker::Sized;
 use either::Either::{self, Left, Right};
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
-use web_utils::dom;
-use web_utils::js::{self, console, EventCallback};
 use ss_trees::tree::*;
 use ss_trees::map::*;
 
@@ -134,5 +135,8 @@ pub struct Mixin<Msg: PartialEq> {
 pub trait Viewable<Msg: PartialEq> {
     fn normalize(&self) -> Mixin<Msg>;
 }
+
+
+
 
 

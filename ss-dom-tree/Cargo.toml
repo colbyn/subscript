@@ -14,6 +14,7 @@ Inflector = "0.11.4"
 web-utils = {path = "../web-utils"}
 css-dsl = {path = "../css-dsl"}
 ss-trees = {path = "../ss-trees"}
+ss-view-tree = {path = "../ss-view-tree"}
 
 ###############################################################################
 # RUST-WASM

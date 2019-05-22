@@ -2,6 +2,7 @@
 members = [
 	"ss-trees",
     "ss-dom-tree",
+    "ss-view-tree",
     "web-utils",
     "css-dsl",
     "subscript",
