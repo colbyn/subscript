@@ -60,7 +60,7 @@ pub mod console {
     }
     impl Loggable for &JsValue {
         fn to_js_value(&self) -> Either<JsValue, &JsValue> {
-            Either::Right(self.clone())
+            Either::Right(self)
         }
     }
 }
