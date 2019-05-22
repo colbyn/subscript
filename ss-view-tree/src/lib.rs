@@ -3,6 +3,7 @@
 
 pub mod attributes;
 pub mod events;
+pub mod macros;
 
 use std::fmt::{self, Debug};
 use std::convert::From;
@@ -25,9 +26,8 @@ use ss_trees::map::*;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub type NodeId = String;
-pub type Html<Msg> = ViewTree<Msg>;
-pub type Svg<Msg> = ViewTree<Msg>;
-
+pub type Html<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
+pub type Svg<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,8 +63,6 @@ impl Debug for Component {
 ///////////////////////////////////////////////////////////////////////////////
 // HTML TREE
 ///////////////////////////////////////////////////////////////////////////////
-
-pub type ViewTree<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
 
 #[derive(Debug)]
 pub enum ViewLeaf {
@@ -124,12 +122,13 @@ impl<Msg: PartialEq> ViewNode<Msg> {
 pub struct Mixin<Msg: PartialEq> {
     pub attributes: IMap<String, attributes::Attribute>,
     pub events: IMap<events::EventType, events::EventHandler<Msg>>,
+    pub children: ViewNode<Msg>,
 }
 
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// DOM TREE EXTENSIONS
+// VIEW TREE EXTENSIONS
 ///////////////////////////////////////////////////////////////////////////////
 
 pub trait Viewable<Msg: PartialEq> {
