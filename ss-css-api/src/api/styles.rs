@@ -1,7 +1,6 @@
 use crate::rules::{self, Rule};
 use crate::api::values::*;
-
-pub struct Style(pub(crate) Rule);
+use crate::stylesheet::Style;
 
 
 pub trait AlignContent {}
