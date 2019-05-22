@@ -1,6 +1,6 @@
 //! This crate combines CSS at-rules, pseudo selectors and pseudo elements.
 
-use crate::api::styles::Style;
+use crate::stylesheet::Style;
 use crate::selectors::{MediaQuerySelector, StateSelector};
 
 /// The '@media' at-rule.
