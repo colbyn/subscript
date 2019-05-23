@@ -3,9 +3,11 @@ name = "ss-trees"
 version = "0.1.0"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
+description = "Work in progress..."
+license = "Copyright 2019 Colbyn Wadman"
 
 [dependencies]
 either = "1.5.2"
 itertools = "0.8.0"
-ss-web-utils = {path = "../ss-web-utils"}
+ss-web-utils = {path = "../ss-web-utils", version="0.1.0"}
 

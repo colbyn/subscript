@@ -3,6 +3,8 @@ name = "ss-web-utils"
 version = "0.1.0"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
+description = "Work in progress..."
+license = "Copyright 2019 Colbyn Wadman"
 
 [lib]
 crate-type=["cdylib", "rlib"]
