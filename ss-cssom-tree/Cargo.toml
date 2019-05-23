@@ -3,7 +3,7 @@ name = "ss-cssom-tree"
 version = "0.1.0"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
-description = "Work in progress..."
+description = "This crate is an internal dependency of Subscript (WIP)."
 license = "AGPL-3.0-or-later"
 
 [lib]
