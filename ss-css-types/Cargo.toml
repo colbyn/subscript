@@ -1,10 +1,11 @@
 [package]
 name = "ss-css-types"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
 description = "This crate is an internal dependency of Subscript (WIP)."
 license = "AGPL-3.0-or-later"
+repository = "https://github.com/colbyn/subscript"
 
 # [lib]
 # crate-type=["cdylib", "rlib"]
