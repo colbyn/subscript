@@ -1,1564 +1,2262 @@
-use crate::rules::{self, Rule};
+use crate::rules::{self, Rule, Property, Value};
 use crate::api::values::*;
 use crate::stylesheet::Style;
 
-
-pub trait AlignContent {}
+pub trait AlignContent {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn align_content(value: impl AlignContent) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AlignContent, value: value.value()})
 }
 
-pub trait AlignItems {}
+pub trait AlignItems {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn align_items(value: impl AlignItems) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AlignItems, value: value.value()})
 }
 
-pub trait AlignSelf {}
+pub trait AlignSelf {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn align_self(value: impl AlignSelf) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AlignSelf, value: value.value()})
 }
 
-pub trait All {}
+pub trait All {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn all(value: impl All) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::All, value: value.value()})
 }
 
-pub trait Animation {}
+pub trait Animation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation(value: impl Animation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Animation, value: value.value()})
 }
 
-pub trait AnimationDelay {}
+pub trait AnimationDelay {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_delay(value: impl AnimationDelay) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationDelay, value: value.value()})
 }
 
-pub trait AnimationDirection {}
+pub trait AnimationDirection {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_direction(value: impl AnimationDirection) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationDirection, value: value.value()})
 }
 
-pub trait AnimationDuration {}
+pub trait AnimationDuration {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_duration(value: impl AnimationDuration) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationDuration, value: value.value()})
 }
 
-pub trait AnimationFillMode {}
+pub trait AnimationFillMode {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_fill_mode(value: impl AnimationFillMode) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationFillMode, value: value.value()})
 }
 
-pub trait AnimationIterationCount {}
+pub trait AnimationIterationCount {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_iteration_count(value: impl AnimationIterationCount) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationIterationCount, value: value.value()})
 }
 
-pub trait AnimationName {}
+pub trait AnimationName {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_name(value: impl AnimationName) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationName, value: value.value()})
 }
 
-pub trait AnimationPlayState {}
+pub trait AnimationPlayState {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_play_state(value: impl AnimationPlayState) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationPlayState, value: value.value()})
 }
 
-pub trait AnimationTimingFunction {}
+pub trait AnimationTimingFunction {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn animation_timing_function(value: impl AnimationTimingFunction) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::AnimationTimingFunction, value: value.value()})
 }
 
-pub trait Azimuth {}
+pub trait Azimuth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn azimuth(value: impl Azimuth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Azimuth, value: value.value()})
 }
 
-pub trait Background {}
+pub trait Background {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background(value: impl Background) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Background, value: value.value()})
 }
 
-pub trait BackgroundAttachment {}
+pub trait BackgroundAttachment {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_attachment(value: impl BackgroundAttachment) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundAttachment, value: value.value()})
 }
 
-pub trait BackgroundBlendMode {}
+pub trait BackgroundBlendMode {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_blend_mode(value: impl BackgroundBlendMode) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundBlendMode, value: value.value()})
 }
 
-pub trait BackgroundClip {}
+pub trait BackgroundClip {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_clip(value: impl BackgroundClip) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundClip, value: value.value()})
 }
 
-pub trait BackgroundColor {}
+pub trait BackgroundColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_color(value: impl BackgroundColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundColor, value: value.value()})
 }
 
-pub trait BackgroundImage {}
+pub trait BackgroundImage {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_image(value: impl BackgroundImage) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundImage, value: value.value()})
 }
 
-pub trait BackgroundOrigin {}
+pub trait BackgroundOrigin {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_origin(value: impl BackgroundOrigin) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundOrigin, value: value.value()})
 }
 
-pub trait BackgroundPosition {}
+pub trait BackgroundPosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_position(value: impl BackgroundPosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundPosition, value: value.value()})
 }
 
-pub trait BackgroundRepeat {}
+pub trait BackgroundRepeat {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_repeat(value: impl BackgroundRepeat) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundRepeat, value: value.value()})
 }
 
-pub trait BackgroundSize {}
+pub trait BackgroundSize {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn background_size(value: impl BackgroundSize) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BackgroundSize, value: value.value()})
 }
 
-pub trait Border {}
+pub trait Border {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border(value: impl Border) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Border, value: value.value()})
 }
 
-pub trait BorderBottom {}
+pub trait BorderBottom {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_bottom(value: impl BorderBottom) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderBottom, value: value.value()})
 }
 
-pub trait BorderBottomColor {}
+pub trait BorderBottomColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_bottom_color(value: impl BorderBottomColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderBottomColor, value: value.value()})
 }
 
-pub trait BorderBottomLeftRadius {}
+pub trait BorderBottomLeftRadius {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_bottom_left_radius(value: impl BorderBottomLeftRadius) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderBottomLeftRadius, value: value.value()})
 }
 
-pub trait BorderBottomRightRadius {}
+pub trait BorderBottomRightRadius {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_bottom_right_radius(value: impl BorderBottomRightRadius) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderBottomRightRadius, value: value.value()})
 }
 
-pub trait BorderBottomStyle {}
+pub trait BorderBottomStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_bottom_style(value: impl BorderBottomStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderBottomStyle, value: value.value()})
 }
 
-pub trait BorderBottomWidth {}
+pub trait BorderBottomWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_bottom_width(value: impl BorderBottomWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderBottomWidth, value: value.value()})
 }
 
-pub trait BorderCollapse {}
+pub trait BorderCollapse {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_collapse(value: impl BorderCollapse) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderCollapse, value: value.value()})
 }
 
-pub trait BorderColor {}
+pub trait BorderColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_color(value: impl BorderColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderColor, value: value.value()})
 }
 
-pub trait BorderImage {}
+pub trait BorderImage {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_image(value: impl BorderImage) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderImage, value: value.value()})
 }
 
-pub trait BorderImageOutset {}
+pub trait BorderImageOutset {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_image_outset(value: impl BorderImageOutset) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderImageOutset, value: value.value()})
 }
 
-pub trait BorderImageRepeat {}
+pub trait BorderImageRepeat {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_image_repeat(value: impl BorderImageRepeat) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderImageRepeat, value: value.value()})
 }
 
-pub trait BorderImageSlice {}
+pub trait BorderImageSlice {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_image_slice(value: impl BorderImageSlice) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderImageSlice, value: value.value()})
 }
 
-pub trait BorderImageSource {}
+pub trait BorderImageSource {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_image_source(value: impl BorderImageSource) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderImageSource, value: value.value()})
 }
 
-pub trait BorderImageWidth {}
+pub trait BorderImageWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_image_width(value: impl BorderImageWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderImageWidth, value: value.value()})
 }
 
-pub trait BorderLeft {}
+pub trait BorderLeft {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_left(value: impl BorderLeft) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderLeft, value: value.value()})
 }
 
-pub trait BorderLeftColor {}
+pub trait BorderLeftColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_left_color(value: impl BorderLeftColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderLeftColor, value: value.value()})
 }
 
-pub trait BorderLeftStyle {}
+pub trait BorderLeftStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_left_style(value: impl BorderLeftStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderLeftStyle, value: value.value()})
 }
 
-pub trait BorderLeftWidth {}
+pub trait BorderLeftWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_left_width(value: impl BorderLeftWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderLeftWidth, value: value.value()})
 }
 
-pub trait BorderRadius {}
+pub trait BorderRadius {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_radius(value: impl BorderRadius) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderRadius, value: value.value()})
 }
 
-pub trait BorderRight {}
+pub trait BorderRight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_right(value: impl BorderRight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderRight, value: value.value()})
 }
 
-pub trait BorderRightColor {}
+pub trait BorderRightColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_right_color(value: impl BorderRightColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderRightColor, value: value.value()})
 }
 
-pub trait BorderRightStyle {}
+pub trait BorderRightStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_right_style(value: impl BorderRightStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderRightStyle, value: value.value()})
 }
 
-pub trait BorderRightWidth {}
+pub trait BorderRightWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_right_width(value: impl BorderRightWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderRightWidth, value: value.value()})
 }
 
-pub trait BorderSpacing {}
+pub trait BorderSpacing {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_spacing(value: impl BorderSpacing) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderSpacing, value: value.value()})
 }
 
-pub trait BorderStyle {}
+pub trait BorderStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_style(value: impl BorderStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderStyle, value: value.value()})
 }
 
-pub trait BorderTop {}
+pub trait BorderTop {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_top(value: impl BorderTop) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderTop, value: value.value()})
 }
 
-pub trait BorderTopColor {}
+pub trait BorderTopColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_top_color(value: impl BorderTopColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderTopColor, value: value.value()})
 }
 
-pub trait BorderTopLeftRadius {}
+pub trait BorderTopLeftRadius {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_top_left_radius(value: impl BorderTopLeftRadius) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderTopLeftRadius, value: value.value()})
 }
 
-pub trait BorderTopRightRadius {}
+pub trait BorderTopRightRadius {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_top_right_radius(value: impl BorderTopRightRadius) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderTopRightRadius, value: value.value()})
 }
 
-pub trait BorderTopStyle {}
+pub trait BorderTopStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_top_style(value: impl BorderTopStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderTopStyle, value: value.value()})
 }
 
-pub trait BorderTopWidth {}
+pub trait BorderTopWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_top_width(value: impl BorderTopWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderTopWidth, value: value.value()})
 }
 
-pub trait BorderWidth {}
+pub trait BorderWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn border_width(value: impl BorderWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BorderWidth, value: value.value()})
 }
 
-pub trait Bottom {}
+pub trait Bottom {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn bottom(value: impl Bottom) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Bottom, value: value.value()})
 }
 
-pub trait BoxDecorationBreak {}
+pub trait BoxDecorationBreak {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn box_decoration_break(value: impl BoxDecorationBreak) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BoxDecorationBreak, value: value.value()})
 }
 
-pub trait BoxShadow {}
+pub trait BoxShadow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn box_shadow(value: impl BoxShadow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BoxShadow, value: value.value()})
 }
 
-pub trait BoxSizing {}
+pub trait BoxSizing {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn box_sizing(value: impl BoxSizing) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BoxSizing, value: value.value()})
 }
 
-pub trait BreakAfter {}
+pub trait BreakAfter {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn break_after(value: impl BreakAfter) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BreakAfter, value: value.value()})
 }
 
-pub trait BreakBefore {}
+pub trait BreakBefore {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn break_before(value: impl BreakBefore) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BreakBefore, value: value.value()})
 }
 
-pub trait BreakInside {}
+pub trait BreakInside {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn break_inside(value: impl BreakInside) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::BreakInside, value: value.value()})
 }
 
-pub trait CaptionSide {}
+pub trait CaptionSide {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn caption_side(value: impl CaptionSide) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::CaptionSide, value: value.value()})
 }
 
-pub trait CaretColor {}
+pub trait CaretColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn caret_color(value: impl CaretColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::CaretColor, value: value.value()})
 }
 
-pub trait Clear {}
+pub trait Clear {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn clear(value: impl Clear) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Clear, value: value.value()})
 }
 
-pub trait Clip {}
+pub trait Clip {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn clip(value: impl Clip) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Clip, value: value.value()})
 }
 
-pub trait ClipPath {}
+pub trait ClipPath {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn clip_path(value: impl ClipPath) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ClipPath, value: value.value()})
 }
 
-pub trait ClipRule {}
+pub trait ClipRule {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn clip_rule(value: impl ClipRule) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ClipRule, value: value.value()})
 }
 
-pub trait Color {}
+pub trait Color {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn color(value: impl Color) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Color, value: value.value()})
 }
 
-pub trait ColorInterpolationFilters {}
+pub trait ColorInterpolationFilters {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn color_interpolation_filters(value: impl ColorInterpolationFilters) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColorInterpolationFilters, value: value.value()})
 }
 
-pub trait ColumnCount {}
+pub trait ColumnCount {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_count(value: impl ColumnCount) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnCount, value: value.value()})
 }
 
-pub trait ColumnFill {}
+pub trait ColumnFill {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_fill(value: impl ColumnFill) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnFill, value: value.value()})
 }
 
-pub trait ColumnGap {}
+pub trait ColumnGap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_gap(value: impl ColumnGap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnGap, value: value.value()})
 }
 
-pub trait ColumnRule {}
+pub trait ColumnRule {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_rule(value: impl ColumnRule) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnRule, value: value.value()})
 }
 
-pub trait ColumnRuleColor {}
+pub trait ColumnRuleColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_rule_color(value: impl ColumnRuleColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnRuleColor, value: value.value()})
 }
 
-pub trait ColumnRuleStyle {}
+pub trait ColumnRuleStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_rule_style(value: impl ColumnRuleStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnRuleStyle, value: value.value()})
 }
 
-pub trait ColumnRuleWidth {}
+pub trait ColumnRuleWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_rule_width(value: impl ColumnRuleWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnRuleWidth, value: value.value()})
 }
 
-pub trait Columns {}
+pub trait Columns {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn columns(value: impl Columns) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Columns, value: value.value()})
 }
 
-pub trait ColumnSpan {}
+pub trait ColumnSpan {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_span(value: impl ColumnSpan) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnSpan, value: value.value()})
 }
 
-pub trait ColumnWidth {}
+pub trait ColumnWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn column_width(value: impl ColumnWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ColumnWidth, value: value.value()})
 }
 
-pub trait Contain {}
+pub trait Contain {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn contain(value: impl Contain) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Contain, value: value.value()})
 }
 
-pub trait Content {}
+pub trait Content {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn content(value: impl Content) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Content, value: value.value()})
 }
 
-pub trait CounterIncrement {}
+pub trait CounterIncrement {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn counter_increment(value: impl CounterIncrement) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::CounterIncrement, value: value.value()})
 }
 
-pub trait CounterReset {}
+pub trait CounterReset {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn counter_reset(value: impl CounterReset) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::CounterReset, value: value.value()})
 }
 
-pub trait Cue {}
+pub trait Cue {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn cue(value: impl Cue) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Cue, value: value.value()})
 }
 
-pub trait CueAfter {}
+pub trait CueAfter {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn cue_after(value: impl CueAfter) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::CueAfter, value: value.value()})
 }
 
-pub trait CueBefore {}
+pub trait CueBefore {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn cue_before(value: impl CueBefore) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::CueBefore, value: value.value()})
 }
 
-pub trait Cursor {}
+pub trait Cursor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn cursor(value: impl Cursor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Cursor, value: value.value()})
 }
 
-pub trait Direction {}
+pub trait Direction {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn direction(value: impl Direction) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Direction, value: value.value()})
 }
 
-pub trait Display {}
+pub trait Display
+{
+	fn value(&self) -> crate::rules::Value;
+}
+impl Display for Block {fn value(&self) -> Value {Value::Block}}
+impl Display for Inline {fn value(&self) -> Value {Value::Inline}}
+impl Display for RunIn {fn value(&self) -> Value {Value::RunIn}}
+impl Display for Flow {fn value(&self) -> Value {Value::Flow}}
+impl Display for FlowRoot {fn value(&self) -> Value {Value::FlowRoot}}
+impl Display for Table {fn value(&self) -> Value {Value::Table}}
+impl Display for Flex {fn value(&self) -> Value {Value::Flex}}
+impl Display for Grid {fn value(&self) -> Value {Value::Grid}}
+impl Display for Contents {fn value(&self) -> Value {Value::Contents}}
+impl Display for None {fn value(&self) -> Value {Value::None}}
 pub fn display(value: impl Display) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Display, value: value.value()})
 }
 
-pub trait Elevation {}
+pub trait Elevation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn elevation(value: impl Elevation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Elevation, value: value.value()})
 }
 
-pub trait EmptyCells {}
+pub trait EmptyCells {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn empty_cells(value: impl EmptyCells) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::EmptyCells, value: value.value()})
 }
 
-pub trait Filter {}
+pub trait Filter {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn filter(value: impl Filter) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Filter, value: value.value()})
 }
 
-pub trait Flex {}
-pub fn flex(value: impl Flex) -> Style {
-	unimplemented!()
-}
+// pub trait Flex {
+// 	fn value(&self) -> crate::rules::Value;
+// }
+// pub fn flex(value: impl Flex) -> Style {
+// 	unimplemented!()
+// }
 
-pub trait FlexBasis {}
+pub trait FlexBasis {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flex_basis(value: impl FlexBasis) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FlexBasis, value: value.value()})
 }
 
-pub trait FlexDirection {}
+pub trait FlexDirection {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flex_direction(value: impl FlexDirection) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FlexDirection, value: value.value()})
 }
 
-pub trait FlexFlow {}
+pub trait FlexFlow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flex_flow(value: impl FlexFlow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FlexFlow, value: value.value()})
 }
 
-pub trait FlexGrow {}
+pub trait FlexGrow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flex_grow(value: impl FlexGrow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FlexGrow, value: value.value()})
 }
 
-pub trait FlexShrink {}
+pub trait FlexShrink {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flex_shrink(value: impl FlexShrink) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FlexShrink, value: value.value()})
 }
 
-pub trait FlexWrap {}
+pub trait FlexWrap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flex_wrap(value: impl FlexWrap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FlexWrap, value: value.value()})
 }
 
-pub trait Float {}
+pub trait Float {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn float(value: impl Float) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Float, value: value.value()})
 }
 
-pub trait FloodColor {}
+pub trait FloodColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flood_color(value: impl FloodColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FloodColor, value: value.value()})
 }
 
-pub trait FloodOpacity {}
+pub trait FloodOpacity {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn flood_opacity(value: impl FloodOpacity) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FloodOpacity, value: value.value()})
 }
 
-pub trait Font {}
+pub trait Font {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font(value: impl Font) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Font, value: value.value()})
 }
 
-pub trait FontFamily {}
+pub trait FontFamily {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_family(value: impl FontFamily) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontFamily, value: value.value()})
 }
 
-pub trait FontFeatureSettings {}
+pub trait FontFeatureSettings {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_feature_settings(value: impl FontFeatureSettings) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontFeatureSettings, value: value.value()})
 }
 
-pub trait FontKerning {}
+pub trait FontKerning {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_kerning(value: impl FontKerning) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontKerning, value: value.value()})
 }
 
-pub trait FontSize {}
+pub trait FontSize {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_size(value: impl FontSize) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontSize, value: value.value()})
 }
 
-pub trait FontSizeAdjust {}
+pub trait FontSizeAdjust {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_size_adjust(value: impl FontSizeAdjust) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontSizeAdjust, value: value.value()})
 }
 
-pub trait FontStretch {}
+pub trait FontStretch {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_stretch(value: impl FontStretch) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontStretch, value: value.value()})
 }
 
-pub trait FontStyle {}
+pub trait FontStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_style(value: impl FontStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontStyle, value: value.value()})
 }
 
-pub trait FontSynthesis {}
+pub trait FontSynthesis {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_synthesis(value: impl FontSynthesis) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontSynthesis, value: value.value()})
 }
 
-pub trait FontVariant {}
+pub trait FontVariant {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_variant(value: impl FontVariant) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontVariant, value: value.value()})
 }
 
-pub trait FontVariantCaps {}
+pub trait FontVariantCaps {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_variant_caps(value: impl FontVariantCaps) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontVariantCaps, value: value.value()})
 }
 
-pub trait FontVariantEastAsian {}
+pub trait FontVariantEastAsian {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_variant_east_asian(value: impl FontVariantEastAsian) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontVariantEastAsian, value: value.value()})
 }
 
-pub trait FontVariantLigatures {}
+pub trait FontVariantLigatures {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_variant_ligatures(value: impl FontVariantLigatures) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontVariantLigatures, value: value.value()})
 }
 
-pub trait FontVariantNumeric {}
+pub trait FontVariantNumeric {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_variant_numeric(value: impl FontVariantNumeric) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontVariantNumeric, value: value.value()})
 }
 
-pub trait FontVariantPosition {}
+pub trait FontVariantPosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_variant_position(value: impl FontVariantPosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontVariantPosition, value: value.value()})
 }
 
-pub trait FontWeight {}
+pub trait FontWeight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn font_weight(value: impl FontWeight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::FontWeight, value: value.value()})
 }
 
-pub trait Gap {}
+pub trait Gap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn gap(value: impl Gap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Gap, value: value.value()})
 }
 
-pub trait Globalcompositeoperation {}
+pub trait Globalcompositeoperation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn globalcompositeoperation(value: impl Globalcompositeoperation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Globalcompositeoperation, value: value.value()})
 }
 
-pub trait GlyphOrientationVertical {}
+pub trait GlyphOrientationVertical {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn glyph_orientation_vertical(value: impl GlyphOrientationVertical) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GlyphOrientationVertical, value: value.value()})
 }
 
-pub trait Grid {}
+pub trait Grid {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid(value: impl Grid) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Grid, value: value.value()})
 }
 
-pub trait GridArea {}
+pub trait GridArea {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_area(value: impl GridArea) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridArea, value: value.value()})
 }
 
-pub trait GridAutoColumns {}
+pub trait GridAutoColumns {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_auto_columns(value: impl GridAutoColumns) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridAutoColumns, value: value.value()})
 }
 
-pub trait GridAutoFlow {}
+pub trait GridAutoFlow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_auto_flow(value: impl GridAutoFlow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridAutoFlow, value: value.value()})
 }
 
-pub trait GridAutoRows {}
+pub trait GridAutoRows {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_auto_rows(value: impl GridAutoRows) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridAutoRows, value: value.value()})
 }
 
-pub trait GridColumn {}
+pub trait GridColumn {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_column(value: impl GridColumn) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridColumn, value: value.value()})
 }
 
-pub trait GridColumnEnd {}
+pub trait GridColumnEnd {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_column_end(value: impl GridColumnEnd) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridColumnEnd, value: value.value()})
 }
 
-pub trait GridColumnGap {}
+pub trait GridColumnGap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_column_gap(value: impl GridColumnGap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridColumnGap, value: value.value()})
 }
 
-pub trait GridColumnStart {}
+pub trait GridColumnStart {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_column_start(value: impl GridColumnStart) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridColumnStart, value: value.value()})
 }
 
-pub trait GridGap {}
+pub trait GridGap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_gap(value: impl GridGap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridGap, value: value.value()})
 }
 
-pub trait GridRow {}
+pub trait GridRow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_row(value: impl GridRow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridRow, value: value.value()})
 }
 
-pub trait GridRowEnd {}
+pub trait GridRowEnd {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_row_end(value: impl GridRowEnd) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridRowEnd, value: value.value()})
 }
 
-pub trait GridRowGap {}
+pub trait GridRowGap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_row_gap(value: impl GridRowGap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridRowGap, value: value.value()})
 }
 
-pub trait GridRowStart {}
+pub trait GridRowStart {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_row_start(value: impl GridRowStart) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridRowStart, value: value.value()})
 }
 
-pub trait GridTemplate {}
+pub trait GridTemplate {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_template(value: impl GridTemplate) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridTemplate, value: value.value()})
 }
 
-pub trait GridTemplateAreas {}
+pub trait GridTemplateAreas {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_template_areas(value: impl GridTemplateAreas) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridTemplateAreas, value: value.value()})
 }
 
-pub trait GridTemplateColumns {}
+pub trait GridTemplateColumns {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_template_columns(value: impl GridTemplateColumns) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridTemplateColumns, value: value.value()})
 }
 
-pub trait GridTemplateRows {}
+pub trait GridTemplateRows {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn grid_template_rows(value: impl GridTemplateRows) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::GridTemplateRows, value: value.value()})
 }
 
-pub trait HangingPunctuation {}
+pub trait HangingPunctuation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn hanging_punctuation(value: impl HangingPunctuation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::HangingPunctuation, value: value.value()})
 }
 
-pub trait Height {}
+pub trait Height {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn height(value: impl Height) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Height, value: value.value()})
 }
 
-pub trait Hyphens {}
+pub trait Hyphens {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn hyphens(value: impl Hyphens) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Hyphens, value: value.value()})
 }
 
-pub trait ImageOrientation {}
+pub trait ImageOrientation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn image_orientation(value: impl ImageOrientation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ImageOrientation, value: value.value()})
 }
 
-pub trait ImageRendering {}
+pub trait ImageRendering {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn image_rendering(value: impl ImageRendering) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ImageRendering, value: value.value()})
 }
 
-pub trait ImageResolution {}
+pub trait ImageResolution {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn image_resolution(value: impl ImageResolution) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ImageResolution, value: value.value()})
 }
 
-pub trait Isolation {}
+pub trait Isolation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn isolation(value: impl Isolation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Isolation, value: value.value()})
 }
 
-pub trait JustifyContent {}
+pub trait JustifyContent {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn justify_content(value: impl JustifyContent) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::JustifyContent, value: value.value()})
 }
 
-pub trait JustifyItems {}
+pub trait JustifyItems {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn justify_items(value: impl JustifyItems) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::JustifyItems, value: value.value()})
 }
 
-pub trait JustifySelf {}
+pub trait JustifySelf {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn justify_self(value: impl JustifySelf) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::JustifySelf, value: value.value()})
 }
 
-pub trait Left {}
+pub trait Left {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn left(value: impl Left) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Left, value: value.value()})
 }
 
-pub trait LetterSpacing {}
+pub trait LetterSpacing {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn letter_spacing(value: impl LetterSpacing) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::LetterSpacing, value: value.value()})
 }
 
-pub trait LightingColor {}
+pub trait LightingColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn lighting_color(value: impl LightingColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::LightingColor, value: value.value()})
 }
 
-pub trait LineBreak {}
+pub trait LineBreak {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn line_break(value: impl LineBreak) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::LineBreak, value: value.value()})
 }
 
-pub trait LineHeight {}
+pub trait LineHeight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn line_height(value: impl LineHeight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::LineHeight, value: value.value()})
 }
 
-pub trait ListStyle {}
+pub trait ListStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn list_style(value: impl ListStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ListStyle, value: value.value()})
 }
 
-pub trait ListStyleImage {}
+pub trait ListStyleImage {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn list_style_image(value: impl ListStyleImage) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ListStyleImage, value: value.value()})
 }
 
-pub trait ListStylePosition {}
+pub trait ListStylePosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn list_style_position(value: impl ListStylePosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ListStylePosition, value: value.value()})
 }
 
-pub trait ListStyleType {}
+pub trait ListStyleType {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn list_style_type(value: impl ListStyleType) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ListStyleType, value: value.value()})
 }
 
-pub trait Margin {}
+pub trait Margin {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn margin(value: impl Margin) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Margin, value: value.value()})
 }
 
-pub trait MarginBottom {}
+pub trait MarginBottom {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn margin_bottom(value: impl MarginBottom) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MarginBottom, value: value.value()})
 }
 
-pub trait MarginLeft {}
+pub trait MarginLeft {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn margin_left(value: impl MarginLeft) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MarginLeft, value: value.value()})
 }
 
-pub trait MarginRight {}
+pub trait MarginRight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn margin_right(value: impl MarginRight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MarginRight, value: value.value()})
 }
 
-pub trait MarginTop {}
+pub trait MarginTop {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn margin_top(value: impl MarginTop) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MarginTop, value: value.value()})
 }
 
-pub trait Mask {}
+pub trait Mask {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask(value: impl Mask) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Mask, value: value.value()})
 }
 
-pub trait MaskBorder {}
+pub trait MaskBorder {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border(value: impl MaskBorder) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorder, value: value.value()})
 }
 
-pub trait MaskBorderMode {}
+pub trait MaskBorderMode {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border_mode(value: impl MaskBorderMode) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorderMode, value: value.value()})
 }
 
-pub trait MaskBorderOutset {}
+pub trait MaskBorderOutset {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border_outset(value: impl MaskBorderOutset) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorderOutset, value: value.value()})
 }
 
-pub trait MaskBorderRepeat {}
+pub trait MaskBorderRepeat {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border_repeat(value: impl MaskBorderRepeat) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorderRepeat, value: value.value()})
 }
 
-pub trait MaskBorderSlice {}
+pub trait MaskBorderSlice {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border_slice(value: impl MaskBorderSlice) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorderSlice, value: value.value()})
 }
 
-pub trait MaskBorderSource {}
+pub trait MaskBorderSource {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border_source(value: impl MaskBorderSource) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorderSource, value: value.value()})
 }
 
-pub trait MaskBorderWidth {}
+pub trait MaskBorderWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_border_width(value: impl MaskBorderWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskBorderWidth, value: value.value()})
 }
 
-pub trait MaskClip {}
+pub trait MaskClip {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_clip(value: impl MaskClip) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskClip, value: value.value()})
 }
 
-pub trait MaskComposite {}
+pub trait MaskComposite {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_composite(value: impl MaskComposite) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskComposite, value: value.value()})
 }
 
-pub trait MaskImage {}
+pub trait MaskImage {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_image(value: impl MaskImage) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskImage, value: value.value()})
 }
 
-pub trait MaskMode {}
+pub trait MaskMode {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_mode(value: impl MaskMode) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskMode, value: value.value()})
 }
 
-pub trait MaskOrigin {}
+pub trait MaskOrigin {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_origin(value: impl MaskOrigin) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskOrigin, value: value.value()})
 }
 
-pub trait MaskPosition {}
+pub trait MaskPosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_position(value: impl MaskPosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskPosition, value: value.value()})
 }
 
-pub trait MaskRepeat {}
+pub trait MaskRepeat {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_repeat(value: impl MaskRepeat) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskRepeat, value: value.value()})
 }
 
-pub trait MaskSize {}
+pub trait MaskSize {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_size(value: impl MaskSize) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskSize, value: value.value()})
 }
 
-pub trait MaskType {}
+pub trait MaskType {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mask_type(value: impl MaskType) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaskType, value: value.value()})
 }
 
-pub trait MaxHeight {}
+pub trait MaxHeight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn max_height(value: impl MaxHeight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaxHeight, value: value.value()})
 }
 
-pub trait MaxWidth {}
+pub trait MaxWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn max_width(value: impl MaxWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MaxWidth, value: value.value()})
 }
 
-pub trait MinHeight {}
+pub trait MinHeight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn min_height(value: impl MinHeight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MinHeight, value: value.value()})
 }
 
-pub trait MinWidth {}
+pub trait MinWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn min_width(value: impl MinWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MinWidth, value: value.value()})
 }
 
-pub trait MixBlendMode {}
+pub trait MixBlendMode {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn mix_blend_mode(value: impl MixBlendMode) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::MixBlendMode, value: value.value()})
 }
 
-pub trait ObjectFit {}
+pub trait ObjectFit {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn object_fit(value: impl ObjectFit) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ObjectFit, value: value.value()})
 }
 
-pub trait ObjectPosition {}
+pub trait ObjectPosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn object_position(value: impl ObjectPosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ObjectPosition, value: value.value()})
 }
 
-pub trait Opacity {}
+pub trait Opacity {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn opacity(value: impl Opacity) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Opacity, value: value.value()})
 }
 
-pub trait Order {}
+pub trait Order {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn order(value: impl Order) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Order, value: value.value()})
 }
 
-pub trait Orphans {}
+pub trait Orphans {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn orphans(value: impl Orphans) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Orphans, value: value.value()})
 }
 
-pub trait Outline {}
+pub trait Outline {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn outline(value: impl Outline) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Outline, value: value.value()})
 }
 
-pub trait OutlineColor {}
+pub trait OutlineColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn outline_color(value: impl OutlineColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::OutlineColor, value: value.value()})
 }
 
-pub trait OutlineOffset {}
+pub trait OutlineOffset {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn outline_offset(value: impl OutlineOffset) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::OutlineOffset, value: value.value()})
 }
 
-pub trait OutlineStyle {}
+pub trait OutlineStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn outline_style(value: impl OutlineStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::OutlineStyle, value: value.value()})
 }
 
-pub trait OutlineWidth {}
+pub trait OutlineWidth {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn outline_width(value: impl OutlineWidth) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::OutlineWidth, value: value.value()})
 }
 
-pub trait Overflow {}
+pub trait Overflow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn overflow(value: impl Overflow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Overflow, value: value.value()})
 }
 
-pub trait OverflowWrap {}
+pub trait OverflowWrap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn overflow_wrap(value: impl OverflowWrap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::OverflowWrap, value: value.value()})
 }
 
-pub trait Padding {}
+pub trait Padding {
+	fn value(&self) -> crate::rules::Value;
+}
+impl Padding for f64 {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length(Length::px(self.clone()))
+	}
+}
+impl Padding for (f64, f64) {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length2(
+			Length::px(self.0.clone()),
+			Length::px(self.1.clone())
+		)
+	}
+}
+impl Padding for (f64, f64, f64) {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length3(
+			Length::px(self.0.clone()),
+			Length::px(self.1.clone()),
+			Length::px(self.2.clone()),
+		)
+	}
+}
+impl Padding for (f64, f64, f64, f64) {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length4(
+			Length::px(self.0.clone()),
+			Length::px(self.1.clone()),
+			Length::px(self.2.clone()),
+			Length::px(self.3.clone()),
+		)
+	}
+}
+impl Padding for Length {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length(self.clone())
+	}
+}
+impl Padding for (Length, Length) {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length2(
+			self.0.clone(),
+			self.1.clone()
+		)
+	}
+}
+impl Padding for (Length, Length, Length) {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length3(
+			self.0.clone(),
+			self.1.clone(),
+			self.2.clone(),
+		)
+	}
+}
+impl Padding for (Length, Length, Length, Length) {
+	fn value(&self) -> crate::rules::Value {
+		Value::Length4(
+			self.0.clone(),
+			self.1.clone(),
+			self.2.clone(),
+			self.3.clone(),
+		)
+	}
+}
 pub fn padding(value: impl Padding) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Padding, value: value.value()})
 }
 
-pub trait PaddingBottom {}
+pub trait PaddingBottom {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn padding_bottom(value: impl PaddingBottom) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PaddingBottom, value: value.value()})
 }
 
-pub trait PaddingLeft {}
+pub trait PaddingLeft {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn padding_left(value: impl PaddingLeft) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PaddingLeft, value: value.value()})
 }
 
-pub trait PaddingRight {}
+pub trait PaddingRight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn padding_right(value: impl PaddingRight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PaddingRight, value: value.value()})
 }
 
-pub trait PaddingTop {}
+pub trait PaddingTop {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn padding_top(value: impl PaddingTop) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PaddingTop, value: value.value()})
 }
 
-pub trait PageBreakAfter {}
+pub trait PageBreakAfter {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn page_break_after(value: impl PageBreakAfter) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PageBreakAfter, value: value.value()})
 }
 
-pub trait PageBreakBefore {}
+pub trait PageBreakBefore {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn page_break_before(value: impl PageBreakBefore) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PageBreakBefore, value: value.value()})
 }
 
-pub trait PageBreakInside {}
+pub trait PageBreakInside {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn page_break_inside(value: impl PageBreakInside) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PageBreakInside, value: value.value()})
 }
 
-pub trait Pause {}
+pub trait Pause {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn pause(value: impl Pause) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Pause, value: value.value()})
 }
 
-pub trait PauseAfter {}
+pub trait PauseAfter {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn pause_after(value: impl PauseAfter) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PauseAfter, value: value.value()})
 }
 
-pub trait PauseBefore {}
+pub trait PauseBefore {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn pause_before(value: impl PauseBefore) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PauseBefore, value: value.value()})
 }
 
-pub trait Pitch {}
+pub trait Pitch {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn pitch(value: impl Pitch) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Pitch, value: value.value()})
 }
 
-pub trait PitchRange {}
+pub trait PitchRange {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn pitch_range(value: impl PitchRange) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PitchRange, value: value.value()})
 }
 
-pub trait PlaceContent {}
+pub trait PlaceContent {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn place_content(value: impl PlaceContent) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PlaceContent, value: value.value()})
 }
 
-pub trait PlaceItems {}
+pub trait PlaceItems {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn place_items(value: impl PlaceItems) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PlaceItems, value: value.value()})
 }
 
-pub trait PlaceSelf {}
+pub trait PlaceSelf {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn place_self(value: impl PlaceSelf) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PlaceSelf, value: value.value()})
 }
 
-pub trait PlayDuring {}
+pub trait PlayDuring {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn play_during(value: impl PlayDuring) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::PlayDuring, value: value.value()})
 }
 
-pub trait Position {}
+pub trait Position {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn position(value: impl Position) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Position, value: value.value()})
 }
 
-pub trait Quotes {}
+pub trait Quotes {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn quotes(value: impl Quotes) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Quotes, value: value.value()})
 }
 
-pub trait Resize {}
+pub trait Resize {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn resize(value: impl Resize) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Resize, value: value.value()})
 }
 
-pub trait Rest {}
+pub trait Rest {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn rest(value: impl Rest) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Rest, value: value.value()})
 }
 
-pub trait RestAfter {}
+pub trait RestAfter {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn rest_after(value: impl RestAfter) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::RestAfter, value: value.value()})
 }
 
-pub trait RestBefore {}
+pub trait RestBefore {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn rest_before(value: impl RestBefore) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::RestBefore, value: value.value()})
 }
 
-pub trait Richness {}
+pub trait Richness {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn richness(value: impl Richness) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Richness, value: value.value()})
 }
 
-pub trait Right {}
+pub trait Right {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn right(value: impl Right) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Right, value: value.value()})
 }
 
-pub trait RowGap {}
+pub trait RowGap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn row_gap(value: impl RowGap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::RowGap, value: value.value()})
 }
 
-pub trait ScrollMargin {}
+pub trait ScrollMargin {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin(value: impl ScrollMargin) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMargin, value: value.value()})
 }
 
-pub trait ScrollMarginBlock {}
+pub trait ScrollMarginBlock {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_block(value: impl ScrollMarginBlock) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginBlock, value: value.value()})
 }
 
-pub trait ScrollMarginBlockEnd {}
+pub trait ScrollMarginBlockEnd {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_block_end(value: impl ScrollMarginBlockEnd) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginBlockEnd, value: value.value()})
 }
 
-pub trait ScrollMarginBlockStart {}
+pub trait ScrollMarginBlockStart {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_block_start(value: impl ScrollMarginBlockStart) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginBlockStart, value: value.value()})
 }
 
-pub trait ScrollMarginBottom {}
+pub trait ScrollMarginBottom {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_bottom(value: impl ScrollMarginBottom) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginBottom, value: value.value()})
 }
 
-pub trait ScrollMarginInline {}
+pub trait ScrollMarginInline {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_inline(value: impl ScrollMarginInline) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginInline, value: value.value()})
 }
 
-pub trait ScrollMarginInlineEnd {}
+pub trait ScrollMarginInlineEnd {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_inline_end(value: impl ScrollMarginInlineEnd) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginInlineEnd, value: value.value()})
 }
 
-pub trait ScrollMarginInlineStart {}
+pub trait ScrollMarginInlineStart {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_inline_start(value: impl ScrollMarginInlineStart) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginInlineStart, value: value.value()})
 }
 
-pub trait ScrollMarginLeft {}
+pub trait ScrollMarginLeft {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_left(value: impl ScrollMarginLeft) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginLeft, value: value.value()})
 }
 
-pub trait ScrollMarginRight {}
+pub trait ScrollMarginRight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_right(value: impl ScrollMarginRight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginRight, value: value.value()})
 }
 
-pub trait ScrollMarginTop {}
+pub trait ScrollMarginTop {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_margin_top(value: impl ScrollMarginTop) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollMarginTop, value: value.value()})
 }
 
-pub trait ScrollPadding {}
+pub trait ScrollPadding {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding(value: impl ScrollPadding) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPadding, value: value.value()})
 }
 
-pub trait ScrollPaddingBlock {}
+pub trait ScrollPaddingBlock {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_block(value: impl ScrollPaddingBlock) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingBlock, value: value.value()})
 }
 
-pub trait ScrollPaddingBlockEnd {}
+pub trait ScrollPaddingBlockEnd {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_block_end(value: impl ScrollPaddingBlockEnd) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingBlockEnd, value: value.value()})
 }
 
-pub trait ScrollPaddingBlockStart {}
+pub trait ScrollPaddingBlockStart {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_block_start(value: impl ScrollPaddingBlockStart) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingBlockStart, value: value.value()})
 }
 
-pub trait ScrollPaddingBottom {}
+pub trait ScrollPaddingBottom {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_bottom(value: impl ScrollPaddingBottom) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingBottom, value: value.value()})
 }
 
-pub trait ScrollPaddingInline {}
+pub trait ScrollPaddingInline {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_inline(value: impl ScrollPaddingInline) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingInline, value: value.value()})
 }
 
-pub trait ScrollPaddingInlineEnd {}
+pub trait ScrollPaddingInlineEnd {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_inline_end(value: impl ScrollPaddingInlineEnd) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingInlineEnd, value: value.value()})
 }
 
-pub trait ScrollPaddingInlineStart {}
+pub trait ScrollPaddingInlineStart {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_inline_start(value: impl ScrollPaddingInlineStart) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingInlineStart, value: value.value()})
 }
 
-pub trait ScrollPaddingLeft {}
+pub trait ScrollPaddingLeft {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_left(value: impl ScrollPaddingLeft) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingLeft, value: value.value()})
 }
 
-pub trait ScrollPaddingRight {}
+pub trait ScrollPaddingRight {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_right(value: impl ScrollPaddingRight) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingRight, value: value.value()})
 }
 
-pub trait ScrollPaddingTop {}
+pub trait ScrollPaddingTop {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_padding_top(value: impl ScrollPaddingTop) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollPaddingTop, value: value.value()})
 }
 
-pub trait ScrollSnapAlign {}
+pub trait ScrollSnapAlign {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_snap_align(value: impl ScrollSnapAlign) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollSnapAlign, value: value.value()})
 }
 
-pub trait ScrollSnapStop {}
+pub trait ScrollSnapStop {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_snap_stop(value: impl ScrollSnapStop) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollSnapStop, value: value.value()})
 }
 
-pub trait ScrollSnapType {}
+pub trait ScrollSnapType {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn scroll_snap_type(value: impl ScrollSnapType) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ScrollSnapType, value: value.value()})
 }
 
-pub trait ShapeImageThreshold {}
+pub trait ShapeImageThreshold {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn shape_image_threshold(value: impl ShapeImageThreshold) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ShapeImageThreshold, value: value.value()})
 }
 
-pub trait ShapeMargin {}
+pub trait ShapeMargin {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn shape_margin(value: impl ShapeMargin) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ShapeMargin, value: value.value()})
 }
 
-pub trait ShapeOutside {}
+pub trait ShapeOutside {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn shape_outside(value: impl ShapeOutside) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ShapeOutside, value: value.value()})
 }
 
-pub trait Speak {}
+pub trait Speak {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn speak(value: impl Speak) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Speak, value: value.value()})
 }
 
-pub trait SpeakAs {}
+pub trait SpeakAs {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn speak_as(value: impl SpeakAs) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::SpeakAs, value: value.value()})
 }
 
-pub trait SpeakHeader {}
+pub trait SpeakHeader {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn speak_header(value: impl SpeakHeader) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::SpeakHeader, value: value.value()})
 }
 
-pub trait SpeakNumeral {}
+pub trait SpeakNumeral {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn speak_numeral(value: impl SpeakNumeral) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::SpeakNumeral, value: value.value()})
 }
 
-pub trait SpeakPunctuation {}
+pub trait SpeakPunctuation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn speak_punctuation(value: impl SpeakPunctuation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::SpeakPunctuation, value: value.value()})
 }
 
-pub trait SpeechRate {}
+pub trait SpeechRate {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn speech_rate(value: impl SpeechRate) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::SpeechRate, value: value.value()})
 }
 
-pub trait Stress {}
+pub trait Stress {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn stress(value: impl Stress) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Stress, value: value.value()})
 }
 
-pub trait TableLayout {}
+pub trait TableLayout {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn table_layout(value: impl TableLayout) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TableLayout, value: value.value()})
 }
 
-pub trait TabSize {}
+pub trait TabSize {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn tab_size(value: impl TabSize) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TabSize, value: value.value()})
 }
 
-pub trait TextAlign {}
+pub trait TextAlign {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_align(value: impl TextAlign) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextAlign, value: value.value()})
 }
 
-pub trait TextAlignAll {}
+pub trait TextAlignAll {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_align_all(value: impl TextAlignAll) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextAlignAll, value: value.value()})
 }
 
-pub trait TextAlignLast {}
+pub trait TextAlignLast {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_align_last(value: impl TextAlignLast) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextAlignLast, value: value.value()})
 }
 
-pub trait TextCombineUpright {}
+pub trait TextCombineUpright {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_combine_upright(value: impl TextCombineUpright) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextCombineUpright, value: value.value()})
 }
 
-pub trait TextDecoration {}
+pub trait TextDecoration {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_decoration(value: impl TextDecoration) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextDecoration, value: value.value()})
 }
 
-pub trait TextDecorationColor {}
+pub trait TextDecorationColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_decoration_color(value: impl TextDecorationColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextDecorationColor, value: value.value()})
 }
 
-pub trait TextDecorationLine {}
+pub trait TextDecorationLine {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_decoration_line(value: impl TextDecorationLine) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextDecorationLine, value: value.value()})
 }
 
-pub trait TextDecorationStyle {}
+pub trait TextDecorationStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_decoration_style(value: impl TextDecorationStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextDecorationStyle, value: value.value()})
 }
 
-pub trait TextEmphasis {}
+pub trait TextEmphasis {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_emphasis(value: impl TextEmphasis) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextEmphasis, value: value.value()})
 }
 
-pub trait TextEmphasisColor {}
+pub trait TextEmphasisColor {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_emphasis_color(value: impl TextEmphasisColor) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextEmphasisColor, value: value.value()})
 }
 
-pub trait TextEmphasisPosition {}
+pub trait TextEmphasisPosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_emphasis_position(value: impl TextEmphasisPosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextEmphasisPosition, value: value.value()})
 }
 
-pub trait TextEmphasisStyle {}
+pub trait TextEmphasisStyle {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_emphasis_style(value: impl TextEmphasisStyle) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextEmphasisStyle, value: value.value()})
 }
 
-pub trait TextIndent {}
+pub trait TextIndent {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_indent(value: impl TextIndent) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextIndent, value: value.value()})
 }
 
-pub trait TextJustify {}
+pub trait TextJustify {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_justify(value: impl TextJustify) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextJustify, value: value.value()})
 }
 
-pub trait TextOrientation {}
+pub trait TextOrientation {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_orientation(value: impl TextOrientation) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextOrientation, value: value.value()})
 }
 
-pub trait TextOverflow {}
+pub trait TextOverflow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_overflow(value: impl TextOverflow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextOverflow, value: value.value()})
 }
 
-pub trait TextShadow {}
+pub trait TextShadow {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_shadow(value: impl TextShadow) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextShadow, value: value.value()})
 }
 
-pub trait TextTransform {}
+pub trait TextTransform {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_transform(value: impl TextTransform) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextTransform, value: value.value()})
 }
 
-pub trait TextUnderlinePosition {}
+pub trait TextUnderlinePosition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn text_underline_position(value: impl TextUnderlinePosition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TextUnderlinePosition, value: value.value()})
 }
 
-pub trait Top {}
+pub trait Top {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn top(value: impl Top) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Top, value: value.value()})
 }
 
-pub trait Transform {}
+pub trait Transform {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transform(value: impl Transform) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Transform, value: value.value()})
 }
 
-pub trait TransformBox {}
+pub trait TransformBox {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transform_box(value: impl TransformBox) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TransformBox, value: value.value()})
 }
 
-pub trait TransformOrigin {}
+pub trait TransformOrigin {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transform_origin(value: impl TransformOrigin) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TransformOrigin, value: value.value()})
 }
 
-pub trait Transition {}
+pub trait Transition {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transition(value: impl Transition) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Transition, value: value.value()})
 }
 
-pub trait TransitionDelay {}
+pub trait TransitionDelay {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transition_delay(value: impl TransitionDelay) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TransitionDelay, value: value.value()})
 }
 
-pub trait TransitionDuration {}
+pub trait TransitionDuration {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transition_duration(value: impl TransitionDuration) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TransitionDuration, value: value.value()})
 }
 
-pub trait TransitionProperty {}
+pub trait TransitionProperty {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transition_property(value: impl TransitionProperty) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TransitionProperty, value: value.value()})
 }
 
-pub trait TransitionTimingFunction {}
+pub trait TransitionTimingFunction {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn transition_timing_function(value: impl TransitionTimingFunction) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::TransitionTimingFunction, value: value.value()})
 }
 
-pub trait UnicodeBidi {}
+pub trait UnicodeBidi {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn unicode_bidi(value: impl UnicodeBidi) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::UnicodeBidi, value: value.value()})
 }
 
-pub trait VerticalAlign {}
+pub trait VerticalAlign {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn vertical_align(value: impl VerticalAlign) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VerticalAlign, value: value.value()})
 }
 
-pub trait Visibility {}
+pub trait Visibility {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn visibility(value: impl Visibility) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Visibility, value: value.value()})
 }
 
-pub trait VoiceBalance {}
+pub trait VoiceBalance {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_balance(value: impl VoiceBalance) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceBalance, value: value.value()})
 }
 
-pub trait VoiceDuration {}
+pub trait VoiceDuration {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_duration(value: impl VoiceDuration) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceDuration, value: value.value()})
 }
 
-pub trait VoiceFamily {}
+pub trait VoiceFamily {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_family(value: impl VoiceFamily) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceFamily, value: value.value()})
 }
 
-pub trait VoicePitch {}
+pub trait VoicePitch {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_pitch(value: impl VoicePitch) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoicePitch, value: value.value()})
 }
 
-pub trait VoiceRange {}
+pub trait VoiceRange {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_range(value: impl VoiceRange) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceRange, value: value.value()})
 }
 
-pub trait VoiceRate {}
+pub trait VoiceRate {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_rate(value: impl VoiceRate) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceRate, value: value.value()})
 }
 
-pub trait VoiceStress {}
+pub trait VoiceStress {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_stress(value: impl VoiceStress) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceStress, value: value.value()})
 }
 
-pub trait VoiceVolume {}
+pub trait VoiceVolume {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn voice_volume(value: impl VoiceVolume) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::VoiceVolume, value: value.value()})
 }
 
-pub trait Volume {}
+pub trait Volume {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn volume(value: impl Volume) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Volume, value: value.value()})
 }
 
-pub trait WhiteSpace {}
+pub trait WhiteSpace {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn white_space(value: impl WhiteSpace) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::WhiteSpace, value: value.value()})
 }
 
-pub trait Widows {}
+pub trait Widows {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn widows(value: impl Widows) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Widows, value: value.value()})
 }
 
-pub trait Width {}
+pub trait Width {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn width(value: impl Width) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::Width, value: value.value()})
 }
 
-pub trait WillChange {}
+pub trait WillChange {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn will_change(value: impl WillChange) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::WillChange, value: value.value()})
 }
 
-pub trait WordBreak {}
+pub trait WordBreak {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn word_break(value: impl WordBreak) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::WordBreak, value: value.value()})
 }
 
-pub trait WordSpacing {}
+pub trait WordSpacing {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn word_spacing(value: impl WordSpacing) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::WordSpacing, value: value.value()})
 }
 
-pub trait WordWrap {}
+pub trait WordWrap {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn word_wrap(value: impl WordWrap) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::WordWrap, value: value.value()})
 }
 
-pub trait WritingMode {}
+pub trait WritingMode {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn writing_mode(value: impl WritingMode) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::WritingMode, value: value.value()})
 }
 
-pub trait ZIndex {}
+pub trait ZIndex {
+	fn value(&self) -> crate::rules::Value;
+}
 pub fn z_index(value: impl ZIndex) -> Style {
-	unimplemented!()
+	Style::Native(Rule{property: Property::ZIndex, value: value.value()})
 }

@@ -1,5 +1,6 @@
 #![allow(dead_code, unused, unused_variables)]
 
+use std::fmt::Debug;
 use std::cell::*;
 use std::convert::From;
 use std::hash::{Hash, Hasher};
@@ -13,10 +14,11 @@ use ss_web_utils::prelude::*;
 use ss_web_utils::dom;
 use ss_web_utils::js::{self, console, EventCallback};
 use ss_trees::tree::*;
-use ss_trees::map::*;
+use ss_trees::tree::map::{SMap, MapApi};
 use ss_view_tree::*;
 use ss_view_tree::events::*;
 use ss_view_tree::attributes::*;
+use ss_css_types::api::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -30,30 +32,35 @@ pub type LiveTree<Msg> = STree<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, Vie
 // ATTRIBUTES
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct AttributesLogic {}
 
-impl<Msg: PartialEq> IMapLogic<LiveNode<Msg>, String, Attribute, Attribute> for AttributesLogic {
-    fn for_added(&self, attached: &LiveNode<Msg>, key: &String, new: Attribute) -> Attribute {
+pub type AttributesMap<Msg> = SMap<LiveNode<Msg>, String, AttributeValue, AttributeValue>;
+pub struct AttributesApi {}
+
+impl<Msg> MapApi<LiveNode<Msg>, String, AttributeValue, AttributeValue> for AttributesApi
+where
+    Msg: PartialEq + 'static + Debug + Clone
+{
+    fn create(&self, attached: &LiveNode<Msg>, key: &String, new: AttributeValue) -> AttributeValue {
     	match &new {
-            Attribute::Value(str) => attached.dom_ref.set_attribute(key, str),
-            Attribute::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
-            Attribute::Toggle(false) => (),
+            AttributeValue::Value(str) => attached.dom_ref.set_attribute(key, str),
+            AttributeValue::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
+            AttributeValue::Toggle(false) => (),
         }
         new
     }
-    fn for_modified(&self, attached: &LiveNode<Msg>, key: &String, old: &mut Attribute, new: Attribute) {
+    fn modified(&self, attached: &LiveNode<Msg>, key: &String, old: &mut AttributeValue, new: AttributeValue) {
     	attached.dom_ref.remove_attribute(key);
         match &new {
-            Attribute::Value(str) => attached.dom_ref.set_attribute(key, str),
-            Attribute::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
-            Attribute::Toggle(false) => (),
+            AttributeValue::Value(str) => attached.dom_ref.set_attribute(key, str),
+            AttributeValue::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
+            AttributeValue::Toggle(false) => (),
         }
         *old = new;
     }
-    fn for_removed(&self, attached: &LiveNode<Msg>, key: String, old: Attribute) {
+    fn remove(&self, attached: &LiveNode<Msg>, key: String, old: AttributeValue) {
     	attached.dom_ref.remove_attribute(&key);
     }
-    fn is_unchanged(&self, old: &Attribute, new: &Attribute) -> bool {
+    fn unchanged(&self, old: &AttributeValue, new: &AttributeValue) -> bool {
     	old == new
     }
 }
@@ -88,11 +95,14 @@ impl<Msg> dom::Callback for LiveEventHandler<Msg> {
     }
 }
 
+pub type EventsMap<Msg> = SMap<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>>;
+pub struct EventsApi {}
 
-pub struct EventsLogic {}
-
-impl<Msg: PartialEq + 'static> IMapLogic<LiveNode<Msg>, EventType, EventHandler<Msg>, LiveEventHandler<Msg>> for EventsLogic {
-    fn for_added(&self, attached: &LiveNode<Msg>, key: &EventType, new: EventHandler<Msg>) -> LiveEventHandler<Msg> {
+impl<Msg> MapApi<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>> for EventsApi
+where
+    Msg: PartialEq + 'static + Debug + Clone
+{
+    fn create(&self, attached: &LiveNode<Msg>, key: &EventType, new: EventHandler<Msg>) -> LiveEventHandler<Msg> {
     	use ss_web_utils::js::Handler;
         use ss_web_utils::dom::DomRef;
 
@@ -106,7 +116,7 @@ impl<Msg: PartialEq + 'static> IMapLogic<LiveNode<Msg>, EventType, EventHandler<
             value,
         }
     }
-    fn for_modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
+    fn modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
     	use ss_web_utils::js::Handler;
         use ss_web_utils::dom::DomRef;
 
@@ -121,13 +131,13 @@ impl<Msg: PartialEq + 'static> IMapLogic<LiveNode<Msg>, EventType, EventHandler<
         };
         *old = result;
     }
-    fn for_removed(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {
+    fn remove(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {
         use ss_web_utils::dom::DomRef;
 
     	assert_eq!(key, old.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
     }
-    fn is_unchanged(&self, old: &LiveEventHandler<Msg>, new: &EventHandler<Msg>) -> bool {
+    fn unchanged(&self, old: &LiveEventHandler<Msg>, new: &EventHandler<Msg>) -> bool {
     	old.value.as_ref() == new
     }
 }
@@ -217,21 +227,31 @@ impl LiveLeaf {
 }
 
 #[derive(Debug)]
-pub struct LiveNode<Msg: PartialEq> {
+pub struct LiveNode<Msg>
+where
+    Msg: PartialEq + Clone + Debug
+{
     pub dom_ref: Rc<dom::Tag>,
     pub tag: String,
-    pub attributes: RefCell<IMap<String, attributes::Attribute>>,
-    pub events: RefCell<IMap<events::EventType, LiveEventHandler<Msg>>>,
+    pub attributes: RefCell<AttributesMap<Msg>>,
+    pub events: RefCell<EventsMap<Msg>>,
+    pub styling: RefCell<Stylesheet>,
 }
 
-impl<Msg: PartialEq> LiveNode<Msg> {
+impl<Msg> LiveNode<Msg>
+where
+    Msg: PartialEq + Clone + Debug
+{
     pub fn get_meta(&self) -> Meta {
         let dom_ref = self.dom_ref.clone();
         Meta::Tag{dom_ref}
     }
 }
 
-impl<Msg: PartialEq> PartialEq for LiveNode<Msg> {
+impl<Msg> PartialEq for LiveNode<Msg>
+where
+    Msg: PartialEq + Clone + Debug
+{
     fn eq(&self, other: &LiveNode<Msg>) -> bool {
         self.tag == other.tag &&
         self.attributes == other.attributes &&
@@ -282,25 +302,38 @@ impl Meta {
 
 pub struct DomTreeLogic {
     pub window: dom::Window,
-    pub attributes_api: AttributesLogic,
-    pub events_api: EventsLogic,
+    pub attributes_api: AttributesApi,
+    pub events_api: EventsApi,
 }
 
 impl Default for DomTreeLogic {
     fn default() -> Self {
         DomTreeLogic {
             window: dom::window(),
-            attributes_api: AttributesLogic {},
-            events_api: EventsLogic {},
+            attributes_api: AttributesApi {},
+            events_api: EventsApi {},
         }
     }
 }
 
-impl<Msg: 'static +  Clone + PartialEq> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf> for DomTreeLogic {
+impl<Msg> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf> for DomTreeLogic
+where
+    Msg: PartialEq + 'static + Debug + Clone
+{
     fn node_unchanged(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
-        let attributes_unchanged = old.attributes.borrow().unchanged::<LiveNode<Msg>, Attribute>(&new.attributes, &self.attributes_api);
-        let events_unchanged = old.events.borrow().unchanged(&new.events, &self.events_api);
-        attributes_unchanged && events_unchanged && new.tag == old.tag
+        let attributes_unchanged = old.attributes.borrow().unchanged(
+            &self.attributes_api,
+            &new.attributes,
+        );
+        let events_unchanged = old.events.borrow().unchanged(
+            &self.events_api,
+            &new.events,
+        );
+        let styling_unchanged = {
+            let old: &Stylesheet = &old.styling.borrow();
+            old == &new.styling
+        };
+        styling_unchanged && attributes_unchanged && events_unchanged && new.tag == old.tag
     }
     fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
         new.tag == old.tag
@@ -309,20 +342,46 @@ impl<Msg: 'static +  Clone + PartialEq> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, V
         use ss_web_utils::dom::DomRef;
         let Update{new, old} = update;
         assert!(new.tag == old.tag);
-        old.attributes.borrow_mut().sync::<LiveNode<Msg>, Attribute>(&old, new.attributes, &self.attributes_api);
-        old.events.borrow_mut().sync::<LiveNode<Msg>, EventHandler<Msg>>(&old, new.events, &self.events_api);
+        old.attributes.borrow_mut().sync(
+            &self.attributes_api,
+            &old,
+            new.attributes,
+        );
+        old.events.borrow_mut().sync(
+            &self.events_api,
+            &old,
+            new.events,
+        );
+        let styling_unchanged = {
+            let old: &Stylesheet = &old.styling.borrow();
+            old == &new.styling
+        };
+        if !styling_unchanged {
+            old.styling.replace(new.styling);
+        }
     }
     fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
         use ss_web_utils::dom::DomRef;
         let dom_ref = self.window.document.create_element(new.tag.as_str());
-        LiveNode {
+        let result = LiveNode {
+            styling: RefCell::new(new.styling),
             dom_ref: Rc::new(dom_ref),
             tag: new.tag,
-            attributes: RefCell::new(IMap::new()),
-            events: RefCell::new(IMap::new()),
-        }
+            attributes: RefCell::new(SMap::default()),
+            events: RefCell::new(SMap::default()),
+        };
+        result.attributes.borrow_mut().sync(
+            &self.attributes_api,
+            &result,
+            new.attributes,
+        );
+        result.events.borrow_mut().sync(
+            &self.events_api,
+            &result,
+            new.events,
+        );
+        result
     }
-
     fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
         match (new, old) {
             (ViewLeaf::Component(x), LiveLeaf::Component{value, ..}) => {
@@ -390,14 +449,10 @@ impl<Msg: 'static +  Clone + PartialEq> TreeApi<Meta, LiveNode<Msg>, LiveLeaf, V
             for x in new {
                 match x {
                     Meta::Text{dom_ref} => {
-                        // fragment.append_with_node_1(dom_ref.dom_ref_as_node())
-                        //     .expect("DocumentFragment.append failed");
                         fragment.append_child(dom_ref.dom_ref_as_node())
                             .expect("DocumentFragment.append failed");
                     }
                     Meta::Tag{dom_ref} => {
-                        // fragment.append_with_node_1(dom_ref.dom_ref_as_node())
-                        //     .expect("DocumentFragment.append failed");
                         fragment.append_child(dom_ref.dom_ref_as_node())
                             .expect("DocumentFragment.append failed");
                     }

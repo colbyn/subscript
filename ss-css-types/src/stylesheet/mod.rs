@@ -4,7 +4,14 @@ use crate::rules::*;
 use crate::selectors::*;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct Style(pub(crate) Rule);
+pub enum Style {
+	Native(Rule),
+	Raw {
+		property: String,
+		value: String,
+	}
+}
+
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Stylesheet {
@@ -25,7 +32,8 @@ impl Stylesheet {
 		unimplemented!()
 	}
 	pub fn union(&mut self, other: Stylesheet) {
-		unimplemented!()
+		let mut other = other;
+		self.local.append(&mut other.local);
 	}
 }
 

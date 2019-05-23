@@ -5,6 +5,6 @@ use crate::selectors::*;
 
 impl Stylesheet {
 	pub fn render_css_syntax(&self) -> String {
-		unimplemented!()
+		String::new()
 	}
 }

@@ -3,8 +3,9 @@
 
 pub mod attributes;
 pub mod events;
+
+#[macro_use]
 pub mod macros;
-pub mod css;
 
 use std::fmt::{self, Debug};
 use std::convert::From;
@@ -18,22 +19,24 @@ use std::marker::Sized;
 use either::Either::{self, Left, Right};
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
+use crate::attributes::*;
+use crate::events::*;
 use ss_trees::tree::*;
-use ss_trees::map::*;
+use ss_trees::tree::map::*;
 use ss_css_types::api::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW TREE WRAPPER
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct View<Msg: PartialEq>(pub(crate) ITree<ViewNode<Msg>, ViewLeaf>);
+pub struct View<Msg: PartialEq>(pub ITree<ViewNode<Msg>, ViewLeaf>);
 
 impl<Msg: PartialEq> View<Msg> {
     pub fn new_tag(tag: &str) -> Self {
         let view_node = ViewNode {
             tag: String::from(tag),
-            attributes: IMap::new(),
-            events: IMap::new(),
+            attributes: HashMap::new(),
+            events: HashMap::new(),
             styling: Stylesheet::default(),
         };
         View(ITree::new(Left(view_node)))
@@ -48,14 +51,9 @@ impl<Msg: PartialEq> View<Msg> {
             self.0.add_child(child.0);
         }
         if let Some(node) = self.0.get_node_mut() {
-            node.attributes.union(attributes);
-            node.events.union(events);
+            node.attributes.extend(attributes);
+            node.events.extend(events);
             node.styling.union(styling);
-        }
-    }
-    pub fn add_style(&mut self, x: Style) {
-        if let Some(node) = self.0.get_node_mut() {
-            node.styling.add_style(x);
         }
     }
 }
@@ -103,8 +101,8 @@ impl Debug for Component {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct Mixin<Msg: PartialEq> {
-    attributes: IMap<String, attributes::Attribute>,
-    events: IMap<events::EventType, events::EventHandler<Msg>>,
+    attributes: HashMap<String, AttributeValue>,
+    events: HashMap<events::EventType, events::EventHandler<Msg>>,
     children: Vec<View<Msg>>,
     styling: Stylesheet,
 }
@@ -112,8 +110,8 @@ pub struct Mixin<Msg: PartialEq> {
 impl<Msg: PartialEq> Default for Mixin<Msg> {
     fn default() -> Self {
         Mixin {
-            attributes: IMap::new(),
-            events: IMap::new(),
+            attributes: HashMap::new(),
+            events: HashMap::new(),
             children: Vec::new(),
             styling: Stylesheet::default(),
         }
@@ -121,7 +119,7 @@ impl<Msg: PartialEq> Default for Mixin<Msg> {
 }
 
 impl<Msg: PartialEq> Mixin<Msg> {
-    pub fn add_attribute(&mut self, key: &str, value: attributes::Attribute) {
+    pub fn add_attribute(&mut self, key: &str, value: AttributeValue) {
         self.attributes.insert(key.to_string(), value);
     }
     pub fn add_event_handler(&mut self, handler: events::EventHandler<Msg>) {
@@ -142,7 +140,7 @@ impl<Msg: PartialEq> Mixin<Msg> {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// VIEW TREE EXTENSIONS
+// VIEW TREE PRIMITIVES & EXTENSION INTERFACE
 ///////////////////////////////////////////////////////////////////////////////
 
 pub trait Viewable<Msg: PartialEq> {
@@ -150,6 +148,21 @@ pub trait Viewable<Msg: PartialEq> {
 }
 
 
+
+impl<Msg: PartialEq> Viewable<Msg> for &str {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_child(View::new_text(self));
+        mixin
+    }
+}
+impl<Msg: PartialEq> Viewable<Msg> for String {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_child(View::new_text(self.as_str()));
+        mixin
+    }
+}
 impl<Msg: PartialEq> Viewable<Msg> for View<Msg> {
     fn normalize(self) -> Mixin<Msg> {
         let mut mixin = Mixin::default();
@@ -164,7 +177,14 @@ impl<Msg: PartialEq> Viewable<Msg> for Vec<View<Msg>> {
         mixin
     }   
 }
-impl<Msg: PartialEq> Viewable<Msg> for (&str, attributes::Attribute) {
+impl<Msg: PartialEq> Viewable<Msg> for (String, AttributeValue) {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.add_attribute(self.0.as_str(), self.1);
+        mixin
+    }
+}
+impl<Msg: PartialEq> Viewable<Msg> for (&str, AttributeValue) {
     fn normalize(self) -> Mixin<Msg> {
         let mut mixin = Mixin::default();
         mixin.add_attribute(self.0, self.1);
@@ -175,6 +195,13 @@ impl<Msg: PartialEq> Viewable<Msg> for events::EventHandler<Msg> {
     fn normalize(self) -> Mixin<Msg> {
         let mut mixin = Mixin::default();
         mixin.add_event_handler(self);
+        mixin
+    }
+}
+impl<Msg: PartialEq> Viewable<Msg> for Style {
+    fn normalize(self) -> Mixin<Msg> {
+        let mut mixin = Mixin::default();
+        mixin.styling.add_style(self);
         mixin
     }
 }
@@ -216,24 +243,13 @@ impl ViewLeaf {
 }
 
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ViewNode<Msg: PartialEq> {
     pub tag: String,
-    pub attributes: IMap<String, attributes::Attribute>,
-    pub events: IMap<events::EventType, events::EventHandler<Msg>>,
+    pub attributes: HashMap<String, AttributeValue>,
+    pub events: HashMap<events::EventType, events::EventHandler<Msg>>,
     pub styling: Stylesheet,
 }
 
-impl<Msg: PartialEq> ViewNode<Msg> {
-    pub fn new(tag: &str) -> Self {
-        ViewNode {
-            tag: String::from(tag),
-            attributes: IMap::new(),
-            events: IMap::new(),
-            styling: Stylesheet::default(),
-        }
-    }
-}
 
 

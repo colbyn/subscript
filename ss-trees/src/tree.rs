@@ -1,3 +1,5 @@
+pub mod map;
+
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::*;

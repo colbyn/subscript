@@ -3,7 +3,7 @@
 
 use std::hash::{Hash, Hasher};
 use ss_css_types::internal::*;
-use ss_trees::map::{IMap, IMapLogic};
+use ss_trees::tree::map::{SMap, MapApi};
 use ss_web_utils::{dom, js, js::console, dom::DomRef};
 
 pub type HashKey = u64;
@@ -11,9 +11,15 @@ pub type HashKey = u64;
 #[derive(Debug)]
 pub struct GlobalCssMount {
 	dom_ref: dom::Tag,
-	nodes: IMap<HashKey, LiveStyling>,
+	nodes: SMap<GlobalCssMount, u64, LiveStyling, Stylesheet>,
 }
 
+
+impl PartialEq for GlobalCssMount {
+    fn eq(&self, other: &GlobalCssMount) -> bool {
+    	self.nodes == other.nodes
+    }
+}
 impl Default for GlobalCssMount {
 	fn default() -> Self {
 		let window = dom::window();
@@ -21,7 +27,7 @@ impl Default for GlobalCssMount {
 		window.document.body.append_child(&dom_ref);
 		GlobalCssMount {
 			dom_ref,
-			nodes: IMap::new(),
+			nodes: SMap::default(),
 		}
 	}
 }
@@ -41,20 +47,20 @@ impl PartialEq for LiveStyling {
 }
 
 
-pub struct CssMapLogic {
+pub struct CssMapApi {
 	window: dom::Window,
 }
 
-impl Default for CssMapLogic {
+impl Default for CssMapApi {
 	fn default() -> Self {
-		CssMapLogic {
+		CssMapApi {
 			window: dom::window(),
 		}
 	}
 }
 
-impl IMapLogic<GlobalCssMount, u64, Stylesheet, LiveStyling> for CssMapLogic {
-	fn for_added(&self, attached: &GlobalCssMount, key: &u64, new: Stylesheet) -> LiveStyling {
+impl MapApi<GlobalCssMount, u64, LiveStyling, Stylesheet> for CssMapApi {
+	fn create(&self, attached: &GlobalCssMount, key: &u64, new: Stylesheet) -> LiveStyling {
 		let stringified = new.render_css_syntax();
 		let dom_ref = self.window.document.create_text_node(stringified.as_str());
 		attached.dom_ref.append_child(&dom_ref);
@@ -64,16 +70,16 @@ impl IMapLogic<GlobalCssMount, u64, Stylesheet, LiveStyling> for CssMapLogic {
 			stylesheet: new,
 		}
 	}
-	fn for_modified(&self, attached: &GlobalCssMount, key: &u64, old: &mut LiveStyling, new: Stylesheet) {
+	fn modified(&self, attached: &GlobalCssMount, key: &u64, old: &mut LiveStyling, new: Stylesheet) {
 		let new_stringified = new.render_css_syntax();
 		old.dom_ref.set_text_content(&new_stringified);
 		old.hash = calculate_hash(&new);
 		old.stylesheet = new;
 	}
-	fn for_removed(&self, attached: &GlobalCssMount, key: u64, old: LiveStyling) {
+	fn remove(&self, attached: &GlobalCssMount, key: u64, old: LiveStyling) {
 		attached.dom_ref.remove_child(&old.dom_ref);
 	}
-	fn is_unchanged(&self, old: &LiveStyling, new: &Stylesheet) -> bool {
+	fn unchanged(&self, old: &LiveStyling, new: &Stylesheet) -> bool {
 		&old.stylesheet == new
 	}
 }
