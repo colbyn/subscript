@@ -20,8 +20,7 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
 use ss_trees::tree::*;
 use ss_trees::map::*;
-// use ss_css_dsl::core::*;
-
+use ss_css_types::api::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW TREE WRAPPER
@@ -35,6 +34,7 @@ impl<Msg: PartialEq> View<Msg> {
             tag: String::from(tag),
             attributes: IMap::new(),
             events: IMap::new(),
+            styling: Stylesheet::default(),
         };
         View(ITree::new(Left(view_node)))
     }
@@ -43,13 +43,19 @@ impl<Msg: PartialEq> View<Msg> {
         View(ITree::new(Right(view_leaf)))
     }
     pub fn append(&mut self, entry: impl Viewable<Msg>) {
-        let Mixin{attributes, events, children} = entry.normalize();
+        let Mixin{attributes, events, children, styling} = entry.normalize();
         for child in children {
             self.0.add_child(child.0);
         }
         if let Some(node) = self.0.get_node_mut() {
             node.attributes.union(attributes);
             node.events.union(events);
+            node.styling.union(styling);
+        }
+    }
+    pub fn add_style(&mut self, x: Style) {
+        if let Some(node) = self.0.get_node_mut() {
+            node.styling.add_style(x);
         }
     }
 }
@@ -100,6 +106,7 @@ pub struct Mixin<Msg: PartialEq> {
     attributes: IMap<String, attributes::Attribute>,
     events: IMap<events::EventType, events::EventHandler<Msg>>,
     children: Vec<View<Msg>>,
+    styling: Stylesheet,
 }
 
 impl<Msg: PartialEq> Default for Mixin<Msg> {
@@ -108,6 +115,7 @@ impl<Msg: PartialEq> Default for Mixin<Msg> {
             attributes: IMap::new(),
             events: IMap::new(),
             children: Vec::new(),
+            styling: Stylesheet::default(),
         }
     }
 }
@@ -126,6 +134,9 @@ impl<Msg: PartialEq> Mixin<Msg> {
     pub fn add_children(&mut self, xs: Vec<View<Msg>>) {
         let mut xs = xs;
         self.children.append(&mut xs);
+    }
+    pub fn add_style(&mut self, x: Style) {
+        self.styling.add_style(x);
     }
 }
 
@@ -211,6 +222,7 @@ pub struct ViewNode<Msg: PartialEq> {
     pub tag: String,
     pub attributes: IMap<String, attributes::Attribute>,
     pub events: IMap<events::EventType, events::EventHandler<Msg>>,
+    pub styling: Stylesheet,
 }
 
 impl<Msg: PartialEq> ViewNode<Msg> {
@@ -219,6 +231,7 @@ impl<Msg: PartialEq> ViewNode<Msg> {
             tag: String::from(tag),
             attributes: IMap::new(),
             events: IMap::new(),
+            styling: Stylesheet::default(),
         }
     }
 }
