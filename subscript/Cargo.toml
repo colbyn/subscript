@@ -3,6 +3,8 @@ name = "subscript"
 version = "0.1.0"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
+description = "Work in progress..."
+license = "Copyright 2019 Colbyn Wadman"
 
 [lib]
 crate-type=["cdylib", "rlib"]
@@ -11,10 +13,10 @@ crate-type=["cdylib", "rlib"]
 serde = {version = "1.0.89", features = ["derive"]}
 either = "1.5.2"
 Inflector = "0.11.4"
-ss-web-utils = {path = "../ss-web-utils"}
-ss-trees = {path = "../ss-trees"}
-ss-view-tree = {path = "../ss-view-tree"}
-ss-dom-tree = {path = "../ss-dom-tree"}
+ss-web-utils = {path = "../ss-web-utils", version="0.1.0"}
+ss-trees = {path = "../ss-trees", version="0.1.0"}
+ss-view-tree = {path = "../ss-view-tree", version="0.1.0"}
+ss-dom-tree = {path = "../ss-dom-tree", version="0.1.0"}
 
 ###############################################################################
 # RUST-WASM
