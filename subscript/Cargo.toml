@@ -21,9 +21,9 @@ ss-dom-tree = {path = "../ss-dom-tree", version="0.1.0"}
 ###############################################################################
 # RUST-WASM
 ###############################################################################
-js-sys = "*"
+js-sys = "0.3.20"
 wasm-bindgen = "0.2.43"
-console_error_panic_hook = "*"
+console_error_panic_hook = "0.1.6"
 
 
 [dependencies.web-sys]
