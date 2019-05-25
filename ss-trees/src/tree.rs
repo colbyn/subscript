@@ -507,27 +507,11 @@ where
             .into_iter()
             // TODO: run unchanged on all nodes first, then check for recyclable nodes.
             .map(|new| -> Item<STree<M, SN, SL, IN, IL>> {
-                let mut unchanged = |olds| remove_item_by(olds, |old| {
-                    match (&new, &old) {
-                        (ITree::Leaf(x), STree::Leaf(y)) => {
-                            api.leaf_unchanged(&x.data, &y.data)
-                        }
-                        (ITree::Node(x), STree::Node(y)) => {
-                            api.node_unchanged(&x.data, &y.data)
-                        }
-                        _ => false
-                    }
+                let mut unchanged = |olds: &mut Vec<STree<M, SN, SL, IN, IL>>| remove_item_by(olds, |old| {
+                    old.unchanged(api, &new)
                 });
-                let mut changed = |olds| remove_item_by(olds, |old| {
-                    match (&new, &old) {
-                        (ITree::Leaf(x), STree::Leaf(y)) => {
-                            api.leaf_recyclable(&x.data, &y.data)
-                        }
-                        (ITree::Node(x), STree::Node(y)) => {
-                            api.node_recyclable(&x.data, &y.data)
-                        }
-                        _ => false
-                    }
+                let mut changed = |olds: &mut Vec<STree<M, SN, SL, IN, IL>>| remove_item_by(olds, |old| {
+                    old.recyclable(api, &new)
                 });
                 if let Some(unchanged) = unchanged(&mut self.data) {
                     Item::Unchanged(unchanged)

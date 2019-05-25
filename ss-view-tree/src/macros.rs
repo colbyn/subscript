@@ -39,7 +39,7 @@ macro_rules! arguments {
 }
 
 #[macro_export]
-macro_rules! view {
+macro_rules! v {
     ($($x:tt)*) => {{
         let mut node = View::new_tag("div");
         arguments!(node; $($x)*);
@@ -59,7 +59,7 @@ pub fn dev() {
     }
     pub struct Model {}
     fn view() -> View<Msg> {
-        view!{
+        v!{
             h1{
                 "hello world";
             }

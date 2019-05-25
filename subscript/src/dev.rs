@@ -1,5 +1,23 @@
 use serde::{Serialize, Deserialize};
+
+use ss_web_utils::js::console;
+
 use ss_view_tree::View;
+use ss_view_tree::events::EventHandler;
+use ss_view_tree::events::{
+    on_click,
+    on_mouse_down,
+    on_mouse_up,
+    on_mouse_enter,
+    on_mouse_leave,
+    on_mouse_over,
+    on_mouse_out,
+    on_input,
+    on_check,
+    on_submit,
+    on_blur,
+    on_focus,
+};
 use ss_program::Subscriptions;
 use ss_program::StartupInfo;
 use ss_program::Init;
@@ -9,14 +27,17 @@ use ss_program::Program;
 use ss_program::Spec;
 
 
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Msg {
     NoOp,
+    Increment,
+    Decrement,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
-pub struct Model {}
+pub struct Model {
+    counter: i32,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub struct AppSpec {
@@ -34,11 +55,33 @@ impl Spec for AppSpec {
     	}
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems) {
-
+        match msg {
+            Msg::NoOp => {}
+            Msg::Increment => {
+                model.counter = model.counter + 1;
+            }
+            Msg::Decrement => {
+                model.counter = model.counter - 1;
+            }
+        }
     }
     fn view(&self, model: &Self::Model) -> View<Self::Msg> {
-    	view!{
-    		h1{"Hello World!!!!";}
+    	v!{
+    		h1{
+                format!("{}", model.counter);
+            }
+            button {
+                on_click(|| {
+                    Msg::Increment
+                });
+                "Increment";
+            }
+            button {
+                on_click(|| {
+                    Msg::Decrement
+                });
+                "Decrement";
+            }
     	}
     }
 }

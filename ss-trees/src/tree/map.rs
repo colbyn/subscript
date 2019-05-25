@@ -87,7 +87,7 @@ where
         is_unchanged
     }
 	pub fn sync(&mut self, api: &MapApi<N, K, SV, IV>, attached: &N, new: HashMap<K, IV>) {
-        let is_unchanged = !self.unchanged(api, &new);
+        let is_unchanged = self.unchanged(api, &new);
         if !is_unchanged {
             let mut old = HashMap::new();
             std::mem::swap(&mut self.data, &mut old);

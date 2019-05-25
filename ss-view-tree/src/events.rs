@@ -214,33 +214,7 @@ impl<Msg: Ord> EventHandlers<Msg> {
         results
     }
     pub fn add(&mut self, handler: EventHandler<Msg>) {
-        let key = match &handler {
-            EventHandler(IEventHandler::OnClick(_)) =>
-                EventType::OnClick,
-            EventHandler(IEventHandler::OnMouseDown(_)) =>
-                EventType::OnMouseDown,
-            EventHandler(IEventHandler::OnMouseUp(_)) =>
-                EventType::OnMouseUp,
-            EventHandler(IEventHandler::OnMouseEnter(_)) =>
-                EventType::OnMouseEnter,
-            EventHandler(IEventHandler::OnMouseLeave(_)) =>
-                EventType::OnMouseLeave,
-            EventHandler(IEventHandler::OnMouseOver(_)) =>
-                EventType::OnMouseOver,
-            EventHandler(IEventHandler::OnMouseOut(_)) =>
-                EventType::OnMouseOut,
-            EventHandler(IEventHandler::OnInput(_)) =>
-                EventType::OnInput,
-            EventHandler(IEventHandler::OnCheck(_)) =>
-                EventType::OnCheck,
-            EventHandler(IEventHandler::OnSubmit(_)) =>
-                EventType::OnSubmit,
-            EventHandler(IEventHandler::OnBlur(_)) =>
-                EventType::OnBlur,
-            EventHandler(IEventHandler::OnFocus(_)) =>
-                EventType::OnFocus,
-        };
-        self.0.insert(key, handler);
+        self.0.insert(handler.event_name(), handler);
     }
 }
 

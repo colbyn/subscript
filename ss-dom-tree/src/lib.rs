@@ -160,7 +160,6 @@ where
     fn create(&self, attached: &LiveNode<Msg>, key: &EventType, new: EventHandler<Msg>) -> LiveEventHandler<Msg> {
     	use ss_web_utils::js::Handler;
         use ss_web_utils::dom::DomRef;
-
         assert!({key == &new.event_name()});
         let x = dom::window();
         let value = Rc::new(new);
@@ -174,7 +173,6 @@ where
     fn modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
     	use ss_web_utils::js::Handler;
         use ss_web_utils::dom::DomRef;
-
         assert!(key == &old.event_name() && key == &new.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
         let value = Rc::new(new);
@@ -188,7 +186,6 @@ where
     }
     fn remove(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {
         use ss_web_utils::dom::DomRef;
-
     	assert_eq!(key, old.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
     }
@@ -283,7 +280,8 @@ where
     fn eq(&self, other: &LiveNode<Msg>) -> bool {
         self.tag == other.tag &&
         self.attributes == other.attributes &&
-        self.events == other.events
+        self.events == other.events &&
+        self.styling == other.styling
     }
 }
 
@@ -418,6 +416,7 @@ where
         result
     }
     fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
+        console::log("leaf_unchanged");
         match (new, old) {
             (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
                 let new: Box<Any> = Box::new(new.clone());
@@ -428,6 +427,7 @@ where
         }
     }
     fn leaf_recyclable(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
+        console::log("leaf_recyclable");
         match (new, old) {
             (ViewLeaf::Text(_), LiveLeaf::Text{..}) => true,
             (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
@@ -438,6 +438,7 @@ where
         }
     }
     fn leaf_update(&self, update: Update<&mut LiveLeaf, ViewLeaf>) {
+        console::log("leaf_update");
         let Update{new, old} = update;
         match (&new, old) {
             (ViewLeaf::Text(x), LiveLeaf::Text{value, dom_ref}) => {
@@ -451,6 +452,7 @@ where
         }
     }
     fn leaf_crate(&self, new: ViewLeaf) -> LiveLeaf {
+        console::log("leaf_crate");
         use ss_web_utils::dom::DomRef;
         match new {
             ViewLeaf::Text(value) => {
