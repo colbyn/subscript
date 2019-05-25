@@ -19,40 +19,40 @@ use ss_web_utils::dom;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn on_click<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnClick(OnClick(cb)))
 }
 pub fn on_mouse_down<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnMouseDown(OnMouseDown(cb)))
 }
 pub fn on_mouse_up<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnMouseUp(OnMouseUp(cb)))
 }
 pub fn on_mouse_enter<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnMouseEnter(OnMouseEnter(cb)))
 }
 pub fn on_mouse_leave<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnMouseLeave(OnMouseLeave(cb)))
 }
 pub fn on_mouse_over<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnMouseOver(OnMouseOver(cb)))
 }
 pub fn on_mouse_out<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnMouseOut(OnMouseOut(cb)))
 }
 pub fn on_input<Msg>(cb: fn(String)->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnInput(OnInput(cb)))
 }
 pub fn on_check<Msg>(cb: fn(bool)->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnCheck(OnCheck(cb)))
 }
 pub fn on_submit<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnSubmit(OnSubmit(cb)))
 }
 pub fn on_blur<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnBlur(OnBlur(cb)))
 }
 pub fn on_focus<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    unimplemented!()
+    EventHandler(IEventHandler::OnFocus(OnFocus(cb)))
 }
 
 
@@ -68,32 +68,7 @@ pub struct EventHandler<Msg>(pub(crate) IEventHandler<Msg>);
 
 impl<Msg> EventHandler<Msg> {
     pub fn event_name(&self) -> EventType {
-        match self {
-            EventHandler(IEventHandler::OnClick(_)) => 
-                EventType::OnClick,
-            EventHandler(IEventHandler::OnMouseDown(_)) => 
-                EventType::OnMouseDown,
-            EventHandler(IEventHandler::OnMouseUp(_)) => 
-                EventType::OnMouseUp,
-            EventHandler(IEventHandler::OnMouseEnter(_)) => 
-                EventType::OnMouseEnter,
-            EventHandler(IEventHandler::OnMouseLeave(_)) => 
-                EventType::OnMouseLeave,
-            EventHandler(IEventHandler::OnMouseOver(_)) => 
-                EventType::OnMouseOver,
-            EventHandler(IEventHandler::OnMouseOut(_)) => 
-                EventType::OnMouseOut,
-            EventHandler(IEventHandler::OnInput(_)) => 
-                EventType::OnInput,
-            EventHandler(IEventHandler::OnCheck(_)) => 
-                EventType::OnCheck,
-            EventHandler(IEventHandler::OnSubmit(_)) => 
-                EventType::OnSubmit,
-            EventHandler(IEventHandler::OnBlur(_)) => 
-                EventType::OnBlur,
-            EventHandler(IEventHandler::OnFocus(_)) => 
-                EventType::OnFocus,
-        }
+        self.0.event_name()
     }
 }
 
@@ -134,7 +109,7 @@ impl EventType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, PartialOrd, Eq, Ord)]
 pub enum IEventHandler<Msg> {
     OnClick(OnClick<Msg>),
     OnMouseDown(OnMouseDown<Msg>),
@@ -149,6 +124,37 @@ pub enum IEventHandler<Msg> {
     OnBlur(OnBlur<Msg>),
     OnFocus(OnFocus<Msg>),
 }
+
+impl<Msg> IEventHandler<Msg> {
+    pub fn event_name(&self) -> EventType {
+        match self {
+            IEventHandler::OnClick(_) =>  EventType::OnClick,
+            IEventHandler::OnMouseDown(_) =>  EventType::OnMouseDown,
+            IEventHandler::OnMouseUp(_) =>  EventType::OnMouseUp,
+            IEventHandler::OnMouseEnter(_) =>  EventType::OnMouseEnter,
+            IEventHandler::OnMouseLeave(_) =>  EventType::OnMouseLeave,
+            IEventHandler::OnMouseOver(_) =>  EventType::OnMouseOver,
+            IEventHandler::OnMouseOut(_) =>  EventType::OnMouseOut,
+            IEventHandler::OnInput(_) =>  EventType::OnInput,
+            IEventHandler::OnCheck(_) =>  EventType::OnCheck,
+            IEventHandler::OnSubmit(_) =>  EventType::OnSubmit,
+            IEventHandler::OnBlur(_) =>  EventType::OnBlur,
+            IEventHandler::OnFocus(_) =>  EventType::OnFocus,
+        }
+    }
+}
+
+impl<Msg> Hash for IEventHandler<Msg> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.event_name().hash(state);
+    }
+}
+impl<Msg> PartialEq for IEventHandler<Msg> {
+    fn eq(&self, other: &IEventHandler<Msg>) -> bool {
+        self.event_name() == other.event_name()
+    }
+}
+
 
 // MOUSE
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]

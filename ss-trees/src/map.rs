@@ -1,3 +1,4 @@
+//! TODO: remove this module...
 use std::hash::{Hash, Hasher};
 use std::collections::*;
 use either::Either;

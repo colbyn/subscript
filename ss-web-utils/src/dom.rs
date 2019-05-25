@@ -254,13 +254,14 @@ impl Window {
         self.instance.device_pixel_ratio()
     }
     pub fn request_animation_frame(&self, cb: &Callback) {
-        self.instance.request_animation_frame(cb.as_js_function());
+        self.instance.request_animation_frame(cb.as_js_function())
+            .expect("request_animation_frame failed");
     }
     pub fn set_timeout(&self, cb: &Callback, timeout: i32) {
         self.instance.set_timeout_with_callback_and_timeout_and_arguments_0(
             cb.as_js_function(),
             timeout
-        );
+        ).expect("set_timeout_with_callback_and_timeout_and_arguments_0 failed");
     }
 }
 
@@ -541,4 +542,6 @@ impl DomRef for Text {
         &self.dom_ref
     }
 }
+
+
 

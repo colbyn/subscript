@@ -55,6 +55,11 @@ where
     SV: Debug + PartialEq,
     IV: Debug + PartialEq,
 {
+    pub fn traverse_values_mut(&mut self, mut f: impl FnMut(&mut SV)) {
+        for value in self.data.values_mut() {
+            f(value);
+        }
+    }
     pub fn unchanged(&self, api: &MapApi<N, K, SV, IV>, new: &HashMap<K, IV>) -> bool {
         let mut is_unchanged = false;
         if self.data.len() == new.len() {

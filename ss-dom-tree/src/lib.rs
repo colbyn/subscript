@@ -21,11 +21,62 @@ use ss_view_tree::attributes::*;
 use ss_css_types::api::*;
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
-// MISCELLANEOUS
+// LIVE-VIEW
 ///////////////////////////////////////////////////////////////////////////////
 
-pub type LiveTree<Msg> = STree<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf>;
+#[derive(Debug, PartialEq)]
+pub struct LiveView<Msg>
+where Msg: PartialEq + Debug + Clone
+{
+    sync_api: DomTreeLogic,
+    mount: Meta,
+    tree: STree<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf>,
+}
+
+impl<Msg> LiveView<Msg>
+where Msg: PartialEq + 'static + Debug + Clone
+{
+    pub fn start(initial_view: View<Msg>) -> Self {
+        let window = dom::window();
+        let sync_api = DomTreeLogic::default();
+        let mount = Meta::Tag {
+            dom_ref: {
+                let mount = window.document.create_element("div");
+                window.document.body.append_child(&mount);
+                Rc::new(mount)
+            },
+        };
+        let tree = STree::from(
+            &sync_api,
+            &mount,
+            initial_view.0
+        );
+        LiveView {sync_api,mount,tree}
+    }
+    pub fn sync(&mut self, view: View<Msg>) {
+        self.tree.sync(&self.sync_api, &self.mount, view.0);
+    }
+    pub fn tick(&self, env: &mut TickEnv<Msg>, reg: &GlobalTickRegistry) {
+        let mut nf = |node: &LiveNode<Msg>| -> () {
+            node.events.borrow_mut().traverse_values_mut(|handler| {
+                env.messages.append(&mut handler.callback.drain());
+            });
+        };
+        let mut lf = |leaf: &LiveLeaf| -> () {
+            match leaf {
+                LiveLeaf::Text{value, ..} => {}
+                LiveLeaf::Component{value, ..} => {
+                    reg.components.borrow_mut().push(value.tick(reg));
+                }
+            }
+        };
+        self.tree.traverse(&mut nf, &mut lf);
+    }
+}
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,6 +85,8 @@ pub type LiveTree<Msg> = STree<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, Vie
 
 
 pub type AttributesMap<Msg> = SMap<LiveNode<Msg>, String, AttributeValue, AttributeValue>;
+
+#[derive(Debug, PartialEq)]
 pub struct AttributesApi {}
 
 impl<Msg> MapApi<LiveNode<Msg>, String, AttributeValue, AttributeValue> for AttributesApi
@@ -96,6 +149,8 @@ impl<Msg> dom::Callback for LiveEventHandler<Msg> {
 }
 
 pub type EventsMap<Msg> = SMap<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>>;
+
+#[derive(Debug, PartialEq)]
 pub struct EventsApi {}
 
 impl<Msg> MapApi<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>> for EventsApi
@@ -145,33 +200,6 @@ where
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// LIVE COMPONENT
-///////////////////////////////////////////////////////////////////////////////
-
-pub type ProcessId = String;
-
-pub trait LiveComponent {
-    fn spec_type_id(&self) -> TypeId;
-    fn process_id(&self) -> ProcessId;
-    fn dom_ref(&self) -> &DomRef;
-    fn tick(&self, sub_enqueue: &Vec<Rc<Any>>);
-    fn box_clone(&self) -> Box<LiveComponent>;
-}
-
-impl Clone for Box<LiveComponent> {
-    fn clone(&self) -> Box<LiveComponent> {
-        self.box_clone()
-    }
-}
-impl PartialEq for LiveComponent {
-    fn eq(&self, other: &LiveComponent) -> bool {
-        self.spec_type_id() == other.spec_type_id()
-    }
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////
 // LIVE DOM TREE
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -184,7 +212,7 @@ pub enum LiveLeaf {
     },
     Component {
         dom_ref: Rc<dom::Tag>,
-        value: Box<Component>,
+        value: Box<ViewComponent>,
     },
 }
 
@@ -261,7 +289,7 @@ where
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// LOGIC
+// SYNC API
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone, PartialEq)]
@@ -300,11 +328,18 @@ impl Meta {
     }
 }
 
+#[derive(Debug)]
 pub struct DomTreeLogic {
     pub window: dom::Window,
     pub attributes_api: AttributesApi,
     pub events_api: EventsApi,
 }
+
+
+impl PartialEq for DomTreeLogic {
+    fn eq(&self, other: &DomTreeLogic) -> bool {true}
+}
+
 
 impl Default for DomTreeLogic {
     fn default() -> Self {
@@ -384,8 +419,9 @@ where
     }
     fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
         match (new, old) {
-            (ViewLeaf::Component(x), LiveLeaf::Component{value, ..}) => {
-                x.spec_type_id() == value.spec_type_id()
+            (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
+                let new: Box<Any> = Box::new(new.clone());
+                old.unchanged(&new)
             },
             (ViewLeaf::Text(x), LiveLeaf::Text{value, ..}) => x == value,
             _ => false
@@ -394,7 +430,10 @@ where
     fn leaf_recyclable(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
         match (new, old) {
             (ViewLeaf::Text(_), LiveLeaf::Text{..}) => true,
-            (ViewLeaf::Component(_), LiveLeaf::Component{..}) => false,
+            (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
+                let new: Box<Any> = Box::new(new.clone());
+                old.recyclable(&new)
+            },
             _ => false
         }
     }

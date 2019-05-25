@@ -3,9 +3,9 @@
 
 pub mod attributes;
 pub mod events;
-
 #[macro_use]
 pub mod macros;
+pub mod components;
 
 use std::fmt::{self, Debug};
 use std::convert::From;
@@ -24,11 +24,13 @@ use crate::events::*;
 use ss_trees::tree::*;
 use ss_trees::tree::map::*;
 use ss_css_types::api::*;
+pub use components::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW TREE WRAPPER
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Debug, PartialEq)]
 pub struct View<Msg: PartialEq>(pub ITree<ViewNode<Msg>, ViewLeaf>);
 
 impl<Msg: PartialEq> View<Msg> {
@@ -67,34 +69,6 @@ pub type NodeId = String;
 pub type Html<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
 pub type Svg<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
 
-
-///////////////////////////////////////////////////////////////////////////////
-// COMPONENTS
-///////////////////////////////////////////////////////////////////////////////
-
-pub trait Component
-{
-    fn spec_type_id(&self) -> TypeId;
-    fn box_clone(&self) -> Box<Component>;
-    fn spawn(&self) -> Box<()>;
-}
-
-impl Clone for Box<Component>
-{
-    fn clone(&self) -> Box<Component> {
-        self.box_clone()
-    }
-}
-impl PartialEq for Component {
-    fn eq(&self, other: &Component) -> bool {
-        self.spec_type_id() == other.spec_type_id()
-    }
-}
-impl Debug for Component {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> fmt::Result {
-        write!(f, "QueueCallback")
-    }
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // MIXINS
@@ -214,7 +188,7 @@ impl<Msg: PartialEq> Viewable<Msg> for Style {
 #[derive(Debug)]
 pub enum ViewLeaf {
     Text(String),
-    Component(Box<Component>),
+    Component(Box<ViewComponent>),
 }
 
 impl PartialEq for ViewLeaf {

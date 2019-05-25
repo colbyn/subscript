@@ -154,20 +154,20 @@ pub enum STree<M, SN, SL, IN, IL>{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SLeaf<M, SN, SL, IN, IL> {
-    mark: PhantomData<(M, SN, SL, IN, IL)>,
-    data: SL,
+    pub mark: PhantomData<(M, SN, SL, IN, IL)>,
+    pub data: SL,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SNode<M, SN, SL, IN, IL> {
-    mark: PhantomData<(M, SN, SL, IN, IL)>,
-    data: SN,
-    children: SChildren<M, SN, SL, IN, IL>,
+    pub mark: PhantomData<(M, SN, SL, IN, IL)>,
+    pub data: SN,
+    pub children: SChildren<M, SN, SL, IN, IL>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SChildren<M, SN, SL, IN, IL> {
-    data: Vec<STree<M, SN, SL, IN, IL>>,
+    pub data: Vec<STree<M, SN, SL, IN, IL>>,
 }
 
 
@@ -252,6 +252,33 @@ where
         };
         api.insert(insert_op);
         new
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TREE TRAVERSAL API
+///////////////////////////////////////////////////////////////////////////////
+
+impl<M, SN, SL, IN, IL> STree<M, SN, SL, IN, IL>
+where
+    M: PartialEq + Clone + Debug,
+    SN: PartialEq + Debug,
+    SL: PartialEq + Debug,
+    IN: PartialEq + Debug,
+    IL: PartialEq + Debug
+{
+    pub fn traverse(&self, nf: &mut FnMut(&SN), lf: &mut FnMut(&SL)) {
+        match self {
+            STree::Leaf(leaf) => {
+                lf(&leaf.data);
+            }
+            STree::Node(node) => {
+                for mut child in node.children.data.iter() {
+                    child.traverse(nf, lf);
+                }
+                nf(&node.data);
+            }
+        }
     }
 }
 
@@ -463,6 +490,7 @@ where
             false
         }
     }
+    // TODO: run unchanged on all nodes first, then check for recyclable nodes.
     pub fn recyclable(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &IChildren<IN, IL>) -> bool {
         if self.data.len() == other.0.len() {
             self.data
@@ -473,9 +501,11 @@ where
             false
         }
     }
+    // TODO: run unchanged on all nodes first, then check for recyclable nodes.
     pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: IChildren<IN, IL>) {
         let mut xs = new.0
             .into_iter()
+            // TODO: run unchanged on all nodes first, then check for recyclable nodes.
             .map(|new| -> Item<STree<M, SN, SL, IN, IL>> {
                 let mut unchanged = |olds| remove_item_by(olds, |old| {
                     match (&new, &old) {
