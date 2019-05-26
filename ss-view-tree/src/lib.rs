@@ -7,6 +7,7 @@ pub mod events;
 pub mod macros;
 pub mod components;
 
+use core::default::Default;
 use std::fmt::{self, Debug};
 use std::convert::From;
 use std::hash::{Hash, Hasher};
@@ -25,6 +26,7 @@ use ss_trees::tree::*;
 use ss_trees::tree::map::*;
 use ss_css_types::api::*;
 pub use components::*;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW TREE WRAPPER

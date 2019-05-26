@@ -1,3 +1,4 @@
+use std::cell::*;
 use std::rc::Rc;
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
@@ -373,13 +374,34 @@ impl Storage {
 
 #[derive(Clone, Debug)]
 pub struct Document {
+    pub(crate) i_ready_state_cache: Rc<RefCell<Option<ReadyState>>>,
+    pub instance: web_sys::Document,
     pub body: Body
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ReadyState {
+    Loading,
+    Interactive,
+    Complete,
+}
+
+impl ReadyState {
+    pub fn is_dom_ready(&self) -> bool {
+        match self {
+            ReadyState::Complete => true,
+            ReadyState::Interactive => true,
+            ReadyState::Loading => false,
+        }
+    }
 }
 
 impl Document {
     pub fn new() -> Self {
         Document {
-            body: Body::new()
+            i_ready_state_cache: Rc::new(RefCell::new(None)),
+            instance: core::get_document(),
+            body: Body::new(),
         }
     }
     pub fn create_element(&self, tag: &str) -> Tag {
@@ -406,6 +428,31 @@ impl Document {
             dom_ref_as_text: dom_ref_as_text,
             dom_ref: dom_ref,
             dom_ref_as_node: dom_ref_as_node,
+        }
+    }
+    pub fn ready_state(&self) -> ReadyState {
+        fn parse(value: String) -> ReadyState {
+            match value.as_str() {
+                "loading" => ReadyState::Loading,
+                "interactive" => ReadyState::Interactive,
+                "complete" => ReadyState::Complete,
+                _ => panic!(),
+            }
+        }
+        let mut is_complete = false;
+        let go = || {
+            let result = parse(self.instance.ready_state());
+            self.i_ready_state_cache.replace(Some(result.clone()));
+            result
+        };
+        match self.i_ready_state_cache.borrow().as_ref() {
+            Some(&ReadyState::Complete) => {is_complete = true;}
+            _ => {}
+        };
+        if is_complete {
+            ReadyState::Complete
+        } else {
+            go()
         }
     }
 }

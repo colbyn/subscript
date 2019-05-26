@@ -3,6 +3,8 @@ pub mod syntax;
 use crate::rules::*;
 use crate::selectors::*;
 
+pub type CssHashKey = u64;
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Style {
 	Native(Rule),
@@ -28,8 +30,11 @@ impl Default for Stylesheet {
 
 
 impl Stylesheet {
+	pub fn is_empty(&self) -> bool {
+		self.local.is_empty()
+	}
 	pub fn add_style(&mut self, x: Style) {
-		unimplemented!()
+		self.local.push(x);
 	}
 	pub fn union(&mut self, other: Stylesheet) {
 		let mut other = other;

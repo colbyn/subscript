@@ -25,6 +25,8 @@ use ss_program::SubSystems;
 use ss_program::Component;
 use ss_program::Program;
 use ss_program::Spec;
+use ss_css_types::api::*;
+use crate::css::{common::*, everything as css};
 
 
 #[derive(Debug, PartialEq, Clone)]
@@ -65,9 +67,12 @@ impl Spec for AppSpec {
             }
         }
     }
+    /// 
     fn view(&self, model: &Self::Model) -> View<Self::Msg> {
+        use crate::css::everything::*;
     	v!{
     		h1{
+                display: "flex";
                 format!("{}", model.counter);
             }
             button {

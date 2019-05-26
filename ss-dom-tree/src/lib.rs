@@ -18,8 +18,8 @@ use ss_trees::tree::map::{SMap, MapApi};
 use ss_view_tree::*;
 use ss_view_tree::events::*;
 use ss_view_tree::attributes::*;
-use ss_css_types::api::*;
-
+use ss_css_types::api::Stylesheet;
+use ss_cssom_tree::GLOBAL_CSS_REGISTRY;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -362,10 +362,7 @@ where
             &self.events_api,
             &new.events,
         );
-        let styling_unchanged = {
-            let old: &Stylesheet = &old.styling.borrow();
-            old == &new.styling
-        };
+        let styling_unchanged = *old.styling.borrow() == new.styling;
         styling_unchanged && attributes_unchanged && events_unchanged && new.tag == old.tag
     }
     fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
@@ -385,12 +382,14 @@ where
             &old,
             new.events,
         );
-        let styling_unchanged = {
-            let old: &Stylesheet = &old.styling.borrow();
-            old == &new.styling
-        };
+        let styling_unchanged = {*old.styling.borrow() == new.styling};
         if !styling_unchanged {
+            let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
+                let sheet = new.styling.clone();
+                |reg| reg.borrow_mut().upsert(sheet)
+            });
             old.styling.replace(new.styling);
+            old.dom_ref.set_attribute("css", &format!("{}", &hash_key));
         }
     }
     fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
@@ -413,10 +412,17 @@ where
             &result,
             new.events,
         );
+        let styling_empty = result.styling.borrow().is_empty();
+        if !styling_empty {
+            let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
+                let sheet = result.styling.borrow().clone();
+                |reg| reg.borrow_mut().upsert(sheet)
+            });
+            result.dom_ref.set_attribute("css", &format!("{}", &hash_key));
+        }
         result
     }
     fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
-        console::log("leaf_unchanged");
         match (new, old) {
             (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
                 let new: Box<Any> = Box::new(new.clone());
@@ -427,7 +433,6 @@ where
         }
     }
     fn leaf_recyclable(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
-        console::log("leaf_recyclable");
         match (new, old) {
             (ViewLeaf::Text(_), LiveLeaf::Text{..}) => true,
             (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
@@ -438,7 +443,6 @@ where
         }
     }
     fn leaf_update(&self, update: Update<&mut LiveLeaf, ViewLeaf>) {
-        console::log("leaf_update");
         let Update{new, old} = update;
         match (&new, old) {
             (ViewLeaf::Text(x), LiveLeaf::Text{value, dom_ref}) => {
@@ -452,7 +456,6 @@ where
         }
     }
     fn leaf_crate(&self, new: ViewLeaf) -> LiveLeaf {
-        console::log("leaf_crate");
         use ss_web_utils::dom::DomRef;
         match new {
             ViewLeaf::Text(value) => {

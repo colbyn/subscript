@@ -1,3 +1,5 @@
+use core::default::Default;
+use core::clone::Clone;
 use std::fmt::{self, Debug};
 use std::convert::From;
 use std::hash::{Hash, Hasher};
@@ -14,7 +16,6 @@ use crate::attributes::*;
 use crate::events::*;
 use ss_trees::tree::*;
 use ss_trees::tree::map::*;
-use ss_css_types::api::*;
 
 pub type InternalComponentId = Any;
 
