@@ -1,0 +1,19 @@
+{'capabilities':
+	{
+		'referencesProvider': True,
+		'documentSymbolProvider': True,
+		'renameProvider': True,
+		'codeLensProvider': {'resolveProvider': False},
+		'definitionProvider': True,
+		'textDocumentSync': 2,
+		'documentRangeFormattingProvider': False,
+		'documentHighlightProvider': True,
+		'documentFormattingProvider': True,
+		'workspaceSymbolProvider': True,
+		'implementationProvider': True,
+		'codeActionProvider': True,
+		'executeCommandProvider': {'commands': ['rls.applySuggestion-11986', 'rls.deglobImports-11986']},
+		'hoverProvider': True,
+		'completionProvider': {'resolveProvider': True, 'triggerCharacters': ['.', ':']}
+	}
+}
