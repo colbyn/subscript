@@ -61,7 +61,7 @@ where Msg: PartialEq + 'static + Debug + Clone
     pub fn tick(&self, env: &mut TickEnv<Msg>, reg: &GlobalTickRegistry) {
         let mut nf = |node: &LiveNode<Msg>| -> () {
             node.events.borrow_mut().traverse_values_mut(|handler| {
-                env.messages.append(&mut handler.callback.drain());
+                env.messages.append(&mut handler.callback.drain_and_apply(&handler.value));
             });
         };
         let mut lf = |leaf: &LiveLeaf| -> () {
@@ -127,8 +127,8 @@ where
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LiveEventHandler<Msg> {
-    pub value: Rc<EventHandler<Msg>>,
-    pub callback: js::EventCallback<Msg>,
+    pub value: EventHandler<Msg>,
+    pub callback: js::EventCallback,
 }
 
 impl<Msg> LiveEventHandler<Msg> {
@@ -162,8 +162,8 @@ where
         use ss_web_utils::dom::DomRef;
         assert!({key == &new.event_name()});
         let x = dom::window();
-        let value = Rc::new(new);
-        let callback = js::EventCallback::new(value.clone());
+        let value = new;
+        let callback = js::EventCallback::new();
         attached.dom_ref.add_event_listener(key.as_str(), &callback);
         LiveEventHandler {
             callback,
@@ -171,27 +171,15 @@ where
         }
     }
     fn modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
-    	use ss_web_utils::js::Handler;
-        use ss_web_utils::dom::DomRef;
-        assert!(key == &old.event_name() && key == &new.event_name());
-        attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
-        let value = Rc::new(new);
-        let callback = js::EventCallback::new(value.clone());
-        attached.dom_ref.add_event_listener(key.as_str(), &callback);
-        let result = LiveEventHandler {
-            callback,
-            value,
-        };
-        *old = result;
+        console::log("EventsApi.modified");
+        old.value = new;
     }
     fn remove(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {
         use ss_web_utils::dom::DomRef;
     	assert_eq!(key, old.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
     }
-    fn unchanged(&self, old: &LiveEventHandler<Msg>, new: &EventHandler<Msg>) -> bool {
-    	old.value.as_ref() == new
-    }
+    fn unchanged(&self, old: &LiveEventHandler<Msg>, new: &EventHandler<Msg>) -> bool {false}
 }
 
 

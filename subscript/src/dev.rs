@@ -32,8 +32,8 @@ use crate::css::{common::*, everything as css};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Msg {
     NoOp,
-    Increment,
-    Decrement,
+    AddTodo,
+    RemoveTodo,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -57,36 +57,12 @@ impl Spec for AppSpec {
     	}
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems) {
-        match msg {
-            Msg::NoOp => {}
-            Msg::Increment => {
-                model.counter = model.counter + 1;
-            }
-            Msg::Decrement => {
-                model.counter = model.counter - 1;
-            }
-        }
+
     }
-    /// 
     fn view(&self, model: &Self::Model) -> View<Self::Msg> {
         use crate::css::everything::*;
     	v!{
-    		h1{
-                display: "flex";
-                format!("{}", model.counter);
-            }
-            button {
-                on_click(|| {
-                    Msg::Increment
-                });
-                "Increment";
-            }
-            button {
-                on_click(|| {
-                    Msg::Decrement
-                });
-                "Decrement";
-            }
+            
     	}
     }
 }

@@ -169,15 +169,14 @@ pub trait Handler<Msg> {
 }
 
 #[derive(Clone)]
-pub struct EventCallback<Msg> {
-    pub i_handler: Rc<Handler<Msg>>,
+pub struct EventCallback {
     pub i_bindgen_closure: Rc<Closure<dyn Fn(JsValue)>>,
     pub i_js_function: Rc<js_sys::Function>,
     pub i_events: Rc<RefCell<VecDeque<JsValue>>>,
 }
 
-impl<Msg> EventCallback<Msg> {
-    pub fn new(handler: Rc<Handler<Msg>>) -> Self {
+impl EventCallback {
+    pub fn new() -> Self {
         use wasm_bindgen::JsCast;
         let events_queue = Rc::new(RefCell::new(VecDeque::new()));
         let function_wrapper: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
@@ -189,34 +188,33 @@ impl<Msg> EventCallback<Msg> {
         let js_function: &js_sys::Function = function_wrapper.as_ref().unchecked_ref();
         let js_function: js_sys::Function = js_function.clone();
         let queue_callback = EventCallback {
-            i_handler: handler,
             i_bindgen_closure: Rc::new(function_wrapper),
             i_js_function: Rc::new(js_function),
             i_events: events_queue,
         };
         queue_callback
     }
-    pub fn drain(&self) -> Vec<Msg> {
+    pub fn drain_and_apply<Msg>(&self, ref handler: impl Handler<Msg>) -> Vec<Msg> {
         let xs: Vec<Msg> = self.i_events.borrow_mut()
             .drain(..)
             .map(|event| {
-                self.i_handler.as_ref().handler(event)
+                handler.handler(event)
             })
             .collect();
         xs
     }
 }
 
-impl<Msg> Debug for EventCallback<Msg> {
+impl Debug for EventCallback {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> fmt::Result {
         write!(f, "EventCallback")
     }
 }
-impl<Msg> PartialEq for EventCallback<Msg> {
-    fn eq(&self, other: &EventCallback<Msg>) -> bool {true}
+impl PartialEq for EventCallback {
+    fn eq(&self, other: &EventCallback) -> bool {true}
 }
 
-impl<Msg> crate::dom::Callback for EventCallback<Msg> {
+impl crate::dom::Callback for EventCallback {
     fn as_js_function(&self) -> &js_sys::Function {
         self.i_js_function.as_ref()
     }

@@ -18,41 +18,41 @@ use ss_web_utils::dom;
 // DOM EVENT-HANDLERS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn on_click<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnClick(OnClick(cb)))
+pub fn on_click<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnClick(OnClick(Rc::new(cb))))
 }
-pub fn on_mouse_down<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnMouseDown(OnMouseDown(cb)))
+pub fn on_mouse_down<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnMouseDown(OnMouseDown(Rc::new(cb))))
 }
-pub fn on_mouse_up<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnMouseUp(OnMouseUp(cb)))
+pub fn on_mouse_up<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnMouseUp(OnMouseUp(Rc::new(cb))))
 }
-pub fn on_mouse_enter<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnMouseEnter(OnMouseEnter(cb)))
+pub fn on_mouse_enter<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnMouseEnter(OnMouseEnter(Rc::new(cb))))
 }
-pub fn on_mouse_leave<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnMouseLeave(OnMouseLeave(cb)))
+pub fn on_mouse_leave<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnMouseLeave(OnMouseLeave(Rc::new(cb))))
 }
-pub fn on_mouse_over<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnMouseOver(OnMouseOver(cb)))
+pub fn on_mouse_over<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnMouseOver(OnMouseOver(Rc::new(cb))))
 }
-pub fn on_mouse_out<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnMouseOut(OnMouseOut(cb)))
+pub fn on_mouse_out<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnMouseOut(OnMouseOut(Rc::new(cb))))
 }
-pub fn on_input<Msg>(cb: fn(String)->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnInput(OnInput(cb)))
+pub fn on_input<Msg>(cb: impl Fn(String) -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnInput(OnInput(Rc::new(cb))))
 }
-pub fn on_check<Msg>(cb: fn(bool)->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnCheck(OnCheck(cb)))
+pub fn on_check<Msg>(cb: impl Fn(bool) -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnCheck(OnCheck(Rc::new(cb))))
 }
-pub fn on_submit<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnSubmit(OnSubmit(cb)))
+pub fn on_submit<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnSubmit(OnSubmit(Rc::new(cb))))
 }
-pub fn on_blur<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnBlur(OnBlur(cb)))
+pub fn on_blur<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnBlur(OnBlur(Rc::new(cb))))
 }
-pub fn on_focus<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
-    EventHandler(IEventHandler::OnFocus(OnFocus(cb)))
+pub fn on_focus<Msg>(cb: impl Fn() -> Msg + 'static) -> EventHandler<Msg> {
+    EventHandler(IEventHandler::OnFocus(OnFocus(Rc::new(cb))))
 }
 
 
@@ -60,10 +60,10 @@ pub fn on_focus<Msg>(cb: fn()->Msg) -> EventHandler<Msg> {
 // INTERNAL DATA TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EventHandlers<Msg>(pub(crate) BTreeMap<EventType, EventHandler<Msg>>);
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EventHandler<Msg>(pub(crate) IEventHandler<Msg>);
 
 impl<Msg> EventHandler<Msg> {
@@ -109,7 +109,7 @@ impl EventType {
     }
 }
 
-#[derive(Debug, Clone, PartialOrd, Eq, Ord)]
+#[derive(Clone)]
 pub enum IEventHandler<Msg> {
     OnClick(OnClick<Msg>),
     OnMouseDown(OnMouseDown<Msg>),
@@ -154,48 +154,45 @@ impl<Msg> PartialEq for IEventHandler<Msg> {
         self.event_name() == other.event_name()
     }
 }
+impl<Msg> Debug for IEventHandler<Msg> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "IEventHandler")
+    }
+}
+
 
 
 // MOUSE
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnClick<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnMouseDown<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnMouseUp<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnMouseEnter<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnMouseLeave<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnMouseOver<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnMouseOut<Msg>(pub fn()->Msg);
+#[derive(Clone)]
+pub struct OnClick<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnMouseDown<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnMouseUp<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnMouseEnter<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnMouseLeave<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnMouseOver<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnMouseOut<Msg>(pub Rc<Fn()->Msg>);
 
 
 // FORMS
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnInput<Msg>(pub fn(String)->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnCheck<Msg>(pub fn(bool)->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnSubmit<Msg>(pub fn()->Msg);
+#[derive(Clone)]
+pub struct OnInput<Msg>(pub Rc<Fn(String)->Msg>);
+#[derive(Clone)]
+pub struct OnCheck<Msg>(pub Rc<Fn(bool)->Msg>);
+#[derive(Clone)]
+pub struct OnSubmit<Msg>(pub Rc<Fn()->Msg>);
 
 
 // FOCUS
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnBlur<Msg>(pub fn()->Msg);
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub struct OnFocus<Msg>(pub fn()->Msg);
+#[derive(Clone)]
+pub struct OnBlur<Msg>(pub Rc<Fn()->Msg>);
+#[derive(Clone)]
+pub struct OnFocus<Msg>(pub Rc<Fn()->Msg>);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -224,6 +221,11 @@ impl<Msg: Ord> EventHandlers<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 // ALL
+impl<Msg> js::Handler<Msg> for &EventHandler<Msg> {
+    fn handler(&self, event: JsValue) -> Msg {
+        self.0.handler(event)
+    }
+}
 impl<Msg> js::Handler<Msg> for EventHandler<Msg> {
     fn handler(&self, event: JsValue) -> Msg {
         self.0.handler(event)
