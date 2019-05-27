@@ -11,10 +11,8 @@ repository = "https://github.com/colbyn/subscript"
 crate-type=["cdylib", "rlib"]
 
 [dependencies]
-owning_ref = "0.4.0"
 serde = {version = "1.0.89", features = ["derive"]}
 either = "1.5.2"
-Inflector = "0.11.4"
 ss-web-utils = {path = "../ss-web-utils", version="0.1.1"}
 ss-trees = {path = "../ss-trees", version="0.1.1"}
 ss-view-tree = {path = "../ss-view-tree", version="0.1.1"}

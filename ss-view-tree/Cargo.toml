@@ -13,7 +13,6 @@ crate-type=["cdylib", "rlib"]
 [dependencies]
 serde = {version = "1.0.89", features = ["derive"]}
 either = "1.5.2"
-Inflector = "0.11.4"
 ss-trees = {path = "../ss-trees", version="0.1.1"}
 ss-web-utils = {path = "../ss-web-utils", version="0.1.1"}
 ss-css-types = {path = "../ss-css-types", version="0.1.1"}
