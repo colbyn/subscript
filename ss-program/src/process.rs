@@ -74,7 +74,7 @@ impl ProcessRegistry {
 			let model = RefCell::new(model);
 			let new_process = Process {
 				view,
-				model: unimplemented!(),
+				model,
 				model_hash,
 				subs,
 				pid: key.clone(),
@@ -247,8 +247,7 @@ pub struct Process<S: Spec> {
 
 impl<S: Spec> Process<S> where S::Msg: 'static {
 	fn force_update_view(&self) {
-		let x: &S::Model = &self.model.borrow();
-		let new_view = self.spec.borrow().view(unimplemented!());
+		let new_view = self.spec.borrow().view(&self.model.borrow());
 		self.view.borrow_mut().sync(new_view);
 	}
 	fn run_sys_requests(&self) {

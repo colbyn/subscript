@@ -1,25 +1,25 @@
 
 
-#[macro_export]
-macro_rules! to_expr {
-    ($x:expr) => {$x};
-}
+
+///////////////////////////////////////////////////////////////////////////////
+// VIEW CONSTRUCTION MACROS
+///////////////////////////////////////////////////////////////////////////////
 
 #[macro_export]
-macro_rules! arguments {
+macro_rules! view_arguments {
     ($ctx:expr;) => {()};
     ($ctx:expr; $tag:ident {$($x:tt)*} $($rest:tt)*) => {{
         let mut node = View::new_tag(stringify!($tag));
-        arguments!(node; $($x)*);
+        view_arguments!(node; $($x)*);
         $ctx.extend(node);
-        arguments!($ctx; $($rest)*);
+        view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $key:ident = $value:expr; $($rest:tt)*) => {{
         let value: AttributeValue = internal_normalize_attribute_value($value);
         let mut key = String::from(stringify!($key));
         key.replace("_", "-");
         $ctx.extend((key, value));
-        arguments!($ctx; $($rest)*);
+        view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $prop:ident: $value:expr; $($rest:tt)*) => {{
         let value: &str = $value;
@@ -30,11 +30,11 @@ macro_rules! arguments {
             property,
             value,
         });
-        arguments!($ctx; $($rest)*);
+        view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $viewable:expr; $($rest:tt)*) => {{
         $ctx.extend($viewable);
-        arguments!($ctx; $($rest)*);
+        view_arguments!($ctx; $($rest)*);
     }};
 }
 
@@ -42,32 +42,72 @@ macro_rules! arguments {
 macro_rules! v {
     ($($x:tt)*) => {{
         let mut node = View::new_tag("div");
-        arguments!(node; $($x)*);
+        view_arguments!(node; $($x)*);
         node
     }};
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// PUBLIC VIEW HELPER MACORS
+///////////////////////////////////////////////////////////////////////////////
+
+#[macro_export]
+macro_rules! extend_ident_argument {
+    ($name:ident @ $value:expr) => {
+        let $name = $value.clone();
+    };
+    ($name:ident) => {
+        let $name = $name.clone();
+    };
+}
+
+#[macro_export]
+macro_rules! extend {
+    ($fn_name:ident, [], $body:expr) => {{
+        $fn_name(($body))
+    }};
+    ($fn_name:ident, [$($($x:tt)*),*], $body:expr) => {{
+        $(extend_ident_argument!($($x)*))*;
+        $fn_name(($body))
+    }};
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// DEV/TESTING
+///////////////////////////////////////////////////////////////////////////////
+
 pub fn dev() {
-    // use ss_css_types::internal::*;
-    // use crate::*;
-    // use crate::attributes::*;
-    // use crate::events::*;
+    use crate::*;
+    use crate::attributes::*;
+    use crate::events::*;
     
-    // #[derive(Debug, PartialEq)]
-    // enum Msg {
-    //     NoOp,
-    // }
-    // pub struct Model {}
-    // fn view() -> View<Msg> {
-    //     v!{
-    //         h1{
-    //             "hello world";
-    //         }
-    //         main {
+    #[derive(Debug, PartialEq)]
+    enum Msg {
+        NoOp,
+        SetCounter(u32),
+    }
+    pub struct Model {
+        counter: u32
+    }
+
+    fn view(model: &Model) -> View<Msg> {
+        v!{
+            h1{
+                "hello world";
+            }
+            button {
+                extend!(on_click, [counter@model.counter], move || {
+                    Msg::SetCounter(counter)
+                });
+            }
+            main {
                 
-    //         }
-    //     }
-    // }
+            }
+        }
+    }
 }
 
 

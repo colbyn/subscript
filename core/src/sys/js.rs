@@ -127,6 +127,7 @@ impl QueueCallback {
         let function_wrapper: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
             let events_queue = events_queue.clone();
             move |value: JsValue| {
+                console::log("QueueCallback.f");
                 events_queue.borrow_mut().push_back(value);
             }
         }));

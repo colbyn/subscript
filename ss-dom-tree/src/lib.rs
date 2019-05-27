@@ -69,7 +69,7 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
                 env.messages.append(
                     &mut handler.callback.drain()
                         .into_iter()
-                        .map(|event| handler.value.borrow().run_handler(event))
+                        .map(|event| f.run_handler(event))
                         .collect::<Vec<Msg>>()
                 );
             });
@@ -171,7 +171,6 @@ where
         }
     }
     fn modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
-        console::log("EventsApi.modified");
         old.value.replace(new);
     }
     fn remove(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {

@@ -127,7 +127,7 @@ pub enum EventHandler<Msg> {
 
 
 impl<Msg> Viewable<Msg> for EventHandler<Msg> {
-    fn mixin(self, mixin: Mixin<Msg>) {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
         mixin.events.insert(self.event_name(), self);
     }
 }
