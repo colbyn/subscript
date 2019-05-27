@@ -11,14 +11,14 @@ macro_rules! arguments {
     ($ctx:expr; $tag:ident {$($x:tt)*} $($rest:tt)*) => {{
         let mut node = View::new_tag(stringify!($tag));
         arguments!(node; $($x)*);
-        $ctx.append(node);
+        $ctx.extend(node);
         arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $key:ident = $value:expr; $($rest:tt)*) => {{
         let value: AttributeValue = internal_normalize_attribute_value($value);
         let mut key = String::from(stringify!($key));
         key.replace("_", "-");
-        $ctx.append((key, value));
+        $ctx.extend((key, value));
         arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $prop:ident: $value:expr; $($rest:tt)*) => {{
@@ -26,14 +26,14 @@ macro_rules! arguments {
         let value: String = String::from(value);
         let mut property = String::from(stringify!($prop));
         property.replace("_", "-");
-        $ctx.append(Style::Raw{
+        $ctx.extend(Style::Raw{
             property,
             value,
         });
         arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $viewable:expr; $($rest:tt)*) => {{
-        $ctx.append($viewable);
+        $ctx.extend($viewable);
         arguments!($ctx; $($rest)*);
     }};
 }
@@ -48,26 +48,26 @@ macro_rules! v {
 }
 
 pub fn dev() {
-    use ss_css_types::internal::*;
-    use crate::*;
-    use crate::attributes::*;
-    use crate::events::*;
+    // use ss_css_types::internal::*;
+    // use crate::*;
+    // use crate::attributes::*;
+    // use crate::events::*;
     
-    #[derive(Debug, PartialEq)]
-    enum Msg {
-        NoOp,
-    }
-    pub struct Model {}
-    fn view() -> View<Msg> {
-        v!{
-            h1{
-                "hello world";
-            }
-            main {
+    // #[derive(Debug, PartialEq)]
+    // enum Msg {
+    //     NoOp,
+    // }
+    // pub struct Model {}
+    // fn view() -> View<Msg> {
+    //     v!{
+    //         h1{
+    //             "hello world";
+    //         }
+    //         main {
                 
-            }
-        }
-    }
+    //         }
+    //     }
+    // }
 }
 
 

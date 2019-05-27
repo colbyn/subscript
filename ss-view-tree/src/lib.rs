@@ -29,13 +29,19 @@ pub use components::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// VIEW TREE WRAPPER
+// MISCELLANEOUS
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// VIEW
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, PartialEq)]
-pub struct View<Msg: PartialEq>(pub ITree<ViewNode<Msg>, ViewLeaf>);
+pub struct View<Msg>(pub ITree<ViewNode<Msg>, ViewLeaf>);
 
-impl<Msg: PartialEq> View<Msg> {
+impl<'a, Msg> View<Msg> {
     pub fn new_tag(tag: &str) -> Self {
         let view_node = ViewNode {
             tag: String::from(tag),
@@ -49,136 +55,73 @@ impl<Msg: PartialEq> View<Msg> {
         let view_leaf = ViewLeaf::Text(String::from(value));
         View(ITree::new(Right(view_leaf)))
     }
-    pub fn append(&mut self, entry: impl Viewable<Msg>) {
-        let Mixin{attributes, events, children, styling} = entry.normalize();
-        for child in children {
-            self.0.add_child(child.0);
-        }
+    pub fn extend(&mut self, something: impl Viewable<Msg>) {
         if let Some(node) = self.0.get_node_mut() {
-            node.attributes.extend(attributes);
-            node.events.extend(events);
-            node.styling.union(styling);
+            let mut children = Vec::new();
+            let mixin = Mixin {
+                attributes: &mut node.attributes,
+                events: &mut node.events,
+                styling: &mut node.styling,
+                children: &mut children,
+            };
+            something.mixin(mixin);
+            if !children.is_empty() {
+                for child in children {
+                    self.0.add_child(child.0);
+                }
+            }
         }
     }
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-// MISCELLANEOUS
-///////////////////////////////////////////////////////////////////////////////
-
-pub type NodeId = String;
-pub type Html<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
-pub type Svg<Msg> = ITree<ViewNode<Msg>, ViewLeaf>;
-
-
-///////////////////////////////////////////////////////////////////////////////
-// MIXINS
-///////////////////////////////////////////////////////////////////////////////
-
-pub struct Mixin<Msg: PartialEq> {
-    attributes: HashMap<String, AttributeValue>,
-    events: HashMap<events::EventType, events::EventHandler<Msg>>,
-    children: Vec<View<Msg>>,
-    styling: Stylesheet,
+pub struct Mixin<'a, Msg> {
+    attributes: &'a mut HashMap<String, AttributeValue>,
+    events: &'a mut HashMap<events::EventType, EventHandler<Msg>>,
+    styling: &'a mut Stylesheet,
+    children: &'a mut Vec<View<Msg>>,
 }
 
-impl<Msg: PartialEq> Default for Mixin<Msg> {
-    fn default() -> Self {
-        Mixin {
-            attributes: HashMap::new(),
-            events: HashMap::new(),
-            children: Vec::new(),
-            styling: Stylesheet::default(),
-        }
-    }
+pub trait Viewable<Msg> {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>);
 }
 
-impl<Msg: PartialEq> Mixin<Msg> {
-    pub fn add_attribute(&mut self, key: &str, value: AttributeValue) {
-        self.attributes.insert(key.to_string(), value);
-    }
-    pub fn add_event_handler(&mut self, handler: events::EventHandler<Msg>) {
-        let event_name = handler.event_name();
-        self.events.insert(event_name, handler);
-    }
-    pub fn add_child(&mut self, child: View<Msg>) {
-        self.children.push(child);
-    }
-    pub fn add_children(&mut self, xs: Vec<View<Msg>>) {
-        let mut xs = xs;
-        self.children.append(&mut xs);
-    }
-    pub fn add_style(&mut self, x: Style) {
-        self.styling.add_style(x);
+impl<Msg> Viewable<Msg> for () {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {}
+}
+impl<Msg> Viewable<Msg> for &str {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        mixin.children.push(View::new_text(self));
     }
 }
-
-
-///////////////////////////////////////////////////////////////////////////////
-// VIEW TREE PRIMITIVES & EXTENSION INTERFACE
-///////////////////////////////////////////////////////////////////////////////
-
-pub trait Viewable<Msg: PartialEq> {
-    fn normalize(self) -> Mixin<Msg>;
-}
-
-
-
-impl<Msg: PartialEq> Viewable<Msg> for &str {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_child(View::new_text(self));
-        mixin
+impl<Msg> Viewable<Msg> for String {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        mixin.children.push(View::new_text(self.as_str()));
     }
 }
-impl<Msg: PartialEq> Viewable<Msg> for String {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_child(View::new_text(self.as_str()));
-        mixin
+impl<Msg> Viewable<Msg> for View<Msg> {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        mixin.children.push(self);
     }
 }
-impl<Msg: PartialEq> Viewable<Msg> for View<Msg> {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_child(self);
-        mixin
-    }
-}
-impl<Msg: PartialEq> Viewable<Msg> for Vec<View<Msg>> {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_children(self);
-        mixin
+impl<Msg> Viewable<Msg> for Vec<View<Msg>> {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        let mut this = self;
+        mixin.children.append(&mut this);
     }   
 }
-impl<Msg: PartialEq> Viewable<Msg> for (String, AttributeValue) {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_attribute(self.0.as_str(), self.1);
-        mixin
+impl<Msg> Viewable<Msg> for (String, AttributeValue) {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        mixin.attributes.insert(self.0, self.1);
     }
 }
-impl<Msg: PartialEq> Viewable<Msg> for (&str, AttributeValue) {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_attribute(self.0, self.1);
-        mixin
+impl<Msg> Viewable<Msg> for (&str, AttributeValue) {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        mixin.attributes.insert(String::from(self.0), self.1);
     }
 }
-impl<Msg: PartialEq> Viewable<Msg> for events::EventHandler<Msg> {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
-        mixin.add_event_handler(self);
-        mixin
-    }
-}
-impl<Msg: PartialEq> Viewable<Msg> for Style {
-    fn normalize(self) -> Mixin<Msg> {
-        let mut mixin = Mixin::default();
+impl<Msg> Viewable<Msg> for Style {
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
         mixin.styling.add_style(self);
-        mixin
     }
 }
 
@@ -219,13 +162,24 @@ impl ViewLeaf {
 }
 
 
-#[derive(Debug, PartialEq)]
-pub struct ViewNode<Msg: PartialEq> {
+#[derive(Debug)]
+pub struct ViewNode<Msg> {
     pub tag: String,
     pub attributes: HashMap<String, AttributeValue>,
-    pub events: HashMap<events::EventType, events::EventHandler<Msg>>,
+    pub events: HashMap<events::EventType, EventHandler<Msg>>,
     pub styling: Stylesheet,
 }
+
+impl<'a, Msg> PartialEq for ViewNode<Msg> {
+    fn eq(&self, other: &ViewNode<Msg>) -> bool {
+        self.tag == other.tag &&
+        self.attributes == other.attributes &&
+        self.events == other.events &&
+        self.styling == other.styling
+    }
+}
+
+
 
 
 

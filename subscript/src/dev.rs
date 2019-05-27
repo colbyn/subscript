@@ -1,3 +1,4 @@
+use std::cell::*;
 use serde::{Serialize, Deserialize};
 
 use ss_web_utils::js::console;
@@ -32,13 +33,14 @@ use crate::css::{common::*, everything as css};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Msg {
     NoOp,
-    AddTodo,
-    RemoveTodo,
+    SetCounter(i32),
+    Test(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub struct Model {
     counter: i32,
+    test: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
@@ -46,32 +48,55 @@ pub struct AppSpec {
 
 }
 
-impl Spec for AppSpec {
-    type Model = Model;
-    type Msg = Msg;
+// impl<'a> Spec<'a> for AppSpec {
+//     type Model = Model;
+//     type Msg = Msg;
 
-    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
-    	Init {
-    		model: Model::default(),
-    		subs: Subscriptions::default(),
-    	}
-    }
-    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems) {
-
-    }
-    fn view(&self, model: &Self::Model) -> View<Self::Msg> {
-        use crate::css::everything::*;
-    	v!{
-            
-    	}
-    }
-}
+//     fn init(&self, startup: StartupInfo<'a, Self>) -> Init<'a, Self> {
+//     	Init {
+//     		model: Model::default(),
+//     		subs: Subscriptions::default(),
+//     	}
+//     }
+//     fn update(&self, model: &'a mut Self::Model, msg: Self::Msg, sys: &SubSystems<Self>) {
+//         match msg {
+//             Msg::NoOp => {}
+//             Msg::SetCounter(x) => {
+//                 model.counter = x;
+//             }
+//             Msg::Test(_) => {}
+//         }
+//     }
+//     fn view(&self, model: &'a Self::Model) -> View<'a, Self::Msg> {
+//         use crate::css::everything::*;
+//         v!{
+//             h1 {
+//                 format!("{}", model.counter);
+//             }
+//             button {
+//                 on_click({
+//                     move || {Msg::SetCounter(model.clone().counter + 1)}
+//                 });
+//                 "Set";
+//             }
+//             main {
+//                 p {
+//                     "Lorem Ipsim";
+//                 }
+//             }
+//             footer {
+//                 // on_click(move || {Msg::Test(model.test.clone())});
+//                 // format!("{}", model.counter);
+//             }
+//     	}
+//     }
+// }
 
 
 pub fn main() {
-	let program = Program::from_component(Component {
-		name: "app",
-		spec: AppSpec::default(),
-	});
-	program.start();
+	// let program = Program::from_component(Component {
+	// 	name: "app",
+	// 	spec: AppSpec::default(),
+	// });
+	// program.start();
 }

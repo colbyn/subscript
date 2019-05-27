@@ -55,6 +55,14 @@ where
     SV: Debug + PartialEq,
     IV: Debug + PartialEq,
 {
+    pub fn traverse_values_pair(&self, new: &HashMap<K, IV>, f: &Fn(&SV, &IV)) {
+        new .iter()
+            .for_each(|(k, v)| {
+                if let Some(x) = self.data.get(&k) {
+                    f(x, v);
+                }
+            });
+    }
     pub fn traverse_values_mut(&mut self, mut f: impl FnMut(&mut SV)) {
         for value in self.data.values_mut() {
             f(value);

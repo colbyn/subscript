@@ -15,13 +15,14 @@ use ss_view_tree::*;
 
 
 pub trait Spec
-where Self: std::marker::Sized + PartialEq + Debug + Clone
+where
+    Self: std::marker::Sized + PartialEq + Debug + Clone
 {
-    type Model: Debug + PartialEq + Hash + Serialize + DeserializeOwned;
+    type Model: Debug + PartialEq + Hash + Serialize + DeserializeOwned + Clone;
     type Msg: Debug + PartialEq + Clone;
     
     fn init(&self, startup: StartupInfo<Self>) -> Init<Self>;
-    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems);
+    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems<Self>);
     fn view(&self, model: &Self::Model) -> View<Self::Msg>;
 }
 
@@ -79,13 +80,15 @@ impl Uri for str {
 
 /// External API for interacting with internal framework facilities.
 #[derive(Debug, PartialEq)]
-pub struct SubSystems {
+pub struct SubSystems<S: Spec> {
+    pub(crate) mark: PhantomData<S>,
 	pub(crate) requests: RefCell<VecDeque<SystemRequest>>,
 }
 
-impl Default for SubSystems {
+impl<S: Spec> Default for SubSystems<S> {
     fn default() -> Self {
         SubSystems {
+            mark: PhantomData,
             requests: RefCell::new(VecDeque::new()),
         }
     }
@@ -110,7 +113,7 @@ impl PartialEq for SystemRequest {
 }
 
 
-impl SubSystems {
+impl<S: Spec> SubSystems<S> {
     pub fn navigate(&self, route: impl Uri) {
         self.requests.borrow_mut().push_back(
             SystemRequest::Navigate(route.stringify())

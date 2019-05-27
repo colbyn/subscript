@@ -280,6 +280,35 @@ where
             }
         }
     }
+    pub fn traverse_pair(&self, api: &TreeApi<M, SN, SL, IN, IL>, new: &ITree<IN, IL>, f: &PairTraversal<&Fn(&SN, &IN), &Fn(&SL, &IL)>) {
+        match (self, new) {
+            (STree::Leaf(l1), ITree::Leaf(l2)) => {
+                (f.leafs)(&l1.data, &l2.data);
+            }
+            (STree::Node(n1), ITree::Node(n2)) => {
+                for new in n2.children.0.iter() {
+                    let unchanged = || get_item_by(&n1.children.data, |old| {
+                        old.unchanged(api, &new)
+                    });
+                    let changed = || get_item_by(&n1.children.data, |old| {
+                        old.recyclable(api, &new)
+                    });
+                    if let Some(unchanged) = unchanged() {
+                        unchanged.traverse_pair(api, new, f);
+                    } if let Some(changed) = changed() {
+                        changed.traverse_pair(api, new, f);
+                    }
+                }
+                (f.nodes)(&n1.data, &n2.data);
+            }
+            _ => {}
+        }
+    }
+}
+
+pub struct PairTraversal<NS, LS> {
+    pub nodes: NS,
+    pub leafs: LS,
 }
 
 
@@ -515,13 +544,11 @@ where
                 });
                 if let Some(unchanged) = unchanged(&mut self.data) {
                     Item::Unchanged(unchanged)
+                } else if let Some(mut changed) = changed(&mut self.data) {
+                    changed.sync(api, parent, new);
+                    Item::Changed(changed)
                 } else {
-                    if let Some(mut changed) = changed(&mut self.data) {
-                        changed.sync(api, parent, new);
-                        Item::Changed(changed)
-                    } else {
-                        Item::New(create_tree(api, parent, new))
-                    }
+                    Item::New(create_tree(api, parent, new))
                 }
             })
             .group_by(|x| x.get_type())
@@ -676,6 +703,11 @@ where
 pub fn remove_item_by<T: PartialEq>(xs: &mut Vec<T>, f: impl Fn(&T)->bool) -> Option<T> {
     let pos = xs.iter().position(|x| f(x))?;
     Some(xs.remove(pos))
+}
+
+pub fn get_item_by<T: PartialEq>(xs: &Vec<T>, f: impl Fn(&T)->bool) -> Option<&T> {
+    let pos = xs.iter().position(|x| f(x))?;
+    xs.get(pos)
 }
 
 pub fn unsafe_unpack_same_type<M, SN, SL, IN, IL>(

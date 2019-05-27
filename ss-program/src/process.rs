@@ -1,5 +1,7 @@
+use std::convert::AsRef;
+use std::borrow::Cow;
 use std::any::*;
-use std::marker::PhantomData;
+use std::marker::*;
 use std::fmt::{self, Debug};
 use std::cell::*;
 use std::rc::*;
@@ -16,7 +18,7 @@ use ss_view_tree::attributes::*;
 use ss_view_tree::events::*;
 use ss_dom_tree::*;
 use crate::spec::*;
-
+use owning_ref::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,7 +75,7 @@ impl ProcessRegistry {
 			let model = RefCell::new(model);
 			let new_process = Process {
 				view,
-				model,
+				model: unimplemented!(),
 				model_hash,
 				subs,
 				pid: key.clone(),
@@ -137,7 +139,8 @@ impl ProcessRegistry {
 	}
 }
 
-pub(crate) trait ProcessObject: Any {
+
+pub(crate) trait ProcessObject {
 	fn tick_global_events(&self, global_events: &Vec<Rc<Any>>);
 	fn to_any(&self) -> &Any;
 }
@@ -163,7 +166,7 @@ pub struct Component<S: Spec> {
 }
 
 
-impl<S: Spec + 'static> ViewComponent for Component<S> {
+impl<S: 'static +  Spec> ViewComponent for Component<S> {
 	fn box_clone(&self) -> Box<ViewComponent> {
 		Box::new(Component {
 			name: self.name,
@@ -232,10 +235,6 @@ pub fn cast_ids(xs: &Vec<Box<InternalComponentId>>) -> HashSet<ProcessId> {
 // PROCESS - CORE
 ///////////////////////////////////////////////////////////////////////////////
 
-// #[derive(Debug, PartialEq)]
-// pub struct LiveProcess<S: Spec>(pub(crate) Rc<Process<S>>);
-
-
 #[derive(Debug, PartialEq)]
 pub struct Process<S: Spec> {
 	pid: ProcessId,
@@ -244,14 +243,13 @@ pub struct Process<S: Spec> {
 	model: RefCell<S::Model>,
 	model_hash: RefCell<u64>,
 	subs: Subscriptions<S::Msg>,
-	sys: SubSystems,
+	sys: SubSystems<S>,
 }
 
-impl<S: Spec> Process<S>
-where S::Msg: 'static
-{
+impl<S: Spec> Process<S> where S::Msg: 'static {
 	fn force_update_view(&self) {
-		let new_view = self.spec.borrow().view(&self.model.borrow());
+		let x: &S::Model = &self.model.borrow();
+		let new_view = self.spec.borrow().view(unimplemented!());
 		self.view.borrow_mut().sync(new_view);
 	}
 	fn run_sys_requests(&self) {
@@ -286,7 +284,7 @@ where S::Msg: 'static
             // FIRST - HTML DOM EVENTS
             self.view.borrow().tick(&mut env, reg);
             // SECOND - SUBSCRIPTIONS
-            // self.0.subs.tick(&mut xs, global_events);
+            // self.subs.tick(&mut env.messages, reg);
             // DONE
             env.messages
 		};
@@ -302,8 +300,7 @@ where S::Msg: 'static
 				// SET NEW HASH
 				self.model_hash.replace(new_hash);
 				// UPDATE VIEW
-				let new_view = self.spec.borrow().view(&self.model.borrow());
-				self.view.borrow_mut().sync(new_view);
+				self.force_update_view();
 			}
 			// PROCESS COMMANDS
 			self.run_sys_requests();
@@ -313,9 +310,8 @@ where S::Msg: 'static
 	}
 }
 
-impl<S: Spec + 'static> ProcessObject for Process<S> {
-	fn to_any(&self) -> &Any {self}
-
+impl<S: 'static +  Spec> ProcessObject for Process<S> {
+	fn to_any(&self) -> &(Any + 'static) {self}
 	fn tick_global_events(&self, global_events: &Vec<Rc<Any>>) {
 		let mut messages = Vec::new();
 		self.subs.tick(&mut messages, global_events);
@@ -331,8 +327,7 @@ impl<S: Spec + 'static> ProcessObject for Process<S> {
 				// SET NEW HASH
 				self.model_hash.replace(new_hash);
 				// UPDATE VIEW
-				let new_view = self.spec.borrow().view(&self.model.borrow());
-				self.view.borrow_mut().sync(new_view);
+				self.force_update_view();
 			}
 			// PROCESS COMMANDS
 			self.run_sys_requests();

@@ -12,7 +12,7 @@ use either::Either::{self, Left, Right};
 
 use ss_web_utils::prelude::*;
 use ss_web_utils::dom;
-use ss_web_utils::js::{self, console, EventCallback};
+use ss_web_utils::js::{self, console, QueueCallback};
 use ss_trees::tree::*;
 use ss_trees::tree::map::{SMap, MapApi};
 use ss_view_tree::*;
@@ -27,17 +27,13 @@ use ss_cssom_tree::GLOBAL_CSS_REGISTRY;
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, PartialEq)]
-pub struct LiveView<Msg>
-where Msg: PartialEq + Debug + Clone
-{
+pub struct LiveView<Msg> where Msg: PartialEq + Debug + Clone {
     sync_api: DomTreeLogic,
     mount: Meta,
     tree: STree<Meta, LiveNode<Msg>, LiveLeaf, ViewNode<Msg>, ViewLeaf>,
 }
 
-impl<Msg> LiveView<Msg>
-where Msg: PartialEq + 'static + Debug + Clone
-{
+impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
     pub fn start(initial_view: View<Msg>) -> Self {
         let window = dom::window();
         let sync_api = DomTreeLogic::default();
@@ -56,12 +52,26 @@ where Msg: PartialEq + 'static + Debug + Clone
         LiveView {sync_api,mount,tree}
     }
     pub fn sync(&mut self, view: View<Msg>) {
+        self.tree.traverse_pair(&self.sync_api, &view.0, &PairTraversal {
+            leafs: &move |n1, n2| {},
+            nodes: &move |n1, n2| {
+                n1.events.borrow().traverse_values_pair(&n2.events, &move |e1, e2| {
+                    e1.sync(e2);
+                });
+            },
+        });
         self.tree.sync(&self.sync_api, &self.mount, view.0);
     }
     pub fn tick(&self, env: &mut TickEnv<Msg>, reg: &GlobalTickRegistry) {
         let mut nf = |node: &LiveNode<Msg>| -> () {
             node.events.borrow_mut().traverse_values_mut(|handler| {
-                env.messages.append(&mut handler.callback.drain_and_apply(&handler.value));
+                let f: &EventHandler<Msg> = &handler.value.borrow();
+                env.messages.append(
+                    &mut handler.callback.drain()
+                        .into_iter()
+                        .map(|event| handler.value.borrow().run_handler(event))
+                        .collect::<Vec<Msg>>()
+                );
             });
         };
         let mut lf = |leaf: &LiveLeaf| -> () {
@@ -127,24 +137,16 @@ where
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LiveEventHandler<Msg> {
-    pub value: EventHandler<Msg>,
-    pub callback: js::EventCallback,
+    pub value: RefCell<EventHandler<Msg>>,
+    pub callback: js::QueueCallback,
 }
 
-impl<Msg> LiveEventHandler<Msg> {
-    /// Gets the DOM event name.
+impl<'a, Msg: Clone> LiveEventHandler<Msg> {
     pub fn event_name(&self) -> EventType {
-        self.value.event_name()
+        self.value.borrow().event_name()
     }
-}
-impl<Msg> js::Handler<Msg> for LiveEventHandler<Msg> {
-    fn handler(&self, event: wasm_bindgen::JsValue) -> Msg {
-        self.value.handler(event)
-    }
-}
-impl<Msg> dom::Callback for LiveEventHandler<Msg> {
-    fn as_js_function(&self) -> &js_sys::Function {
-        self.callback.as_js_function()
+    pub fn sync(&self, new: &EventHandler<Msg>) {
+        self.value.replace(new.clone());
     }
 }
 
@@ -153,17 +155,15 @@ pub type EventsMap<Msg> = SMap<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, 
 #[derive(Debug, PartialEq)]
 pub struct EventsApi {}
 
-impl<Msg> MapApi<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>> for EventsApi
+impl<'a, Msg> MapApi<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>> for EventsApi
 where
     Msg: PartialEq + 'static + Debug + Clone
 {
     fn create(&self, attached: &LiveNode<Msg>, key: &EventType, new: EventHandler<Msg>) -> LiveEventHandler<Msg> {
-    	use ss_web_utils::js::Handler;
-        use ss_web_utils::dom::DomRef;
         assert!({key == &new.event_name()});
         let x = dom::window();
-        let value = new;
-        let callback = js::EventCallback::new();
+        let value = RefCell::new(new);
+        let callback = js::QueueCallback::new();
         attached.dom_ref.add_event_listener(key.as_str(), &callback);
         LiveEventHandler {
             callback,
@@ -172,14 +172,14 @@ where
     }
     fn modified(&self, attached: &LiveNode<Msg>, key: &EventType, old: &mut LiveEventHandler<Msg>, new: EventHandler<Msg>) {
         console::log("EventsApi.modified");
-        old.value = new;
+        old.value.replace(new);
     }
     fn remove(&self, attached: &LiveNode<Msg>, key: EventType, old: LiveEventHandler<Msg>) {
         use ss_web_utils::dom::DomRef;
     	assert_eq!(key, old.event_name());
         attached.dom_ref.remove_event_listener(key.as_str(), &old.callback);
     }
-    fn unchanged(&self, old: &LiveEventHandler<Msg>, new: &EventHandler<Msg>) -> bool {false}
+    fn unchanged(&self, old: &LiveEventHandler<Msg>, new: &EventHandler<Msg>) -> bool {true}
 }
 
 
@@ -240,10 +240,7 @@ impl LiveLeaf {
 }
 
 #[derive(Debug)]
-pub struct LiveNode<Msg>
-where
-    Msg: PartialEq + Clone + Debug
-{
+pub struct LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     pub dom_ref: Rc<dom::Tag>,
     pub tag: String,
     pub attributes: RefCell<AttributesMap<Msg>>,
@@ -251,20 +248,14 @@ where
     pub styling: RefCell<Stylesheet>,
 }
 
-impl<Msg> LiveNode<Msg>
-where
-    Msg: PartialEq + Clone + Debug
-{
+impl<Msg> LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     pub fn get_meta(&self) -> Meta {
         let dom_ref = self.dom_ref.clone();
         Meta::Tag{dom_ref}
     }
 }
 
-impl<Msg> PartialEq for LiveNode<Msg>
-where
-    Msg: PartialEq + Clone + Debug
-{
+impl<Msg> PartialEq for LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     fn eq(&self, other: &LiveNode<Msg>) -> bool {
         self.tag == other.tag &&
         self.attributes == other.attributes &&
