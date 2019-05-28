@@ -90,7 +90,7 @@ impl EventType {
             EventType::OnMouseLeave => "mouseenter",
             EventType::OnMouseOver => "mouseover",
             EventType::OnMouseOut => "mouseout",
-            EventType::OnInput => "change",
+            EventType::OnInput => "input",
             EventType::OnCheck => "click",
             EventType::OnSubmit => "submit",
             EventType::OnBlur => "blur",
@@ -217,43 +217,57 @@ impl<Msg> EventHandlerObject<Msg> for EventHandler<Msg> {
 
 // MOUSE
 impl<Msg> EventHandlerObject<Msg> for OnClick<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnClick
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnMouseDown<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnMouseDown
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnMouseUp<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnMouseUp
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnMouseEnter<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnMouseEnter
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnMouseLeave<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnMouseLeave
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnMouseOver<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnMouseOver
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnMouseOut<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnMouseOut
     }
@@ -285,7 +299,9 @@ impl<Msg> EventHandlerObject<Msg> for OnCheck<Msg> {
     }
 }
 impl<Msg> EventHandlerObject<Msg> for OnSubmit<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
         EventType::OnSubmit
     }
@@ -293,13 +309,17 @@ impl<Msg> EventHandlerObject<Msg> for OnSubmit<Msg> {
 
 // FOCUS
 impl<Msg> EventHandlerObject<Msg> for OnBlur<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
             EventType::OnBlur
         }
 }
 impl<Msg> EventHandlerObject<Msg> for OnFocus<Msg> {
-    fn run_handler(&self, event: JsValue) -> Msg {self.0()}
+    fn run_handler(&self, event: JsValue) -> Msg {
+        self.0()
+    }
     fn event_name(&self) -> EventType {
             EventType::OnFocus
         }

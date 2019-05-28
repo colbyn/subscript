@@ -6,6 +6,15 @@ pub enum AttributeValue {
     Toggle(bool),
 }
 
+impl AttributeValue {
+	pub fn get_string(&self) -> Option<&String> {
+		match self {
+			AttributeValue::Value(x) => Some(&x),
+			_ => None
+		}
+	}
+}
+
 pub trait AttributeValueInterface {
 	fn to_attribute(self) -> AttributeValue;
 }

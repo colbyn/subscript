@@ -23,8 +23,9 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use crate::attributes::*;
 use crate::events::*;
 use ss_trees::tree::*;
-use ss_trees::tree::map::*;
+use ss_trees::ext::map::*;
 use ss_css_types::api::*;
+use ss_web_utils::{js::console};
 pub use components::*;
 
 
@@ -86,7 +87,12 @@ pub trait Viewable<Msg> {
 }
 
 impl<Msg> Viewable<Msg> for () {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {}
+    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+        console::warn(
+            "Something in your view isn’t returning anything
+            (i.e. ‘()’); perhaps theres a mistake somewhere?"
+        );
+    }
 }
 impl<Msg> Viewable<Msg> for &str {
     fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {

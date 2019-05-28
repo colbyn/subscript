@@ -15,7 +15,7 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use crate::attributes::*;
 use crate::events::*;
 use ss_trees::tree::*;
-use ss_trees::tree::map::*;
+use ss_trees::ext::map::*;
 
 pub type InternalComponentId = Any;
 

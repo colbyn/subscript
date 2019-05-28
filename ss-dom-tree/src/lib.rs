@@ -1,5 +1,6 @@
 #![allow(dead_code, unused, unused_variables)]
 
+
 use std::fmt::Debug;
 use std::cell::*;
 use std::convert::From;
@@ -9,12 +10,13 @@ use std::rc::Rc;
 use std::any::*;
 use std::collections::*;
 use either::Either::{self, Left, Right};
+use wasm_bindgen::JsValue;
 
 use ss_web_utils::prelude::*;
 use ss_web_utils::dom;
-use ss_web_utils::js::{self, console, QueueCallback};
+use ss_web_utils::js::{self, console, QueueCallback, VoidCallback};
 use ss_trees::tree::*;
-use ss_trees::tree::map::{SMap, MapApi};
+use ss_trees::ext::map::{SMap, MapApi};
 use ss_view_tree::*;
 use ss_view_tree::events::*;
 use ss_view_tree::attributes::*;
@@ -93,7 +95,6 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
 // ATTRIBUTES
 ///////////////////////////////////////////////////////////////////////////////
 
-
 pub type AttributesMap<Msg> = SMap<LiveNode<Msg>, String, AttributeValue, AttributeValue>;
 
 #[derive(Debug, PartialEq)]
@@ -112,15 +113,25 @@ where
         new
     }
     fn modified(&self, attached: &LiveNode<Msg>, key: &String, old: &mut AttributeValue, new: AttributeValue) {
-    	attached.dom_ref.remove_attribute(key);
+        // SPECIAL - SYNC STATEFUL ATTRIBUTE CONTROLLED DOM VALUES
+        match (attached.tag.as_str(), key.as_str()) {
+            ("input", "value") => {
+                if let Some(value) = new.get_string() {
+                    set_input_value(attached.dom_ref.as_ref(), value);
+                }
+            },
+            _ => ()
+        }
+        // UPDATE ATTRIBUTE
         match &new {
             AttributeValue::Value(str) => attached.dom_ref.set_attribute(key, str),
             AttributeValue::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
-            AttributeValue::Toggle(false) => (),
+            AttributeValue::Toggle(false) => attached.dom_ref.remove_attribute(key),
         }
         *old = new;
     }
     fn remove(&self, attached: &LiveNode<Msg>, key: String, old: AttributeValue) {
+        console::log("AttributesApi.remove");
     	attached.dom_ref.remove_attribute(&key);
     }
     fn unchanged(&self, old: &AttributeValue, new: &AttributeValue) -> bool {
@@ -129,16 +140,28 @@ where
 }
 
 
+/// Helper for AttributesApi.
+fn set_input_value(dom_ref: &dom::Tag, value: &str) {
+    let node_ref: JsValue = From::from(dom_ref.dom_ref_as_element());
+    let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+    node_ref.set_value(value);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // EVENTS
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct LiveEventHandler<Msg> {
     pub value: RefCell<EventHandler<Msg>>,
-    pub callback: js::QueueCallback,
+    pub callback: js::DomEventHandler,
+}
+
+impl<Msg> PartialEq for LiveEventHandler<Msg> {
+    fn eq(&self, other: &LiveEventHandler<Msg>) -> bool {
+        self.value.borrow().event_name() == other.value.borrow().event_name()
+    }
 }
 
 impl<'a, Msg: Clone> LiveEventHandler<Msg> {
@@ -163,7 +186,16 @@ where
         assert!({key == &new.event_name()});
         let x = dom::window();
         let value = RefCell::new(new);
-        let callback = js::QueueCallback::new();
+        let prevent_default = match (attached.tag.as_str(), key) {
+            ("form", EventType::OnSubmit) => true,
+            ("input", EventType::OnSubmit) => true,
+            _ => false,
+        };
+        let settings = js::DomCallbackSettings {
+            stop_propagation: false,
+            prevent_default,
+        };
+        let callback = js::DomEventHandler::new(settings);
         attached.dom_ref.add_event_listener(key.as_str(), &callback);
         LiveEventHandler {
             callback,
@@ -240,11 +272,23 @@ impl LiveLeaf {
 
 #[derive(Debug)]
 pub struct LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
+    pub auto_listeners: HashMap<String, VoidCallback>,
     pub dom_ref: Rc<dom::Tag>,
     pub tag: String,
     pub attributes: RefCell<AttributesMap<Msg>>,
     pub events: RefCell<EventsMap<Msg>>,
     pub styling: RefCell<Stylesheet>,
+}
+
+impl<Msg> Drop for LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
+    fn drop(&mut self) {
+        for (event_name, callback) in self.auto_listeners.drain() {
+            self.dom_ref.remove_event_listener(&event_name, &callback);
+        }
+        for (key, live_event_listener) in self.events.borrow_mut().dangerous_unsync_drain() {
+            self.dom_ref.remove_event_listener(key.as_str(), &live_event_listener.callback);
+        }
+    }
 }
 
 impl<Msg> LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
@@ -336,15 +380,26 @@ where
             &self.attributes_api,
             &new.attributes,
         );
-        let events_unchanged = old.events.borrow().unchanged(
-            &self.events_api,
-            &new.events,
-        );
+        let events_unchanged = {
+            let mut ks = Vec::new();
+            for k in new.events.keys() {
+                ks.push(k.clone());
+            }
+            old.events.borrow().get_keys() == ks
+        };
         let styling_unchanged = *old.styling.borrow() == new.styling;
-        styling_unchanged && attributes_unchanged && events_unchanged && new.tag == old.tag
+        let result = styling_unchanged && attributes_unchanged && events_unchanged && new.tag == old.tag;
+        result
     }
     fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
-        new.tag == old.tag
+        let events_recyclable = {
+            let mut ks = Vec::new();
+            for k in new.events.keys() {
+                ks.push(k.clone());
+            }
+            old.events.borrow().get_keys() == ks
+        };
+        (new.tag == old.tag) && events_recyclable
     }
     fn node_update(&self, update: Update<&mut LiveNode<Msg>, ViewNode<Msg>>) {
         use ss_web_utils::dom::DomRef;
@@ -373,7 +428,24 @@ where
     fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
         use ss_web_utils::dom::DomRef;
         let dom_ref = self.window.document.create_element(new.tag.as_str());
+        let mut auto_listeners = HashMap::new();
+        let mut add_prevent_default_callback = |event_name: &str| {
+            let callback = move |event: JsValue| {
+                let event: web_sys::Event = From::from(event);
+                event.prevent_default();
+            };
+            let callback = VoidCallback::new(callback);
+            dom_ref.add_event_listener(event_name, &callback);
+            auto_listeners.insert(String::from(event_name), callback);
+        };
+        match new.tag.as_str() {
+            "form" => add_prevent_default_callback("submit"),
+            "input" => add_prevent_default_callback("submit"),
+            "a" => add_prevent_default_callback("click"),
+            _ => ()
+        }
         let result = LiveNode {
+            auto_listeners,
             styling: RefCell::new(new.styling),
             dom_ref: Rc::new(dom_ref),
             tag: new.tag,

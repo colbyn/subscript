@@ -16,16 +16,16 @@ macro_rules! view_arguments {
     }};
     ($ctx:expr; $key:ident = $value:expr; $($rest:tt)*) => {{
         let value: AttributeValue = internal_normalize_attribute_value($value);
-        let mut key = String::from(stringify!($key));
-        key.replace("_", "-");
+        let key = String::from(stringify!($key));
+        let ket = key.replace("_", "-");
         $ctx.extend((key, value));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $prop:ident: $value:expr; $($rest:tt)*) => {{
         let value: &str = $value;
         let value: String = String::from(value);
-        let mut property = String::from(stringify!($prop));
-        property.replace("_", "-");
+        let property = String::from(stringify!($prop));
+        let property = property.replace("_", "-");
         $ctx.extend(Style::Raw{
             property,
             value,
@@ -40,6 +40,11 @@ macro_rules! view_arguments {
 
 #[macro_export]
 macro_rules! v {
+    ($tag:ident| $($x:tt)*) => {{
+        let mut node = View::new_tag(stringify!($tag));
+        view_arguments!(node; $($x)*);
+        node
+    }};
     ($($x:tt)*) => {{
         let mut node = View::new_tag("div");
         view_arguments!(node; $($x)*);

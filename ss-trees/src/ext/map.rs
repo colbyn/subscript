@@ -21,7 +21,7 @@ where
 impl<N, K, SV, IV> Default for SMap<N, K, SV, IV>
 where
     N: Debug + PartialEq,
-    K: Debug + Eq + Hash,
+    K: Debug + Eq + Hash + Clone,
     SV: Debug + PartialEq,
     IV: Debug + PartialEq,
 {
@@ -37,7 +37,7 @@ where
 pub trait MapApi<N, K, SV, IV>
 where
 	N: Debug + PartialEq,
-    K: Debug + Eq + Hash,
+    K: Debug + Eq + Hash + Clone,
     SV: Debug + PartialEq,
     IV: Debug + PartialEq,
 {
@@ -51,10 +51,20 @@ where
 impl<N, K, SV, IV> SMap<N, K, SV, IV>
 where
 	N: Debug + PartialEq,
-    K: Debug + Eq + Hash,
+    K: Debug + Eq + Hash + Clone,
     SV: Debug + PartialEq,
     IV: Debug + PartialEq,
 {
+    pub fn get_keys(&self) -> Vec<K> {
+        let mut ks = Vec::new();
+        for k in self.data.keys() {
+            ks.push(k.clone());
+        }
+        ks
+    }
+    pub fn dangerous_unsync_drain(&mut self) -> HashMap<K, SV, std::collections::hash_map::RandomState> {
+        self.data.drain().collect()
+    }
     pub fn traverse_values_pair(&self, new: &HashMap<K, IV>, f: &Fn(&SV, &IV)) {
         new .iter()
             .for_each(|(k, v)| {
@@ -66,6 +76,11 @@ where
     pub fn traverse_values_mut(&mut self, mut f: impl FnMut(&mut SV)) {
         for value in self.data.values_mut() {
             f(value);
+        }
+    }
+    pub fn traverse(&self, f: impl Fn(&K, &SV)) {
+        for (k, v) in self.data.iter() {
+            f(k, v);
         }
     }
     pub fn unchanged(&self, api: &MapApi<N, K, SV, IV>, new: &HashMap<K, IV>) -> bool {

@@ -6,7 +6,7 @@ use std::cell::*;
 use std::hash::{Hash, Hasher};
 use ss_css_types::internal::*;
 use ss_css_types::stylesheet::syntax::*;
-use ss_trees::tree::map::{SMap, MapApi};
+use ss_trees::ext::map::{SMap, MapApi};
 use ss_web_utils::{dom, js, js::console, dom::DomRef};
 
 

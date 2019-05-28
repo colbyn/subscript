@@ -1,5 +1,3 @@
-pub mod map;
-
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::*;
@@ -416,12 +414,14 @@ where
         api.node_recyclable(&other.data, &self.data)
     }
     pub fn sync(&mut self, api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: INode<IN, IL>) {
-        if self.recyclable(api, &new) {
+        // let recyclable = self.recyclable(api, &new);
+        let recyclable = true;
+        if recyclable {
+            self.children.sync(api, &api.get_meta(Left(&self.data)), new.children);
             api.node_update(Update {
                 old: &mut self.data,
                 new: new.data,
             });
-            self.children.sync(api, &api.get_meta(Left(&self.data)), new.children);
         } else {
             let new_tree = create_tree(api, parent, ITree::Node(new));
             let insert_op = InsertOp::Swap {
@@ -576,20 +576,23 @@ where
         let mut xs = {
             if self.data.is_empty() && xs.len() == 1 {
                 let (key, group) = xs.remove(0);
-                let group_ms: Vec<M> = group
-                    .iter()
-                    .map(|x| -> M {
-                        match x {
-                            Item::Unchanged(x) => api.get_meta(x.to_either_inner()),
-                            Item::Changed(x) => api.get_meta(x.to_either_inner()),
-                            Item::New(x) => api.get_meta(x.to_either_inner()),
-                        }
-                    })
-                    .collect_vec();
-                let insert_op = InsertOp::Append{
-                    parent: parent.clone(),
-                    new: group_ms,
-                };
+                if key == ItemType::New {
+                    let group_ms: Vec<M> = group
+                        .iter()
+                        .map(|x| -> M {
+                            match x {
+                                Item::Unchanged(x) => api.get_meta(x.to_either_inner()),
+                                Item::Changed(x) => api.get_meta(x.to_either_inner()),
+                                Item::New(x) => api.get_meta(x.to_either_inner()),
+                            }
+                        })
+                        .collect_vec();
+                    let insert_op = InsertOp::Append{
+                        parent: parent.clone(),
+                        new: group_ms,
+                    };
+                    api.insert(insert_op.clone());
+                }
                 let items: Vec<STree<M, SN, SL, IN, IL>> = group
                     .into_iter()
                     .map(|x| {
@@ -600,7 +603,6 @@ where
                         }
                     })
                     .collect_vec();
-                api.insert(insert_op.clone());
                 vec![items]
             } else {
                 xs  .into_iter()
@@ -672,7 +674,7 @@ where
                             .collect_vec();
                         match &key {
                             ItemType::New => {
-                                console::log(format!("tree: {:#?}", (key, insert_op.clone())));
+                                // console::log(format!("tree: {:#?}", (key, insert_op.clone())));
                                 api.insert(insert_op.clone());
                             }
                             _ => {}

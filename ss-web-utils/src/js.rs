@@ -11,6 +11,7 @@ use either::Either;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::closure;
 use wasm_bindgen::closure::Closure;
+use wasm_bindgen::JsCast;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -78,7 +79,7 @@ pub struct VoidCallback {
 }
 
 impl VoidCallback {
-    pub fn new(cb: Box<Fn(JsValue)>) -> Self {
+    pub fn new(cb: impl Fn(JsValue) + 'static) -> Self {
         use wasm_bindgen::JsCast;
         let function_wrapper: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
             move |value: JsValue| {
@@ -113,8 +114,10 @@ impl crate::dom::Callback for VoidCallback {
 // JAVASCRIPT QUEUE CALLBACK
 ///////////////////////////////////////////////////////////////////////////////
 
+
 #[derive(Clone)]
 pub struct QueueCallback {
+    pub i_settings: Rc<RefCell<Option<DomCallbackSettings>>>,
     pub i_bindgen_closure: Rc<Closure<dyn Fn(JsValue)>>,
     pub i_js_function: Rc<js_sys::Function>,
     pub i_events: Rc<RefCell<VecDeque<JsValue>>>,
@@ -124,8 +127,10 @@ impl QueueCallback {
     pub fn new() -> Self {
         use wasm_bindgen::JsCast;
         let events_queue = Rc::new(RefCell::new(VecDeque::new()));
+        let i_settings = Rc::new(RefCell::new(None));
         let function_wrapper: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
             let events_queue = events_queue.clone();
+            let i_settings = i_settings.clone();
             move |value: JsValue| {
                 events_queue.borrow_mut().push_back(value);
             }
@@ -133,6 +138,7 @@ impl QueueCallback {
         let js_function: &js_sys::Function = function_wrapper.as_ref().unchecked_ref();
         let js_function: js_sys::Function = js_function.clone();
         let queue_callback = QueueCallback {
+            i_settings,
             i_bindgen_closure: Rc::new(function_wrapper),
             i_js_function: Rc::new(js_function),
             i_events: events_queue,
@@ -159,6 +165,82 @@ impl crate::dom::Callback for QueueCallback {
         self.i_js_function.as_ref()
     }
 }
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// JAVASCRIPT DOM EVENT-HANDLER
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct DomCallbackSettings {
+    pub stop_propagation: bool,
+    pub prevent_default: bool,
+}
+
+#[derive(Clone)]
+pub struct DomEventHandler {
+    pub i_settings: Rc<RefCell<DomCallbackSettings>>,
+    pub i_bindgen_closure: Rc<Closure<dyn Fn(JsValue)>>,
+    pub i_js_function: Rc<js_sys::Function>,
+    pub i_events: Rc<RefCell<VecDeque<JsValue>>>,
+}
+
+impl DomEventHandler {
+    pub fn new(settings: DomCallbackSettings) -> Self {
+        fn handler(settings: Rc<RefCell<DomCallbackSettings>>, value: &JsValue) {
+            let settings: DomCallbackSettings = settings.borrow().clone();
+            let event: web_sys::Event = From::from(value.clone());
+            if settings.prevent_default {
+                event.prevent_default();
+            }
+            if settings.stop_propagation {
+                event.stop_propagation();
+            }
+        }
+        let events_queue = Rc::new(RefCell::new(VecDeque::new()));
+        let i_settings = Rc::new(RefCell::new(settings));
+        let function_wrapper: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
+            let events_queue = events_queue.clone();
+            let i_settings = i_settings.clone();
+            move |value: JsValue| {
+                // handler(i_settings.clone(), &value);
+                events_queue.borrow_mut().push_back(value);
+            }
+        }));
+        let js_function: &js_sys::Function = function_wrapper.as_ref().unchecked_ref();
+        let js_function: js_sys::Function = js_function.clone();
+        let queue_callback = DomEventHandler {
+            i_settings,
+            i_bindgen_closure: Rc::new(function_wrapper),
+            i_js_function: Rc::new(js_function),
+            i_events: events_queue,
+        };
+        queue_callback
+    }
+    pub fn drain(&self) -> Vec<JsValue> {
+        let xs: Vec<JsValue> = self.i_events.borrow_mut().drain(..).collect();
+        xs
+    }
+}
+
+impl Debug for DomEventHandler {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> fmt::Result {
+        write!(f, "DomEventHandler")
+    }
+}
+impl PartialEq for DomEventHandler {
+    fn eq(&self, other: &DomEventHandler) -> bool {true}
+}
+
+impl crate::dom::Callback for DomEventHandler {
+    fn as_js_function(&self) -> &js_sys::Function {
+        self.i_js_function.as_ref()
+    }
+}
+
 
 
 
