@@ -518,6 +518,12 @@ pub struct Tag {
     pub dom_ref_as_element: web_sys::Element,
 }
 
+impl PartialEq for Tag {
+    fn eq(&self, other: &Tag) -> bool {
+        self.tag == other.tag
+    }
+}
+
 impl Tag {
     pub fn new(tag: &str) -> Self {
         let element = {
@@ -563,6 +569,10 @@ pub struct Text {
     pub dom_ref: JsValue,
     pub dom_ref_as_text: web_sys::Text,
     pub dom_ref_as_node: web_sys::Node,
+}
+
+impl PartialEq for Text {
+    fn eq(&self, other: &Text) -> bool {true}
 }
 
 impl Text {

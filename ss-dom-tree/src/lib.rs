@@ -1,5 +1,5 @@
 #![allow(dead_code, unused, unused_variables)]
-
+pub mod css;
 
 use std::fmt::Debug;
 use std::cell::*;
@@ -20,8 +20,7 @@ use ss_trees::ext::map::{SMap, MapApi};
 use ss_view_tree::*;
 use ss_view_tree::events::*;
 use ss_view_tree::attributes::*;
-use ss_css_types::api::Stylesheet;
-use ss_cssom_tree::GLOBAL_CSS_REGISTRY;
+use ss_view_tree::styling::{Stylesheet, Style, MediaQuerySelector, StateSelector};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +87,15 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// STYLING
+///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct LiveStylesheet {
+    css_id: u32,
+    value: Stylesheet,
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -417,10 +424,11 @@ where
         );
         let styling_unchanged = {*old.styling.borrow() == new.styling};
         if !styling_unchanged {
-            let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
-                let sheet = new.styling.clone();
-                |reg| reg.borrow_mut().upsert(sheet)
-            });
+            let hash_key: u64 = unimplemented!();
+            // let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
+            //     let sheet = new.styling.clone();
+            //     |reg| reg.borrow_mut().upsert(sheet)
+            // });
             old.styling.replace(new.styling);
             old.dom_ref.set_attribute("css", &format!("{}", &hash_key));
         }
@@ -464,10 +472,11 @@ where
         );
         let styling_empty = result.styling.borrow().is_empty();
         if !styling_empty {
-            let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
-                let sheet = result.styling.borrow().clone();
-                |reg| reg.borrow_mut().upsert(sheet)
-            });
+            let hash_key: u64 = unimplemented!();
+            // let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
+            //     let sheet = result.styling.borrow().clone();
+            //     |reg| reg.borrow_mut().upsert(sheet)
+            // });
             result.dom_ref.set_attribute("css", &format!("{}", &hash_key));
         }
         result

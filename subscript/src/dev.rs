@@ -27,8 +27,8 @@ use ss_program::SubSystems;
 use ss_program::Component;
 use ss_program::Program;
 use ss_program::Spec;
-use ss_css_types::api::*;
-use crate::css::{common::*, everything as css};
+// use ss_css_types::api::*;
+// use crate::css::{common::*, everything as css};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,82 +64,82 @@ pub struct Entry {
 // APP - IMPLEMENTATION
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
-pub struct AppSpec {}
+// #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+// pub struct AppSpec {}
 
-impl Spec for AppSpec {
-    /// See 'Spec' docs for required derive/trait implementations.
-    type Model = Model;
-    type Msg = Msg;
+// impl Spec for AppSpec {
+//     /// See 'Spec' docs for required derive/trait implementations.
+//     type Model = Model;
+//     type Msg = Msg;
 
-    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
-    	Init {
-    		model: Model::default(),
-    		subs: Subscriptions::default(),
-    	}
-    }
-    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems<Self>) {
-        match msg {
-            Msg::NoOp => {}
-            Msg::NewEntryName(str) => {model.new_entry_name = str;}
-            Msg::SubmitNewEntryName => {
-                if !model.new_entry_name.is_empty() {
-                    let name = model.new_entry_name.drain(..).collect::<String>();
-                    let entry = Entry {name, completed: false};
-                    model.entries.push(entry);
-                }
-            }
-            Msg::EntryCompleted(ix, toggle) => {
-                if let Some(entry) = model.entries.get_mut(ix) {
-                    entry.completed = toggle;
-                }
-            }
-        }
-    }
-    fn view(&self, model: &Self::Model) -> View<Self::Msg> {v!{
-        h1 {
-            "todos";
-        }
-        main {
-            form {
-                on_submit(|| Msg::SubmitNewEntryName);
-                input {
-                    type = "text";
-                    value = model.new_entry_name.as_str();
-                    on_input(move |str| Msg::NewEntryName(str));
-                }
-            }
-            ul {
-                list_style: "none";
-                model.entries
-                    .iter()
-                    .enumerate()
-                    .map(move |(ix, entry)| render_entry(ix, entry))
-                    .collect::<Vec<_>>();
-            }
-        }
-    }}
-}
+//     fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
+//     	Init {
+//     		model: Model::default(),
+//     		subs: Subscriptions::default(),
+//     	}
+//     }
+//     fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &SubSystems<Self>) {
+//         match msg {
+//             Msg::NoOp => {}
+//             Msg::NewEntryName(str) => {model.new_entry_name = str;}
+//             Msg::SubmitNewEntryName => {
+//                 if !model.new_entry_name.is_empty() {
+//                     let name = model.new_entry_name.drain(..).collect::<String>();
+//                     let entry = Entry {name, completed: false};
+//                     model.entries.push(entry);
+//                 }
+//             }
+//             Msg::EntryCompleted(ix, toggle) => {
+//                 if let Some(entry) = model.entries.get_mut(ix) {
+//                     entry.completed = toggle;
+//                 }
+//             }
+//         }
+//     }
+//     fn view(&self, model: &Self::Model) -> View<Self::Msg> {v!{
+//         h1 {
+//             "todos";
+//         }
+//         main {
+//             form {
+//                 on_submit(|| Msg::SubmitNewEntryName);
+//                 input {
+//                     type = "text";
+//                     value = model.new_entry_name.as_str();
+//                     on_input(move |str| Msg::NewEntryName(str));
+//                 }
+//             }
+//             ul {
+//                 list_style: "none";
+//                 model.entries
+//                     .iter()
+//                     .enumerate()
+//                     .map(move |(ix, entry)| render_entry(ix, entry))
+//                     .collect::<Vec<_>>();
+//             }
+//         }
+//     }}
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-fn render_entry(ix: usize, entry: &Entry) -> View<Msg> {v!{li|
-    form {
-        input {
-            on_check(move |toggle| Msg::EntryCompleted(ix, toggle));
-            type = "checkbox";
-            checked = entry.completed;
-        }
-        label {
-            entry.name.as_str();
-        }
-        button {
-            i {class = "fas fa-times";}
-        }
-    }
-}}
+// fn render_entry(ix: usize, entry: &Entry) -> View<Msg> {v!{li|
+//     form {
+//         input {
+//             on_check(move |toggle| Msg::EntryCompleted(ix, toggle));
+//             type = "checkbox";
+//             checked = entry.completed;
+//         }
+//         label {
+//             entry.name.as_str();
+//         }
+//         button {
+//             i {class = "fas fa-times";}
+//         }
+//     }
+// }}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -147,9 +147,9 @@ fn render_entry(ix: usize, entry: &Entry) -> View<Msg> {v!{li|
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn main() {
-	let program = Program::from_component(Component {
-		name: "app",
-		spec: AppSpec::default(),
-	});
-	program.start();
+	// let program = Program::from_component(Component {
+	// 	name: "app",
+	// 	spec: AppSpec::default(),
+	// });
+	// program.start();
 }

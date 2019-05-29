@@ -17,7 +17,7 @@ ss-web-utils = {path = "../ss-web-utils", version="0.1.1"}
 ss-trees = {path = "../ss-trees", version="0.1.1"}
 ss-view-tree = {path = "../ss-view-tree", version="0.1.1"}
 ss-dom-tree = {path = "../ss-dom-tree", version="0.1.1"}
-ss-css-types = {path = "../ss-css-types", version="0.1.1"}
+# ss-css-types = {path = "../ss-css-types", version="0.1.1"}
 ss-program = {path = "../ss-program", version="0.1.1"}
 
 ###############################################################################

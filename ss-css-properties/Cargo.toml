@@ -1,5 +1,5 @@
 [package]
-name = "ss-css-types"
+name = "ss-css-properties"
 version = "0.1.1"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"

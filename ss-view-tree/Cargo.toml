@@ -15,7 +15,8 @@ serde = {version = "1.0.89", features = ["derive"]}
 either = "1.5.2"
 ss-trees = {path = "../ss-trees", version="0.1.1"}
 ss-web-utils = {path = "../ss-web-utils", version="0.1.1"}
-ss-css-types = {path = "../ss-css-types", version="0.1.1"}
+# ss-css-types = {path = "../ss-css-types", version="0.1.1"}
+ss-css-properties = {path="../ss-css-properties", version="0.1.1"}
 
 ###############################################################################
 # RUST-WASM

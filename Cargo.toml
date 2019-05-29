@@ -3,7 +3,7 @@ members = [
 	"ss-trees",
     "ss-dom-tree",
     "ss-view-tree",
-    "ss-css-types",
+	"ss-css-properties",
     "ss-cssom-tree",
     "ss-web-utils",
     "ss-program",

@@ -1,9 +1,25 @@
-use crate::rules::*;
+use crate::data::*;
 
-impl Rule {
-	pub fn to_css_syntax(&self) -> String {
-		let Rule{property, value} = self;
-		let property = match property {
+impl Style {
+	pub fn render_css_syntax(&self) -> String {
+		match self {
+			Style::Typed(Rule{property, value}) => {
+				let property = property.render_css_syntax();
+				let value = value.render_css_syntax();
+				format!("{prop}: {value}", prop=property, value=value)
+			}
+			Style::Untyped(Untyped{property, value}) => format!(
+				"{prop}: {value}",
+				prop=property,
+				value=value,
+			),
+		}
+	}	
+}
+
+impl Property {
+	pub fn render_css_syntax(&self) -> &str {
+		match self {
 			Property::AlignContent => "align-content",
 			Property::AlignItems => "align-items",
 			Property::AlignSelf => "align-self",
@@ -316,8 +332,13 @@ impl Rule {
 			Property::WordWrap => "word-wrap",
 			Property::WritingMode => "writing-mode",
 			Property::ZIndex => "z-index",
-		};
-		let value = match value {
+		}
+	}
+}
+
+impl Value {
+	pub fn render_css_syntax(&self) -> String {
+		match self {
 			Value::Length(x) => x.render_css_syntax(),
 			Value::Length2(x1, x2) => format!(
 				"{} {}",
@@ -737,8 +758,7 @@ impl Rule {
 			Value::Y => String::from("y"),
 			Value::ZoomIn => String::from("zoom-in"),
 			Value::ZoomOut => String::from("zoom-out"),
-		};
-		format!("{prop}: {value}", prop=property, value=value)
+		}
 	}
 }
 

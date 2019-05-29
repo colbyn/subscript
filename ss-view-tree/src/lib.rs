@@ -6,6 +6,7 @@ pub mod events;
 #[macro_use]
 pub mod macros;
 pub mod components;
+pub mod styling;
 
 use core::default::Default;
 use std::fmt::{self, Debug};
@@ -20,13 +21,14 @@ use std::marker::Sized;
 use either::Either::{self, Left, Right};
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 
-use crate::attributes::*;
-use crate::events::*;
 use ss_trees::tree::*;
 use ss_trees::ext::map::*;
-use ss_css_types::api::*;
+use ss_css_properties::data::Style;
 use ss_web_utils::{js::console};
 pub use components::*;
+use crate::attributes::*;
+use crate::events::*;
+use crate::styling::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,11 +125,6 @@ impl<Msg> Viewable<Msg> for (String, AttributeValue) {
 impl<Msg> Viewable<Msg> for (&str, AttributeValue) {
     fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
         mixin.attributes.insert(String::from(self.0), self.1);
-    }
-}
-impl<Msg> Viewable<Msg> for Style {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.styling.add_style(self);
     }
 }
 
