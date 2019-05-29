@@ -286,13 +286,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ss-cssom-tree"
-version = "0.1.1"
-dependencies = [
- "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "ss-dom-tree"
 version = "0.1.1"
 dependencies = [

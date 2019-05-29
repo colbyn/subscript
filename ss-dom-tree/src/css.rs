@@ -15,6 +15,17 @@ use crate::LiveStylesheet;
 
 pub type MediaSelectorType = String;
 
+///////////////////////////////////////////////////////////////////////////////
+// CRATE-LEVEL EXTERNAL API
+///////////////////////////////////////////////////////////////////////////////
+
+pub(crate) fn upsert(sheet: &LiveStylesheet) {
+	// GLOBAL_CSS_REGISTRY.with(move |reg| {
+	// 	reg.upsert(sheet);
+	// });
+}
+pub(crate) fn remove(css_id: &CssId) {}
+pub(crate) fn sync() {}
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL-CSS-REGISTRY
@@ -236,21 +247,21 @@ pub struct GlobalMediaApi {}
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL-STYLESHEET-CONTROLLER - COMMON
 ///////////////////////////////////////////////////////////////////////////////
-pub fn create(attached: &GlobalCssMount, new: Rc<RenderedSelector>) -> LiveSelector {
+pub fn selector_create(attached: &GlobalCssMount, new: Rc<RenderedSelector>) -> LiveSelector {
 	let live_selector = LiveSelector::new(new);
 	attached.local.append_child(&live_selector.dom_ref);
 	live_selector
 }
-fn modified(attached: &GlobalCssMount, old: &mut LiveSelector, new: Rc<RenderedSelector>) {
+fn selector_modified(attached: &GlobalCssMount, old: &mut LiveSelector, new: Rc<RenderedSelector>) {
 	if old.value != new {
 		old.dom_ref.set_text_content(&new.0);
 		old.value = new;
 	}
 }
-fn remove(attached: &GlobalCssMount, old: LiveSelector) {
+fn selector_remove(attached: &GlobalCssMount, old: LiveSelector) {
 	attached.local.remove_child(&old.dom_ref);
 }
-fn unchanged(old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
+fn selector_unchanged(old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
 	&old.value == new
 }
 
@@ -274,32 +285,32 @@ fn render_media_selector(key: &MediaSelectorType, value: &Rc<HashMap<CssId, Rend
 ///////////////////////////////////////////////////////////////////////////////
 impl MapApi<GlobalCssMount, CssId, LiveSelector, Rc<RenderedSelector>> for NodeLocalsApi {
 	fn create(&self, attached: &GlobalCssMount, key: &CssId, new: Rc<RenderedSelector>) -> LiveSelector {
-		create(attached, new)
+		selector_create(attached, new)
 	}
 	fn modified(&self, attached: &GlobalCssMount, key: &CssId, old: &mut LiveSelector, new: Rc<RenderedSelector>) {
-		modified(attached, old, new)
+		selector_modified(attached, old, new)
 	}
 	fn remove(&self, attached: &GlobalCssMount, key: CssId, old: LiveSelector) {
-		remove(attached, old)
+		selector_remove(attached, old)
 	}
 	fn unchanged(&self, old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
-		unchanged(old, new)
+		selector_unchanged(old, new)
 	}
 }
 
 
 impl MapApi<GlobalCssMount, (CssId, StateSelectorType), LiveSelector, Rc<RenderedSelector>> for NodeStatesApi {
 	fn create(&self, attached: &GlobalCssMount, key: &(CssId, StateSelectorType), new: Rc<RenderedSelector>) -> LiveSelector {
-		create(attached, new)
+		selector_create(attached, new)
 	}
 	fn modified(&self, attached: &GlobalCssMount, key: &(CssId, StateSelectorType), old: &mut LiveSelector, new: Rc<RenderedSelector>) {
-		modified(attached, old, new)
+		selector_modified(attached, old, new)
 	}
 	fn remove(&self, attached: &GlobalCssMount, key: (CssId, StateSelectorType), old: LiveSelector) {
-		remove(attached, old)
+		selector_remove(attached, old)
 	}
 	fn unchanged(&self, old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
-		unchanged(old, new)
+		selector_unchanged(old, new)
 	}
 }
 
