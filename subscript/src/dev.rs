@@ -147,7 +147,7 @@ impl Spec for AppSpec {
                 on_submit(|| Msg::SubmitNewEntryName);
                 input {
                     type = "text";
-                    value = model.new_entry_name.as_str();
+                    // value = model.new_entry_name.as_str();
                     on_input(move |str| Msg::NewEntryName(str));
                 }
             }
@@ -170,16 +170,13 @@ impl Spec for AppSpec {
 fn render_entry(ix: EntryIx, entry: &Entry) -> View<Msg> {v!{li|
     padding: "22px";
     border: "1px solid #000";
-    {
-        console::log(format!("init on_mouse_enter: #{} {}", ix, entry.name));
-    };
-    extend!(on_mouse_enter, [id@entry.id, name@entry.name], move || {
-        console::log(format!("on_mouse_enter: #{} {}", ix, name));
-        Msg::EntryMouseEnter(id, ix)
-    });
-    extend!(on_mouse_leave, [id@entry.id], move || {
-        Msg::EntryMouseLeave(id, ix)
-    });
+    // extend!(on_mouse_enter, [id@entry.id, name@entry.name], move || {
+    //     console::log(format!("on_mouse_enter: #{} {}", ix, name));
+    //     Msg::EntryMouseEnter(id, ix)
+    // });
+    // extend!(on_mouse_leave, [id@entry.id], move || {
+    //     Msg::EntryMouseLeave(id, ix)
+    // });
     form {
         input {
             extend!(on_check, [id@entry.id], move |x| {

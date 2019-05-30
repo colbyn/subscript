@@ -90,11 +90,11 @@ pub trait Viewable<Msg> {
 
 impl<Msg> Viewable<Msg> for () {
     fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        let warning = vec![
-            "Something in your view isn’t returning anything",
-            "(i.e. returning ‘()’); perhaps theres a mistake somewhere?"
-        ];
-        console::warn(warning.join(" "));
+        // let warning = vec![
+        //     "Something in your view isn’t returning anything",
+        //     "(i.e. returning ‘()’); perhaps theres a mistake somewhere?"
+        // ];
+        // console::warn(warning.join(" "));
     }
 }
 impl<Msg> Viewable<Msg> for &str {

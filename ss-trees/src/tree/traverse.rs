@@ -8,24 +8,28 @@ use either::Either::{self, Left, Right};
 use itertools::Itertools;
 use ss_web_utils::js::console;
 
-use crate::data::*;
+use crate::tree::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA
 ///////////////////////////////////////////////////////////////////////////////
+pub type Parent<M> = M;
 pub struct SyncTraversal<'a,M,SN,SL,IN,IL> {
     pub nodes: &'a Fn(Parent<&M>, &SN, &IN),
     pub leafs: &'a Fn(Parent<&M>, &SL, &IL),
     pub new_node: &'a Fn(Parent<&M>, &IN),
     pub new_leaf: &'a Fn(Parent<&M>, &IL),
 }
-
-pub struct ItreeTraversal<'a,M,N,L> {
-    pub node: &'a Fn(Parent<&M>, &N),
-    pub leaf: &'a Fn(Parent<&M>, &L),
+struct ITreeSyncTraversal<'a,M,N,L> {
+    node: &'a Fn(Parent<&M>, &N),
+    leaf: &'a Fn(Parent<&M>, &L),
 }
 
-pub type Parent<M> = M;
+
+pub struct Traversal<'a,SN,SL> {
+    pub node: &'a Fn(&SN),
+    pub leaf: &'a Fn(&SL),
+}
 
 
 
@@ -33,14 +37,14 @@ pub type Parent<M> = M;
 // IMPLEMENTATION
 ///////////////////////////////////////////////////////////////////////////////
 impl<N, L> ITree<N, L> {
-    pub fn traverse<'a,M>(&self, parent: &M, f: &ItreeTraversal<'a,M,N,L>) {
+    fn traverse_sync<'a,M>(&self, parent: &M, f: &ITreeSyncTraversal<'a,M,N,L>) {
         match self {
             ITree::Leaf(l) => {
                 (f.leaf)(parent, &l.data);
             }
             ITree::Node(n) => {
                 for c in n.children.0.iter() {
-                    c.traverse(parent, f);
+                    c.traverse_sync(parent, f);
                 }
                 (f.node)(parent, &n.data);
             }
@@ -59,8 +63,8 @@ where
     pub fn traverse_sync<'a>(
     	&mut self,
     	api: &TreeApi<M, SN, SL, IN, IL>,
-    	new: &ITree<IN, IL>,
     	parent: &M,
+    	new: &ITree<IN, IL>,
     	f: &SyncTraversal<'a,M,SN,SL,IN,IL>
     ) {
         match (self, new) {
@@ -75,7 +79,7 @@ where
             }
             (STree::Node(n1), ITree::Node(n2)) => {
             	let ref children_parent = api.get_meta(Left(&n1.data.borrow()));
-                n1.children.traverse_sync(api, &n2.children, children_parent, f);
+                n1.children.traverse_sync(api, children_parent, &n2.children, f);
                 (f.nodes)(parent, &n1.data.borrow(), &n2.data);
                 if !n1.unchanged(api, n2) {
                     api.node_update(Update {
@@ -85,7 +89,7 @@ where
                 }
             }
             (old, new) => {
-            	new.traverse(parent, &ItreeTraversal {
+            	new.traverse_sync(parent, &ITreeSyncTraversal {
             		node: f.new_node,
             		leaf: f.new_leaf,
             	});
@@ -96,6 +100,19 @@ where
                     target: old.get_meta(api),
                 });
                 *old = result;
+            }
+        }
+    }
+    pub fn traverse<'a>(&self, f: &Traversal<'a,SN,SL>) {
+        match self {
+            STree::Leaf(l1) => {
+                (f.leaf)(&l1.data.borrow());
+            }
+            STree::Node(n1) => {
+                for child in n1.children.0.borrow().iter() {
+                    child.borrow().traverse(f);
+                }
+                (f.node)(&n1.data.borrow());
             }
         }
     }
@@ -111,8 +128,8 @@ where
     pub fn traverse_sync<'a>(
         &self,
         api: &TreeApi<M, SN, SL, IN, IL>,
-        new: &IChildren<IN, IL>,
         parent: &M,
+        new: &IChildren<IN, IL>,
         f: &SyncTraversal<'a,M,SN,SL,IN,IL>
     ) {
         let mut results: Vec<Item<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>> = Vec::new();
@@ -127,18 +144,18 @@ where
                 let pos = this.iter().position(|x| x.borrow().recyclable(api, &new))?;
                 Some((pos, this.remove(pos)))
             };
-            if let Some((old_position, unchanged)) = get_unchanged(&mut this) {
-                unchanged.borrow_mut().traverse_sync(api, new, parent, f);
+            if let Some((poped_position, unchanged)) = get_unchanged(&mut this) {
+                unchanged.borrow_mut().traverse_sync(api, parent, new, f);
                 results.push(Item::Preexisting{
-                    old_position,
+                    poped_position,
                     adjusted_position,
                     data: unchanged.clone(),
                 });
                 adjusted_position = adjusted_position + 1;
-            } else if let Some((old_position, changed)) = get_changed(&mut this) {
-                changed.borrow_mut().traverse_sync(api, new, parent, f);
+            } else if let Some((poped_position, changed)) = get_changed(&mut this) {
+                changed.borrow_mut().traverse_sync(api, parent, new, f);
                 results.push(Item::Preexisting{
-                    old_position,
+                    poped_position,
                     adjusted_position,
                     data: changed.clone(),
                 });
@@ -151,6 +168,7 @@ where
                 });
             }
         }
+        assert!(results.len() == new.0.len());
         for old in this.drain(..) {
             api.remove(old.borrow().get_meta(api));
         }
@@ -158,11 +176,11 @@ where
             .iter()
             .map(|item| -> Item<M> {
                 match item {
-                    Item::Preexisting{old_position, adjusted_position, data} => {
-                        let old_position = old_position.clone();
+                    Item::Preexisting{poped_position, adjusted_position, data} => {
+                        let poped_position = poped_position.clone();
                         let adjusted_position = adjusted_position.clone();
                         let data = data.borrow().get_meta(api);
-                        Item::Preexisting{old_position, adjusted_position, data}
+                        Item::Preexisting{poped_position, adjusted_position, data}
                     }
                     Item::New{adjusted_position, data} => {
                         let adjusted_position = adjusted_position.clone();
@@ -173,40 +191,43 @@ where
             })
             .collect::<Vec<_>>();
         let get_insert_op = |ix: usize, new: M| -> InsertOp<M> {
-            if ix == 0 {
-                match metas.get(ix + 1) {
-                    Some(old) => {
-                        InsertOp::InsertBefore{
-                            new: vec![new],
-                            old: old.unpack().clone(),
-                        }
-                    }
-                    None => {panic!()}
-                }
-            } else {
-                match metas.get(ix - 1) {
-                    Some(old) => {
-                        InsertOp::InsertAfter{
-                            new: vec![new],
-                            old: old.unpack().clone(),
-                        }
-                    }
-                    None => match metas.get(ix + 1) {
-                        Some(old) => {
-                            InsertOp::InsertBefore{
-                                new: vec![new],
-                                old: old.unpack().clone(),
-                            }
-                        }
-                        None => panic!()
-                    }
+            // NEW - FIRST CHILD - APPEND
+            if (ix == 0) && (metas.len() == 1) {
+                InsertOp::Append{
+                    parent: parent.clone(),
+                    new: vec![new],
                 }
             }
+            // INSERT AFTER?
+            else if let Some(old) = metas.get(ix - 1) {
+                InsertOp::InsertAfter{
+                    new: vec![new],
+                    old: old.unpack().clone(),
+                }
+            }
+            // OTHERWISE INSERT BEFORE
+            else if let Some(old) = metas.get(ix + 1) {
+                InsertOp::InsertBefore{
+                    new: vec![new],
+                    old: old.unpack().clone(),
+                }
+            }
+            else {panic!()}
         };
+        // console::log("-------------------------------------------------------------------------------");
+        // console::log("**");
         for (ix, entry) in results.into_iter().enumerate() {
             match entry {
-                Item::Preexisting{data, old_position, adjusted_position} => {
-                    assert!(old_position == adjusted_position);
+                Item::Preexisting{data, poped_position, adjusted_position} => {
+                    // TODO: ...
+                    assert!(poped_position == 0);
+                    // if poped_position != 0 {
+                    //     console::log(format!(
+                    //         "{:#?} {:?}",
+                    //         (ix, (poped_position, adjusted_position)),
+                    //         &data
+                    //     ));
+                    // }
                     this.push(data);
                 }
                 Item::New{data, ..} => {
@@ -216,6 +237,8 @@ where
                 }
             }
         }
+        // console::log("**");
+        // console::log("-------------------------------------------------------------------------------");
     }
 }
 
@@ -230,7 +253,7 @@ pub enum ItemType {
 #[derive(Debug)]
 pub enum Item<X> {
     Preexisting {
-        old_position: usize,
+        poped_position: usize,
         adjusted_position: usize,
         data: X,
     },

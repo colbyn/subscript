@@ -1,3 +1,5 @@
+pub mod traverse;
+
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::*;
@@ -8,6 +10,7 @@ use either::Either::{self, Left, Right};
 use itertools::Itertools;
 use ss_web_utils::js::console;
 
+pub use traverse::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // CLIENT API
@@ -173,13 +176,6 @@ pub struct SChildren<M, SN, SL, IN, IL>(pub Rc<RefCell<Vec<Rc<RefCell<STree<M, S
 // // MISCELLANEOUS
 // ///////////////////////////////////////////////////////////////////////////////
 
-// TODO: DELETE ME!
-// Only leads to errors!!!!
-pub fn get_item_by<T: PartialEq>(xs: &Vec<T>, f: impl Fn(&T)->bool) -> Option<&T> {
-    let pos = xs.iter().position(|x| f(x))?;
-    xs.get(pos)
-}
-
 pub fn remove_item_by<T: PartialEq>(xs: &mut Vec<T>, f: impl Fn(&T)->bool) -> Option<T> {
     let pos = xs.iter().position(|x| f(x))?;
     Some(xs.remove(pos))
@@ -239,6 +235,15 @@ where
     IN: PartialEq + Debug,
     IL: PartialEq + Debug
 {
+    pub fn from(api: &TreeApi<M, SN, SL, IN, IL>, parent: &M, new: &ITree<IN, IL>) -> Self {
+        let new = new.create_tree(api, parent);
+        let insert_op = InsertOp::Append {
+            parent: parent.clone(),
+            new: vec![new.get_meta(api)],
+        };
+        api.insert(insert_op);
+        new
+    }
     pub fn unchanged(&self, api: &TreeApi<M, SN, SL, IN, IL>, other: &ITree<IN, IL>) -> bool {
         match (self, other) {
             (STree::Node(old), ITree::Node(new)) => old.unchanged(api, new),
@@ -362,7 +367,4 @@ impl<IN, IL> ITree<IN, IL> {
         }
     }
 }
-
-
-
 

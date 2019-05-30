@@ -278,13 +278,13 @@ impl<S: Spec> Process<S> where S::Msg: 'static {
 		// SETUP
 		let messages = {
 			// SETUP
-            let mut env = TickEnv::default();
+            let env = RefCell::new(TickEnv::default());
             // FIRST - HTML DOM EVENTS
-            self.view.borrow().tick(&mut env, reg);
+            self.view.borrow().tick(&env, reg);
             // SECOND - SUBSCRIPTIONS
             // self.subs.tick(&mut env.messages, reg);
             // DONE
-            env.messages
+            env.into_inner().messages
 		};
 		if !messages.is_empty() {
 			// PROCESS EVENTS

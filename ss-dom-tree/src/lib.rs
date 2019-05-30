@@ -48,42 +48,44 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
         let tree = STree::from(
             &sync_api,
             &mount,
-            initial_view.0
+            &initial_view.0
         );
         LiveView {sync_api,mount,tree}
     }
     pub fn sync(&mut self, view: View<Msg>) {
-        self.tree.traverse_pair(&self.sync_api, &view.0, &PairTraversal {
-            leafs: &move |n1, n2| {},
-            nodes: &move |n1, n2| {
+        self.tree.traverse_sync(&self.sync_api, &self.mount, &view.0, &SyncTraversal {
+            leafs: &move |parent, n1, n2| {},
+            nodes: &move |parent, n1, n2| {
                 n1.events.borrow().traverse_values_pair(&n2.events, &move |e1, e2| {
                     e1.sync(e2);
                 });
             },
-        });
-        self.tree.sync(&self.sync_api, &self.mount, view.0);
+            new_node: &move |parent, n| {},
+            new_leaf: &move |parent, l| {},
+        })
     }
-    pub fn tick(&self, env: &mut TickEnv<Msg>, reg: &GlobalTickRegistry) {
-        let mut nf = |node: &LiveNode<Msg>| -> () {
-            node.events.borrow_mut().traverse_values_mut(|handler| {
-                let f: &EventHandler<Msg> = &handler.value.borrow();
-                env.messages.append(
-                    &mut handler.callback.drain()
-                        .into_iter()
-                        .map(|event| f.run_handler(event))
-                        .collect::<Vec<Msg>>()
-                );
-            });
-        };
-        let mut lf = |leaf: &LiveLeaf| -> () {
-            match leaf {
-                LiveLeaf::Text{value, ..} => {}
-                LiveLeaf::Component{value, ..} => {
-                    reg.components.borrow_mut().push(value.tick(reg));
+    pub fn tick(&self, env: &RefCell<TickEnv<Msg>>, reg: &GlobalTickRegistry) {
+        self.tree.traverse(&Traversal {
+            node: &|node: &LiveNode<Msg>| -> () {
+                node.events.borrow_mut().traverse_values_mut(|handler| {
+                    let f: &EventHandler<Msg> = &handler.value.borrow();
+                    env.borrow_mut().messages.append(
+                        &mut handler.callback.drain()
+                            .into_iter()
+                            .map(|event| f.run_handler(event))
+                            .collect::<Vec<Msg>>()
+                    );
+                });
+            },
+            leaf: &|leaf: &LiveLeaf| -> () {
+                match leaf {
+                    LiveLeaf::Text{value, ..} => {}
+                    LiveLeaf::Component{value, ..} => {
+                        reg.components.borrow_mut().push(value.tick(reg));
+                    }
                 }
             }
-        };
-        self.tree.traverse(&mut nf, &mut lf);
+        });
     }
 }
 
@@ -290,9 +292,9 @@ impl LiveLeaf {
 
 #[derive(Debug)]
 pub struct LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
+    pub tag: String,
     pub auto_listeners: HashMap<String, VoidCallback>,
     pub dom_ref: Rc<dom::Tag>,
-    pub tag: String,
     pub attributes: RefCell<AttributesMap<Msg>>,
     pub events: RefCell<EventsMap<Msg>>,
     pub styling: LiveStylesheet,
@@ -395,6 +397,42 @@ where
     Msg: PartialEq + 'static + Debug + Clone
 {
     fn node_unchanged(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
+        let equal_tags = new.tag == old.tag;
+        let attributes_unchanged = || {
+            old.attributes.borrow().unchanged(
+                &self.attributes_api,
+                &new.attributes,
+            )
+        };
+        let events_unchanged = || {
+            let mut ks: HashSet<EventType> = HashSet::new();
+            for k in new.events.keys() {
+                ks.insert(k.clone());
+            }
+            old.events.borrow().get_keys() == ks
+        };
+        let styling_unchanged = || {
+            *old.styling.value.borrow() == new.styling
+        };
+        let result = equal_tags && styling_unchanged() && attributes_unchanged() && events_unchanged();
+        result
+    }
+    fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
+        let equal_tags = new.tag == old.tag;
+        let events_recyclable = || {
+            let mut ks: HashSet<EventType> = HashSet::new();
+            for k in new.events.keys() {
+                ks.insert(k.clone());
+            }
+            old.events.borrow().get_keys() == ks
+        };
+        equal_tags && events_recyclable()
+    }
+    fn node_update(&self, update: Update<&mut LiveNode<Msg>, &ViewNode<Msg>>) {
+        // SETUP
+        let Update{new, old} = update;
+        assert!(new.tag == old.tag);
+        // UNCHANGED CHECKS
         let attributes_unchanged = old.attributes.borrow().unchanged(
             &self.attributes_api,
             &new.attributes,
@@ -407,41 +445,33 @@ where
             old.events.borrow().get_keys() == ks
         };
         let styling_unchanged = *old.styling.value.borrow() == new.styling;
-        let result = styling_unchanged && attributes_unchanged && events_unchanged && new.tag == old.tag;
-        result
-    }
-    fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
-        let events_recyclable = {
-            let mut ks: HashSet<EventType> = HashSet::new();
-            for k in new.events.keys() {
-                ks.insert(k.clone());
-            }
-            old.events.borrow().get_keys() == ks
-        };
-        (new.tag == old.tag) && events_recyclable
-    }
-    fn node_update(&self, update: Update<&mut LiveNode<Msg>, ViewNode<Msg>>) {
-        use ss_web_utils::dom::DomRef;
-        let Update{new, old} = update;
-        assert!(new.tag == old.tag);
-        old.attributes.borrow_mut().sync(
-            &self.attributes_api,
-            &old,
-            new.attributes,
-        );
-        old.events.borrow_mut().sync(
-            &self.events_api,
-            &old,
-            new.events,
-        );
-        let styling_unchanged = {*old.styling.value.borrow() == new.styling};
+        // SYNC CHANGES
+        if !attributes_unchanged {
+            let new_attributes: HashMap<String, AttributeValue> = new.attributes.clone();
+            old.attributes.borrow_mut().sync(
+                &self.attributes_api,
+                &old,
+                new_attributes,
+            );
+        }
+        if !events_unchanged {
+            let new_events: HashMap<events::EventType, EventHandler<Msg>> = new.events.clone();
+            old.events.borrow_mut().sync(
+                &self.events_api,
+                &old,
+                new_events,
+            );
+        }
         if !styling_unchanged {
-            old.styling.value.replace(new.styling);
+            let new_styling: Stylesheet = new.styling.clone();
+            old.styling.value.replace(new_styling);
             css::upsert(&old.styling);
         }
     }
-    fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
-        use ss_web_utils::dom::DomRef;
+    fn node_crate(&self, new: &ViewNode<Msg>) -> LiveNode<Msg> {
+        let new_attributes: HashMap<String, AttributeValue> = new.attributes.clone();
+        let new_events: HashMap<events::EventType, EventHandler<Msg>> = new.events.clone();
+        let new_styling: Stylesheet = new.styling.clone();
         let dom_ref = self.window.document.create_element(new.tag.as_str());
         let mut auto_listeners = HashMap::new();
         let mut add_prevent_default_callback = |event_name: &str| {
@@ -461,21 +491,21 @@ where
         }
         let result = LiveNode {
             auto_listeners,
-            styling: LiveStylesheet::new(new.styling),
+            styling: LiveStylesheet::new(new_styling),
             dom_ref: Rc::new(dom_ref),
-            tag: new.tag,
+            tag: new.tag.clone(),
             attributes: RefCell::new(SMap::default()),
             events: RefCell::new(SMap::default()),
         };
         result.attributes.borrow_mut().sync(
             &self.attributes_api,
             &result,
-            new.attributes,
+            new_attributes,
         );
         result.events.borrow_mut().sync(
             &self.events_api,
             &result,
-            new.events,
+            new_events,
         );
         let css_id: CssId = result.styling.css_id;
         result.dom_ref.set_attribute("css", &format!("{}", &css_id));
@@ -504,7 +534,7 @@ where
             _ => false
         }
     }
-    fn leaf_update(&self, update: Update<&mut LiveLeaf, ViewLeaf>) {
+    fn leaf_update(&self, update: Update<&mut LiveLeaf, &ViewLeaf>) {
         let Update{new, old} = update;
         match (&new, old) {
             (ViewLeaf::Text(x), LiveLeaf::Text{value, dom_ref}) => {
@@ -517,7 +547,7 @@ where
             _ => panic!()
         }
     }
-    fn leaf_crate(&self, new: ViewLeaf) -> LiveLeaf {
+    fn leaf_crate(&self, new: &ViewLeaf) -> LiveLeaf {
         use ss_web_utils::dom::DomRef;
         match new {
             ViewLeaf::Text(value) => {
@@ -525,14 +555,14 @@ where
                 dom_ref.set_text_content(value.as_str());
                 LiveLeaf::Text {
                     dom_ref: Rc::new(dom_ref),
-                    value,
+                    value: value.to_string(),
                 }
             }
             ViewLeaf::Component(value) => {
                 let dom_ref = self.window.document.create_element("div");
                 LiveLeaf::Component {
                     dom_ref: Rc::new(dom_ref),
-                    value
+                    value: value.clone(),
                 }
             }
         }
