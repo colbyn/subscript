@@ -87,7 +87,7 @@ impl EventType {
             EventType::OnMouseDown => "mousedown",
             EventType::OnMouseUp => "mouseup",
             EventType::OnMouseEnter => "mouseenter",
-            EventType::OnMouseLeave => "mouseenter",
+            EventType::OnMouseLeave => "mouseleave",
             EventType::OnMouseOver => "mouseover",
             EventType::OnMouseOut => "mouseout",
             EventType::OnInput => "input",

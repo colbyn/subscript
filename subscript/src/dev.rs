@@ -63,15 +63,16 @@ use ss_program::Spec;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub type EntryIx = usize;
+pub type EntryId = u16;
 
 #[derive(Debug, PartialEq, Clone)] // REQUIRED
 pub enum Msg {
     NoOp,
     NewEntryName(String),
     SubmitNewEntryName,
-    EntryCompleted(EntryIx, bool),
-    EntryMouseOver(EntryIx),
-    EntryMouseOut(EntryIx),
+    EntryCompleted(EntryId, EntryIx, bool),
+    EntryMouseEnter(EntryId, EntryIx),
+    EntryMouseLeave(EntryId, EntryIx),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)] // REQUIRED
@@ -81,12 +82,12 @@ pub struct Model {
     entries: Vec<Entry>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)] // REQUIRED
-#[derive(Default)] // OPTIONAL
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub struct Entry {
+    id: EntryId,
     name: String,
     completed: bool,
-    mouse_over: bool,
+    mouse_hovering: bool,
 }
 
 
@@ -114,25 +115,26 @@ impl Spec for AppSpec {
             Msg::NewEntryName(str) => {model.new_entry_name = str;}
             Msg::SubmitNewEntryName => {
                 if !model.new_entry_name.is_empty() {
+                    let id = rand::random::<u16>();
                     let name = model.new_entry_name.drain(..).collect::<String>();
-                    let entry = Entry {name, completed: false, mouse_over: false};
+                    let entry = Entry {id, name, completed: false, mouse_hovering: false};
                     model.entries.push(entry);
                 }
             }
-            Msg::EntryCompleted(ix, toggle) => {
-                if let Some(entry) = model.entries.get_mut(ix) {
-                    entry.completed = toggle;
-                }
+            Msg::EntryCompleted(id, ix, toggle) => {
+                let mut entry = model.entries.get_mut(ix).expect("missing entry");
+                assert!(entry.id == id);
+                entry.completed = toggle;
             }
-            Msg::EntryMouseOver(ix) => {
-                if let Some(entry) = model.entries.get_mut(ix) {
-                    entry.mouse_over = true;
-                }
+            Msg::EntryMouseEnter(id, ix) => {
+                let mut entry = model.entries.get_mut(ix).expect("missing entry");
+                assert!(entry.id == id);
+                entry.mouse_hovering = true;
             }
-            Msg::EntryMouseOut(ix) => {
-                if let Some(entry) = model.entries.get_mut(ix) {
-                    entry.mouse_over = false;
-                }
+            Msg::EntryMouseLeave(id, ix) => {
+                let mut entry = model.entries.get_mut(ix).expect("missing entry");
+                assert!(entry.id == id);
+                entry.mouse_hovering = false;
             }
         }
     }
@@ -165,22 +167,34 @@ impl Spec for AppSpec {
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-fn render_entry(ix: usize, entry: &Entry) -> View<Msg> {v!{li|
+fn render_entry(ix: EntryIx, entry: &Entry) -> View<Msg> {v!{li|
+    padding: "22px";
+    border: "1px solid #000";
+    {
+        console::log(format!("init on_mouse_enter: #{} {}", ix, entry.name));
+    };
+    extend!(on_mouse_enter, [id@entry.id, name@entry.name], move || {
+        console::log(format!("on_mouse_enter: #{} {}", ix, name));
+        Msg::EntryMouseEnter(id, ix)
+    });
+    extend!(on_mouse_leave, [id@entry.id], move || {
+        Msg::EntryMouseLeave(id, ix)
+    });
     form {
-        on_mouse_over(move || Msg::EntryMouseOver(ix));
-        on_mouse_out(move || Msg::EntryMouseOut(ix));
         input {
-            on_check(move |toggle| Msg::EntryCompleted(ix, toggle));
+            extend!(on_check, [id@entry.id], move |x| {
+                Msg::EntryCompleted(id, ix, x)
+            });
             type = "checkbox";
             checked = entry.completed;
         }
         label {
-            entry.name.as_str();
+            format!("{}. {}", ix, entry.name.as_str());
         }
         button {
-            // if (!entry.mouse_over) {
-            //     display: "none";
-            // };
+            if (!entry.mouse_hovering) {
+                display: "none";
+            };
             i {class = "fas fa-times";}
         }
     }

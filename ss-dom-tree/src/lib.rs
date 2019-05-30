@@ -20,7 +20,7 @@ use ss_trees::ext::map::{SMap, MapApi};
 use ss_view_tree::*;
 use ss_view_tree::events::*;
 use ss_view_tree::attributes::*;
-use ss_view_tree::styling::{Stylesheet, Style, MediaQuerySelector, StateSelector};
+use ss_view_tree::styling::{CssId, Stylesheet, Style, MediaQuerySelector, StateSelector};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,7 +94,18 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct LiveStylesheet {
     css_id: u32,
-    value: Stylesheet,
+    value: RefCell<Stylesheet>,
+}
+
+impl LiveStylesheet {
+    pub fn new(value: Stylesheet) -> Self {
+        let css_id = rand::random::<u32>();
+        let value = RefCell::new(value);
+        LiveStylesheet{value, css_id}
+    }
+    pub fn is_empty(&self) -> bool {
+        self.value.borrow().is_empty()
+    }
 }
 
 
@@ -284,11 +295,12 @@ pub struct LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     pub tag: String,
     pub attributes: RefCell<AttributesMap<Msg>>,
     pub events: RefCell<EventsMap<Msg>>,
-    pub styling: RefCell<Stylesheet>,
+    pub styling: LiveStylesheet,
 }
 
 impl<Msg> Drop for LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     fn drop(&mut self) {
+        css::remove(&self.styling.css_id);
         for (event_name, callback) in self.auto_listeners.drain() {
             self.dom_ref.remove_event_listener(&event_name, &callback);
         }
@@ -388,21 +400,21 @@ where
             &new.attributes,
         );
         let events_unchanged = {
-            let mut ks = Vec::new();
+            let mut ks: HashSet<EventType> = HashSet::new();
             for k in new.events.keys() {
-                ks.push(k.clone());
+                ks.insert(k.clone());
             }
             old.events.borrow().get_keys() == ks
         };
-        let styling_unchanged = *old.styling.borrow() == new.styling;
+        let styling_unchanged = *old.styling.value.borrow() == new.styling;
         let result = styling_unchanged && attributes_unchanged && events_unchanged && new.tag == old.tag;
         result
     }
     fn node_recyclable(&self, new: &ViewNode<Msg>, old: &LiveNode<Msg>) -> bool {
         let events_recyclable = {
-            let mut ks = Vec::new();
+            let mut ks: HashSet<EventType> = HashSet::new();
             for k in new.events.keys() {
-                ks.push(k.clone());
+                ks.insert(k.clone());
             }
             old.events.borrow().get_keys() == ks
         };
@@ -422,15 +434,10 @@ where
             &old,
             new.events,
         );
-        let styling_unchanged = {*old.styling.borrow() == new.styling};
+        let styling_unchanged = {*old.styling.value.borrow() == new.styling};
         if !styling_unchanged {
-            let hash_key: u64 = unimplemented!();
-            // let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
-            //     let sheet = new.styling.clone();
-            //     |reg| reg.borrow_mut().upsert(sheet)
-            // });
-            old.styling.replace(new.styling);
-            old.dom_ref.set_attribute("css", &format!("{}", &hash_key));
+            old.styling.value.replace(new.styling);
+            css::upsert(&old.styling);
         }
     }
     fn node_crate(&self, new: ViewNode<Msg>) -> LiveNode<Msg> {
@@ -454,7 +461,7 @@ where
         }
         let result = LiveNode {
             auto_listeners,
-            styling: RefCell::new(new.styling),
+            styling: LiveStylesheet::new(new.styling),
             dom_ref: Rc::new(dom_ref),
             tag: new.tag,
             attributes: RefCell::new(SMap::default()),
@@ -470,14 +477,10 @@ where
             &result,
             new.events,
         );
-        let styling_empty = result.styling.borrow().is_empty();
-        if !styling_empty {
-            let hash_key: u64 = unimplemented!();
-            // let hash_key: u64 = GLOBAL_CSS_REGISTRY.with({
-            //     let sheet = result.styling.borrow().clone();
-            //     |reg| reg.borrow_mut().upsert(sheet)
-            // });
-            result.dom_ref.set_attribute("css", &format!("{}", &hash_key));
+        let css_id: CssId = result.styling.css_id;
+        result.dom_ref.set_attribute("css", &format!("{}", &css_id));
+        if !result.styling.is_empty() {
+            css::upsert(&result.styling);
         }
         result
     }

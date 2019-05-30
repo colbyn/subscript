@@ -11,6 +11,7 @@ repository = "https://github.com/colbyn/subscript"
 crate-type=["cdylib", "rlib"]
 
 [dependencies]
+rand = {version="0.6.5", features = ["wasm-bindgen"]}
 serde = {version = "1.0.89", features = ["derive"]}
 either = "1.5.2"
 ss-web-utils = {path = "../ss-web-utils", version="0.1.1"}

@@ -2,6 +2,5 @@
 pub mod tree;
 pub mod ext;
 pub mod data;
-pub mod sync;
 pub mod traverse;
 

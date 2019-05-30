@@ -20,12 +20,20 @@ pub type MediaSelectorType = String;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub(crate) fn upsert(sheet: &LiveStylesheet) {
-	// GLOBAL_CSS_REGISTRY.with(move |reg| {
-	// 	reg.upsert(sheet);
-	// });
+	GLOBAL_CSS_REGISTRY.with(move |reg| {
+		reg.borrow_mut().upsert(sheet);
+	});
 }
-pub(crate) fn remove(css_id: &CssId) {}
-pub(crate) fn sync() {}
+pub(crate) fn remove(css_id: &CssId) {
+	GLOBAL_CSS_REGISTRY.with(move |reg| {
+		reg.borrow_mut().remove(css_id);
+	});
+}
+pub fn sync() {
+	GLOBAL_CSS_REGISTRY.with(move |reg| {
+		reg.borrow_mut().sync();
+	});
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL-CSS-REGISTRY
@@ -56,6 +64,7 @@ impl GlobalCssRegistry {
 					wrapper.append_child(&local);
 					wrapper.append_child(&state);
 					wrapper.append_child(&media);
+					window.document.body.append_child(&wrapper);
 					GlobalCssMount {wrapper,local,state,media}
 				},
 				node_locals_api: NodeLocalsApi{},
@@ -113,7 +122,7 @@ impl LiveCssRegistry {
 	pub fn upsert(&mut self, sheet: &LiveStylesheet) {
 		// SETUP
 		let css_id = sheet.css_id;
-		let RenderedStylesheet{local, state, media} = sheet.value.render_css_syntax(&css_id);
+		let RenderedStylesheet{local, state, media} = sheet.value.borrow().render_css_syntax(&css_id);
 		let local: RenderedSelector = local;
 		let state: HashMap<StateSelectorType, RenderedSelector> = state;
 		let media: HashMap<MediaSelectorType, RenderedSelector> = media;
@@ -162,12 +171,9 @@ impl LiveCssRegistry {
 		}
 	}
 	pub fn sync(&mut self) {
-		// self.online.node_locals.sync(self.node_locals_api, self.mount, self.offline.node_locals);
-		// old.attributes.borrow_mut().sync(
-		//     &self.attributes_api,
-		//     &old,
-		//     new.attributes,
-		// );
+		self.online.node_locals.sync_ref(&self.node_locals_api, &self.mount, self.offline.node_locals.as_ref());
+		self.online.node_states.sync_ref(&self.node_states_api, &self.mount, self.offline.node_states.as_ref());
+		self.online.global_media.sync_ref(&self.global_media_api, &self.mount, self.offline.global_media.as_ref());
 	}
 } 
 
@@ -176,7 +182,7 @@ impl LiveCssRegistry {
 // GLOBAL-STYLESHEET
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct OfflineGlobalStylesheet {
 	node_locals: Rc<HashMap<CssId, Rc<RenderedSelector>>>,
 	node_states: Rc<HashMap<(CssId, StateSelectorType), Rc<RenderedSelector>>>,

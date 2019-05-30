@@ -1,3 +1,5 @@
+
+
 use crate::styling::*;
 
 pub type MediaSelectorType = String;
@@ -47,7 +49,7 @@ impl Stylesheet {
 			let mut selector: &str = x.selector.render_css_syntax();
 			let mut body: Vec<String> = Vec::with_capacity(x.body.len());
 			for s in x.body.iter() {
-				local.push(format!("{};", s.render_css_syntax()));
+				body.push(format!("{};", s.render_css_syntax()));
 			}
 			// CONCAT
 			let body: String = body.join("");
@@ -61,7 +63,11 @@ impl Stylesheet {
 			state.insert(x.selector.clone(), body);
 		}
 		// CONCAT
-		let local: String = local.join("");
+		let local: String = format!(
+			"[css=\"{css_id}\"] {{{body}}}",
+			css_id=css_id,
+			body=local.join(""),
+		);
 		// DONE
 		RenderedStylesheet {
 			local: RenderedSelector(local),

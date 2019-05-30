@@ -55,10 +55,10 @@ where
     SV: Debug + PartialEq,
     IV: Debug + PartialEq,
 {
-    pub fn get_keys(&self) -> Vec<K> {
-        let mut ks = Vec::new();
+    pub fn get_keys(&self) -> HashSet<K> {
+        let mut ks = HashSet::new();
         for k in self.data.keys() {
-            ks.push(k.clone());
+            ks.insert(k.clone());
         }
         ks
     }
@@ -141,6 +141,38 @@ where
             std::mem::replace(&mut self.data, new);
         }
 	}
+    pub fn sync_ref(&mut self, api: &MapApi<N, K, SV, IV>, attached: &N, new: &HashMap<K, IV>) where IV: Clone {
+        let is_unchanged = self.unchanged(api, &new);
+        if !is_unchanged {
+            let mut old = HashMap::new();
+            std::mem::swap(&mut self.data, &mut old);
+            let mut new = new
+                .iter()
+                .map(|(k, v)| {
+                    let result = {
+                        if let Some(x) = old.remove(&k) {
+                            if api.unchanged(&x, &v) {
+                                x
+                            } else {
+                                let mut x = x;
+                                api.modified(attached, &k, &mut x, v.clone());
+                                x
+                            }
+                        } else {
+                            api.create(attached, &k, v.clone())
+                        }
+                    };
+                    (k.clone(), result)
+                })
+                .collect::<HashMap<K, SV>>();
+            // REMOVE UNUSED
+            for (k, v) in old {
+                api.remove(attached, k, v);
+            }
+            // SAVE CHANGES
+            std::mem::replace(&mut self.data, new);
+        }
+    }
 }
 
 

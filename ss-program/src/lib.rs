@@ -11,7 +11,6 @@ use ss_web_utils::{dom, js, js::console};
 use ss_view_tree::components::*;
 pub use spec::*;
 pub use process::*;
-// use ss_cssom_tree::GLOBAL_CSS_REGISTRY;
 
 
 #[derive(Clone)]
@@ -40,9 +39,7 @@ impl<S: 'static +   Spec> Program<S> {
                 proc_reg.borrow_mut().prune_and_tick_global_events(&self.global_tick_registry);
             });
             self.global_tick_registry.components.borrow_mut().clear();
-            // GLOBAL_CSS_REGISTRY.with(move |css_reg| {
-            //     css_reg.borrow_mut().sync();
-            // });
+            ss_dom_tree::css::sync()
         }
     }
     pub fn start(self) {

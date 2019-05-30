@@ -293,7 +293,7 @@ where
                     });
                     if let Some(unchanged) = unchanged() {
                         unchanged.traverse_pair(api, new, f);
-                    } if let Some(changed) = changed() {
+                    } else if let Some(changed) = changed() {
                         changed.traverse_pair(api, new, f);
                     }
                 }
