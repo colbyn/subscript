@@ -55,8 +55,8 @@ impl<N, L> ITree<N, L> {
 impl<M, SN, SL, IN, IL> STree<M,SN,SL,IN,IL>
 where
     M: PartialEq + Clone + Debug,
-    SN: PartialEq + Debug,
-    SL: PartialEq + Debug,
+    SN: PartialEq + Clone + Debug,
+    SL: PartialEq + Clone + Debug,
     IN: PartialEq + Debug,
     IL: PartialEq + Debug
 {
@@ -68,38 +68,38 @@ where
     	f: &SyncTraversal<'a,M,SN,SL,IN,IL>
     ) {
         match (self, new) {
-            (STree::Leaf(l1), ITree::Leaf(l2)) => {
-                (f.leafs)(parent, &l1.data.borrow(), &l2.data);
-                if !l1.unchanged(api, l2) {
+            (STree::Leaf(old), ITree::Leaf(new)) => {
+                (f.leafs)(parent, &old.data.borrow(), &new.data);
+                if !old.unchanged(api, new) {
                     api.leaf_update(Update {
-                        new: &l2.data,
-                        old: &mut *l1.data.borrow_mut(),
+                        new: &new.data,
+                        old: &mut *old.data.borrow_mut(),
                     });
                 }
             }
-            (STree::Node(n1), ITree::Node(n2)) => {
-            	let ref children_parent = api.get_meta(Left(&n1.data.borrow()));
-                n1.children.traverse_sync(api, children_parent, &n2.children, f);
-                (f.nodes)(parent, &n1.data.borrow(), &n2.data);
-                if !n1.unchanged(api, n2) {
+            (STree::Node(old), ITree::Node(new)) => {
+                if !old.unchanged(Intensity::Shallow, api, new) {
                     api.node_update(Update {
-                        new: &n2.data,
-                        old: &mut *n1.data.borrow_mut(),
+                        new: &new.data,
+                        old: &mut *old.data.borrow_mut(),
                     });
                 }
+            	let ref children_parent = api.get_meta(Left(&old.data.borrow()));
+                old.children.traverse_sync(api, children_parent, &new.children, f);
+                (f.nodes)(parent, &old.data.borrow(), &new.data);
             }
             (old, new) => {
             	new.traverse_sync(parent, &ITreeSyncTraversal {
             		node: f.new_node,
             		leaf: f.new_leaf,
             	});
-                let result = new.create_tree(api, parent);
+                let created = new.create_tree(api, parent);
                 api.insert(InsertOp::Swap {
                     parent: parent.clone(),
-                    current: result.get_meta(api),
-                    target: old.get_meta(api),
+                    old: old.get_meta(api),
+                    new: created.get_meta(api),
                 });
-                *old = result;
+                *old = created;
             }
         }
     }
@@ -117,11 +117,11 @@ where
         }
     }
 }
-impl<M, SN, SL, IN, IL> SChildren<M, SN, SL, IN, IL>
+impl<M, SN, SL, IN, IL> SChildren<M,SN,SL,IN,IL>
 where
     M: PartialEq + Clone + Debug,
-    SN: PartialEq + Debug,
-    SL: PartialEq + Debug,
+    SN: PartialEq + Clone + Debug,
+    SL: PartialEq + Clone + Debug,
     IN: PartialEq + Debug,
     IL: PartialEq + Debug
 {
@@ -132,32 +132,44 @@ where
         new: &IChildren<IN, IL>,
         f: &SyncTraversal<'a,M,SN,SL,IN,IL>
     ) {
-        let mut adjusted_position: usize = 0;
-        let mut stage2: Vec<Stage2<M, SN, SL, IN, IL>> = new.0
+        // TMP - SANITY CHECK
+        let mut available: HashSet<usize> = (0 .. self.0.borrow().len()).collect();
+        let mut this: Vec<(usize, Rc<RefCell<STree<M,SN,SL,IN,IL>>>)> = self.0
+            .borrow_mut()
+            .drain(..)
+            .enumerate()
+            .map(|(ix, x)| (ix, x))
+            .collect();
+        let mut stage1 = new.0
             .iter()
             .map(|new: &ITree<IN, IL>| -> Stage1<M, SN, SL, IN, IL> {
-                let mut this = self.0.borrow_mut();
-                let mut get_unchanged = |this: &mut RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>>| {
-                    let pos = this.iter().position(|x| x.borrow().unchanged(api, &new))?;
-                    Some((pos, this.remove(pos)))
+                let mut get_unchanged = |this: &mut Vec<(usize, Rc<RefCell<STree<M,SN,SL,IN,IL>>>)>| {
+                    let pos = this.iter().position(|x| x.1.borrow().unchanged(Intensity::Deep, api, &new))?;
+                    let (ix, x) = this.remove(pos);
+                    assert!(available.remove(&ix));
+                    Some((pos, (ix, x)))
                 };
-                if let Some((poped_pos, old)) = get_unchanged(&mut this) {
+                if let Some((poped_pos, (old_ix, old))) = get_unchanged(&mut this) {
                     Stage1::Unchanged(Unchanged {old, new})
                 } else {
                     Stage1::Unset(new)
                 }
             })
+            .collect::<Vec<_>>();
+        let mut stage2 = stage1
+            .into_iter()
             .map(|stage1: Stage1<M, SN, SL, IN, IL>| -> Stage2<M, SN, SL, IN, IL> {
-                let mut this = self.0.borrow_mut();
-                let mut get_changed = |new: &ITree<IN, IL>, this: &mut RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>>| {
-                    let pos = this.iter().position(|x| x.borrow().recyclable(api, new))?;
-                    Some((pos, this.remove(pos)))
+                let mut get_changed = |new: &ITree<IN, IL>, this: &mut Vec<(usize, Rc<RefCell<STree<M,SN,SL,IN,IL>>>)>| {
+                    let pos = this.iter().position(|x| x.1.borrow().recyclable(Intensity::Deep, api, new))?;
+                    let (ix, x) = this.remove(pos);
+                    assert!(available.remove(&ix));
+                    Some((pos, (ix, x)))
                 };
                 match stage1 {
                     Stage1::Unchanged(x) => {Stage2::Unchanged(x)}
                     Stage1::Unset(new) => {
                         // CHANGED
-                        if let Some((poped_pos, old)) = get_changed(new, &mut this) {
+                        if let Some((poped_pos, (ols_pos, old))) = get_changed(new, &mut this) {
                             Stage2::Changed(Changed{old, new})
                         }
                         // NEW
@@ -172,7 +184,7 @@ where
             .collect::<Vec<_>>();
         assert!(stage2.len() == new.0.len());
         // REMOVE UNUSED
-        for old in self.0.borrow_mut().drain(..) {
+        for (old_ix, old) in this.drain(..) {
             api.remove(old.borrow().get_meta(api));
         }
         // UPSERT HELPERS
@@ -180,13 +192,24 @@ where
             .iter()
             .map(|entry| -> M {
                 match entry {
-                    Stage2::Unchanged(Unchanged{old, ..}) => {
+                    Stage2::Unchanged(Unchanged{old, new, ..}) => {
+                        // console::log(format!(
+                        //     "Children::Unchanged {:?} <---> {:?}",
+                        //     old.borrow().to_either_inner_clone(),
+                        //     new.to_either_inner(),
+                        // ));
                         old.borrow().get_meta(api)
                     },
-                    Stage2::Changed(Changed{old, ..}) => {
+                    Stage2::Changed(Changed{old, new, ..}) => {
+                        // console::log(format!(
+                        //     "Children::Changed {:?} ---> {:?}",
+                        //     old.borrow().to_either_inner_clone(),
+                        //     new.to_either_inner(),
+                        // ));
                         old.borrow().get_meta(api)
                     },
                     Stage2::New(New{created, new}) => {
+                        // console::log(format!("Children::New {:?}", created.borrow().to_either_inner_clone()));
                         created.borrow().get_meta(api)
                     }
                 }
@@ -200,7 +223,7 @@ where
                     new: vec![new],
                 }
             }
-            // INSERT AFTER?
+            // CHECK INSERT AFTER
             else if let Some(old) = metas.get(ix - 1) {
                 InsertOp::InsertAfter{
                     new: vec![new],
@@ -256,6 +279,8 @@ where
             .collect::<Vec<_>>();
         // SAVE & DONE
         self.0.borrow_mut().append(&mut results);
+        // console::log("***");
+        // console::log("-------------------------------------------------------------------------------");
     }
 }
 

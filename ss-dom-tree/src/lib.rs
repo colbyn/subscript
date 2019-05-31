@@ -117,7 +117,7 @@ impl LiveStylesheet {
 
 pub type AttributesMap<Msg> = SMap<LiveNode<Msg>, String, AttributeValue, AttributeValue>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct AttributesApi {}
 
 impl<Msg> MapApi<LiveNode<Msg>, String, AttributeValue, AttributeValue> for AttributesApi
@@ -195,7 +195,7 @@ impl<'a, Msg: Clone> LiveEventHandler<Msg> {
 
 pub type EventsMap<Msg> = SMap<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EventsApi {}
 
 impl<'a, Msg> MapApi<LiveNode<Msg>, EventType, LiveEventHandler<Msg>, EventHandler<Msg>> for EventsApi
@@ -240,7 +240,7 @@ where
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LiveLeaf {
     Text {
         dom_ref: Rc<dom::Text>,
@@ -290,25 +290,26 @@ impl LiveLeaf {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     pub tag: String,
-    pub auto_listeners: HashMap<String, VoidCallback>,
+    pub auto_listeners: Rc<HashMap<String, VoidCallback>>,
     pub dom_ref: Rc<dom::Tag>,
-    pub attributes: RefCell<AttributesMap<Msg>>,
-    pub events: RefCell<EventsMap<Msg>>,
+    pub attributes: Rc<RefCell<AttributesMap<Msg>>>,
+    pub events: Rc<RefCell<EventsMap<Msg>>>,
     pub styling: LiveStylesheet,
 }
 
 impl<Msg> Drop for LiveNode<Msg> where Msg: PartialEq + Clone + Debug {
     fn drop(&mut self) {
-        css::remove(&self.styling.css_id);
-        for (event_name, callback) in self.auto_listeners.drain() {
-            self.dom_ref.remove_event_listener(&event_name, &callback);
-        }
-        for (key, live_event_listener) in self.events.borrow_mut().dangerous_unsync_drain() {
-            self.dom_ref.remove_event_listener(key.as_str(), &live_event_listener.callback);
-        }
+        // css::remove(&self.styling.css_id);
+        // let mut auto_listeners = Rc::make_mut(&mut self.auto_listeners);
+        // for (event_name, callback) in auto_listeners.drain() {
+        //     self.dom_ref.remove_event_listener(&event_name, &callback);
+        // }
+        // for (key, live_event_listener) in self.events.borrow_mut().dangerous_unsync_drain() {
+        //     self.dom_ref.remove_event_listener(key.as_str(), &live_event_listener.callback);
+        // }
     }
 }
 
@@ -369,7 +370,7 @@ impl Meta {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DomTreeLogic {
     pub window: dom::Window,
     pub attributes_api: AttributesApi,
@@ -489,13 +490,14 @@ where
             "a" => add_prevent_default_callback("click"),
             _ => ()
         }
+        let auto_listeners = Rc::new(auto_listeners);
         let result = LiveNode {
             auto_listeners,
             styling: LiveStylesheet::new(new_styling),
             dom_ref: Rc::new(dom_ref),
             tag: new.tag.clone(),
-            attributes: RefCell::new(SMap::default()),
-            events: RefCell::new(SMap::default()),
+            attributes: Rc::new(RefCell::new(SMap::default())),
+            events: Rc::new(RefCell::new(SMap::default())),
         };
         result.attributes.borrow_mut().sync(
             &self.attributes_api,
@@ -538,12 +540,11 @@ where
         let Update{new, old} = update;
         match (&new, old) {
             (ViewLeaf::Text(new), LiveLeaf::Text{value: old, dom_ref}) => {
-                // TODO: DISABLED FOR TESTING...
-                // dom_ref.set_text_content(new.as_str());
-                // *old = new.clone();
+                dom_ref.set_text_content(new.as_str());
+                *old = new.clone();
             }
             (ViewLeaf::Component(_), LiveLeaf::Component{value, dom_ref}) => {
-                panic!()
+                panic!("todo...")
             }
             _ => panic!()
         }
@@ -616,10 +617,10 @@ where
                 let old: web_sys::Element = web_sys::Element::from(old);
                 old.after_with_node_1(&new);
             }
-            InsertOp::Swap {parent, current, target} => {
+            InsertOp::Swap {parent, new, old} => {
                 parent
                     .get_dom_ref()
-                    .replace_child(target.get_dom_ref().as_ref(), current.get_dom_ref().as_ref());
+                    .replace_child(new.get_dom_ref().as_ref(), old.get_dom_ref().as_ref());
             }
             InsertOp::Append {parent, new} => {
                 let new = init_fragment(new);

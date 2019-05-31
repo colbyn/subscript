@@ -6,7 +6,7 @@ use either::Either;
 use itertools::Itertools;
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SMap<N, K, SV, IV>
 where
 	N: Debug + PartialEq,
