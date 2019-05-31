@@ -70,6 +70,7 @@ pub enum Msg {
     NoOp,
     NewEntryName(String),
     SubmitNewEntryName,
+    RemoveEntry(EntryId, EntryIx),
     EntryCompleted(EntryId, EntryIx, bool),
     EntryMouseEnter(EntryId, EntryIx),
     EntryMouseLeave(EntryId, EntryIx),
@@ -126,6 +127,11 @@ impl Spec for AppSpec {
                 assert!(entry.id == id);
                 entry.completed = toggle;
             }
+            Msg::RemoveEntry(id, ix) => {
+                let mut entry = model.entries.get_mut(ix).expect("missing entry");
+                assert!(entry.id == id);
+                model.entries.remove(ix);
+            }
             Msg::EntryMouseEnter(id, ix) => {
                 let mut entry = model.entries.get_mut(ix).expect("missing entry");
                 assert!(entry.id == id);
@@ -147,7 +153,7 @@ impl Spec for AppSpec {
                 on_submit(|| Msg::SubmitNewEntryName);
                 input {
                     type = "text";
-                    // value = model.new_entry_name.as_str();
+                    value = model.new_entry_name.as_str();
                     on_input(move |str| Msg::NewEntryName(str));
                 }
             }
@@ -170,18 +176,11 @@ impl Spec for AppSpec {
 fn render_entry(ix: EntryIx, entry: &Entry) -> View<Msg> {v!{li|
     padding: "22px";
     border: "1px solid #000";
-    // extend!(on_mouse_enter, [id@entry.id, name@entry.name], move || {
-    //     console::log(format!("on_mouse_enter: #{} {}", ix, name));
-    //     Msg::EntryMouseEnter(id, ix)
-    // });
-    // extend!(on_mouse_leave, [id@entry.id], move || {
-    //     Msg::EntryMouseLeave(id, ix)
-    // });
+    extend!(on_mouse_enter, [id@entry.id], move || Msg::EntryMouseEnter(id, ix));
+    extend!(on_mouse_leave, [id@entry.id], move || Msg::EntryMouseLeave(id, ix));
     form {
         input {
-            extend!(on_check, [id@entry.id], move |x| {
-                Msg::EntryCompleted(id, ix, x)
-            });
+            extend!(on_check, [id@entry.id], move |x| Msg::EntryCompleted(id, ix, x));
             type = "checkbox";
             checked = entry.completed;
         }
@@ -189,6 +188,7 @@ fn render_entry(ix: EntryIx, entry: &Entry) -> View<Msg> {v!{li|
             format!("{}. {}", ix, entry.name.as_str());
         }
         button {
+            extend!(on_click, [id@entry.id], move || Msg::RemoveEntry(id, ix));
             if (!entry.mouse_hovering) {
                 display: "none";
             };

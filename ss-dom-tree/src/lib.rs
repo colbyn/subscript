@@ -516,11 +516,11 @@ where
     }
     fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {
         match (new, old) {
+            (ViewLeaf::Text(x), LiveLeaf::Text{value, ..}) => x == value,
             (ViewLeaf::Component(new), LiveLeaf::Component{value: old, ..}) => {
                 let new: Box<Any> = Box::new(new.clone());
                 old.unchanged(&new)
             },
-            (ViewLeaf::Text(x), LiveLeaf::Text{value, ..}) => x == value,
             _ => false
         }
     }
@@ -537,9 +537,10 @@ where
     fn leaf_update(&self, update: Update<&mut LiveLeaf, &ViewLeaf>) {
         let Update{new, old} = update;
         match (&new, old) {
-            (ViewLeaf::Text(x), LiveLeaf::Text{value, dom_ref}) => {
-                dom_ref.set_text_content(value.as_str());
-                *value = x.clone();
+            (ViewLeaf::Text(new), LiveLeaf::Text{value: old, dom_ref}) => {
+                // TODO: DISABLED FOR TESTING...
+                // dom_ref.set_text_content(new.as_str());
+                // *old = new.clone();
             }
             (ViewLeaf::Component(_), LiveLeaf::Component{value, dom_ref}) => {
                 panic!()

@@ -132,60 +132,62 @@ where
         new: &IChildren<IN, IL>,
         f: &SyncTraversal<'a,M,SN,SL,IN,IL>
     ) {
-        let mut results: Vec<Item<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>> = Vec::new();
-        let mut this: RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>> = self.0.borrow_mut();
         let mut adjusted_position: usize = 0;
-        for new in new.0.iter() {
-            let mut get_unchanged = |this: &mut RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>>| {
-                let pos = this.iter().position(|x| x.borrow().unchanged(api, &new))?;
-                Some((pos, this.remove(pos)))
-            };
-            let mut get_changed = |this: &mut RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>>| {
-                let pos = this.iter().position(|x| x.borrow().recyclable(api, &new))?;
-                Some((pos, this.remove(pos)))
-            };
-            if let Some((poped_position, unchanged)) = get_unchanged(&mut this) {
-                unchanged.borrow_mut().traverse_sync(api, parent, new, f);
-                results.push(Item::Preexisting{
-                    poped_position,
-                    adjusted_position,
-                    data: unchanged.clone(),
-                });
-                adjusted_position = adjusted_position + 1;
-            } else if let Some((poped_position, changed)) = get_changed(&mut this) {
-                changed.borrow_mut().traverse_sync(api, parent, new, f);
-                results.push(Item::Preexisting{
-                    poped_position,
-                    adjusted_position,
-                    data: changed.clone(),
-                });
-                adjusted_position = adjusted_position + 1;
-            } else {
-                let created = new.create_tree(api, parent);
-                results.push(Item::New{
-                    adjusted_position,
-                    data: Rc::new(RefCell::new(created)),
-                });
-            }
-        }
-        assert!(results.len() == new.0.len());
-        for old in this.drain(..) {
+        let mut stage2: Vec<Stage2<M, SN, SL, IN, IL>> = new.0
+            .iter()
+            .map(|new: &ITree<IN, IL>| -> Stage1<M, SN, SL, IN, IL> {
+                let mut this = self.0.borrow_mut();
+                let mut get_unchanged = |this: &mut RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>>| {
+                    let pos = this.iter().position(|x| x.borrow().unchanged(api, &new))?;
+                    Some((pos, this.remove(pos)))
+                };
+                if let Some((poped_pos, old)) = get_unchanged(&mut this) {
+                    Stage1::Unchanged(Unchanged {old, new})
+                } else {
+                    Stage1::Unset(new)
+                }
+            })
+            .map(|stage1: Stage1<M, SN, SL, IN, IL>| -> Stage2<M, SN, SL, IN, IL> {
+                let mut this = self.0.borrow_mut();
+                let mut get_changed = |new: &ITree<IN, IL>, this: &mut RefMut<Vec<Rc<RefCell<STree<M, SN, SL, IN, IL>>>>>| {
+                    let pos = this.iter().position(|x| x.borrow().recyclable(api, new))?;
+                    Some((pos, this.remove(pos)))
+                };
+                match stage1 {
+                    Stage1::Unchanged(x) => {Stage2::Unchanged(x)}
+                    Stage1::Unset(new) => {
+                        // CHANGED
+                        if let Some((poped_pos, old)) = get_changed(new, &mut this) {
+                            Stage2::Changed(Changed{old, new})
+                        }
+                        // NEW
+                        else {
+                            let created = new.create_tree(api, parent);
+                            let created = Rc::new(RefCell::new(created));
+                            Stage2::New(New{created, new})
+                        }
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+        assert!(stage2.len() == new.0.len());
+        // REMOVE UNUSED
+        for old in self.0.borrow_mut().drain(..) {
             api.remove(old.borrow().get_meta(api));
         }
-        let ref metas = results
+        // UPSERT HELPERS
+        let ref metas = stage2
             .iter()
-            .map(|item| -> Item<M> {
-                match item {
-                    Item::Preexisting{poped_position, adjusted_position, data} => {
-                        let poped_position = poped_position.clone();
-                        let adjusted_position = adjusted_position.clone();
-                        let data = data.borrow().get_meta(api);
-                        Item::Preexisting{poped_position, adjusted_position, data}
-                    }
-                    Item::New{adjusted_position, data} => {
-                        let adjusted_position = adjusted_position.clone();
-                        let data = data.borrow().get_meta(api);
-                        Item::New{adjusted_position, data}
+            .map(|entry| -> M {
+                match entry {
+                    Stage2::Unchanged(Unchanged{old, ..}) => {
+                        old.borrow().get_meta(api)
+                    },
+                    Stage2::Changed(Changed{old, ..}) => {
+                        old.borrow().get_meta(api)
+                    },
+                    Stage2::New(New{created, new}) => {
+                        created.borrow().get_meta(api)
                     }
                 }
             })
@@ -202,74 +204,123 @@ where
             else if let Some(old) = metas.get(ix - 1) {
                 InsertOp::InsertAfter{
                     new: vec![new],
-                    old: old.unpack().clone(),
+                    old: old.clone(),
                 }
             }
             // OTHERWISE INSERT BEFORE
             else if let Some(old) = metas.get(ix + 1) {
                 InsertOp::InsertBefore{
                     new: vec![new],
-                    old: old.unpack().clone(),
+                    old: old.clone(),
                 }
             }
             else {panic!()}
         };
-        // console::log("-------------------------------------------------------------------------------");
-        // console::log("**");
-        for (ix, entry) in results.into_iter().enumerate() {
-            match entry {
-                Item::Preexisting{data, poped_position, adjusted_position} => {
-                    // TODO: ...
-                    assert!(poped_position == 0);
-                    // if poped_position != 0 {
-                    //     console::log(format!(
-                    //         "{:#?} {:?}",
-                    //         (ix, (poped_position, adjusted_position)),
-                    //         &data
-                    //     ));
-                    // }
-                    this.push(data);
+        // APPLY API TRAIT UPDATES & USER-CALLBACKS
+        let mut stage3 = stage2
+            .into_iter()
+            .enumerate()
+            .map(|(ix, entry)| -> Stage3<M, SN, SL, IN, IL> {
+                match entry {
+                    Stage2::Unchanged(Unchanged{old, new, ..}) => {
+                        old.borrow_mut().traverse_sync(api, parent, new, f);
+                        Stage3::PositionUnchanged {data: old}
+                    },
+                    Stage2::Changed(Changed{old, new, ..}) => {
+                        old.borrow_mut().traverse_sync(api, parent, new, f);
+                        Stage3::PositionUnchanged {data: old}
+                    },
+                    Stage2::New(New{created, new}) => {
+                        let insert_op = get_insert_op(ix, created.borrow().get_meta(api));
+                        new.traverse_sync(parent, &ITreeSyncTraversal {
+                            node: f.new_node,
+                            leaf: f.new_leaf,
+                        });
+                        Stage3::Upsert {insert_op, data: created}
+                    },
                 }
-                Item::New{data, ..} => {
-                    let insert_op = get_insert_op(ix, data.borrow().get_meta(api));
-                    api.insert(insert_op);
-                    this.push(data);
+            })
+            .collect::<Vec<_>>();
+        // APPLY UPSERTS
+        let mut results = stage3
+            .into_iter()
+            .map(|entry| -> Rc<RefCell<STree<M, SN, SL, IN, IL>>> {
+                match entry {
+                    Stage3::PositionUnchanged{data, ..} => {data}
+                    Stage3::Upsert{data, insert_op} => {
+                        api.insert(insert_op);
+                        data
+                    },
                 }
-            }
-        }
-        // console::log("**");
-        // console::log("-------------------------------------------------------------------------------");
+            })
+            .collect::<Vec<_>>();
+        // SAVE & DONE
+        self.0.borrow_mut().append(&mut results);
     }
 }
 
-
-#[derive(Debug)]
-pub enum ItemType {
-    Unchanged,
-    Changed,
-    New,
+pub enum Stage1<'a, M, SN, SL, IN, IL> {
+    Unchanged(Unchanged<'a, M, SN, SL, IN, IL>),
+    Unset(&'a ITree<IN, IL>),
 }
-
-#[derive(Debug)]
-pub enum Item<X> {
-    Preexisting {
-        poped_position: usize,
-        adjusted_position: usize,
-        data: X,
+pub enum Stage2<'a, M, SN, SL, IN, IL> {
+    Unchanged(Unchanged<'a, M, SN, SL, IN, IL>),
+    Changed(Changed<'a, M, SN, SL, IN, IL>),
+    New(New<'a, M, SN, SL, IN, IL>),
+}
+pub enum Stage3<M, SN, SL, IN, IL> {
+    PositionUnchanged {
+        data: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
     },
-    New{
-        adjusted_position: usize,
-        data: X,
+    Upsert {
+        insert_op: InsertOp<M>,
+        data: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
     },
 }
 
-impl<X> Item<X> {
-    fn unpack(&self) -> &X {
-        match self {
-            Item::New{data, ..} => data,
-            Item::Preexisting{data, ..} => data,
-        }
-    }
+#[derive(Debug)]
+pub struct Unchanged<'a, M, SN, SL, IN, IL> {
+    old: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
+    new: &'a ITree<IN, IL>,
 }
+#[derive(Debug)]
+pub struct Changed<'a, M, SN, SL, IN, IL> {
+    old: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
+    new: &'a ITree<IN, IL>,
+}
+#[derive(Debug)]
+pub struct New<'a, M, SN, SL, IN, IL> {
+    created: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
+    new: &'a ITree<IN, IL>,
+}
+
+// #[derive(Debug)]
+// pub enum ItemType {
+//     Unchanged,
+//     Changed,
+//     New,
+// }
+
+// #[derive(Debug)]
+// pub enum Item<X> {
+//     Preexisting {
+//         poped_position: usize,
+//         adjusted_position: usize,
+//         data: X,
+//     },
+//     New{
+//         adjusted_position: usize,
+//         data: X,
+//     },
+// }
+
+// impl<X> Item<X> {
+//     fn unpack(&self) -> &X {
+//         match self {
+//             Item::New{data, ..} => data,
+//             Item::Preexisting{data, ..} => data,
+//         }
+//     }
+// }
 
 
