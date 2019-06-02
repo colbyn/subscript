@@ -14,7 +14,7 @@ use wasm_bindgen::JsValue;
 
 use ss_web_utils::js;
 use ss_web_utils::dom;
-use crate::{Mixin, Viewable};
+use crate::{Env, Viewable};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -127,8 +127,8 @@ pub enum EventHandler<Msg> {
 
 
 impl<Msg> Viewable<Msg> for EventHandler<Msg> {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.events.insert(self.event_name(), self);
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.events.insert(self.event_name(), self);
     }
 }
 impl<Msg> PartialEq for EventHandler<Msg> {

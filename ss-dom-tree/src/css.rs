@@ -2,10 +2,11 @@ use std::iter::FromIterator;
 use std::rc::*;
 use std::cell::*;
 use std::collections::*;
+use wasm_bindgen::JsValue;
 use ss_view_tree::styling::*;
 use ss_view_tree::styling::syntax::*;
 use ss_web_utils::dom::DomRef;
-use ss_web_utils::{dom, js, js::console};
+use ss_web_utils::{dom, js, js::console, prelude::*};
 use ss_trees::ext::map::{SMap, MapApi};
 use crate::LiveStylesheet;
 
@@ -61,24 +62,35 @@ impl GlobalCssRegistry {
 					let local = dom::Tag::new("style");
 					let state = dom::Tag::new("style");
 					let media = dom::Tag::new("style");
+					wrapper.set_attribute("subscript-styling-wrapper", "");
+					wrapper.set_attribute("style", "display: none;");
 					wrapper.append_child(&local);
 					wrapper.append_child(&state);
 					wrapper.append_child(&media);
-					window.document.body.append_child(&wrapper);
+					// INSERT INTO DOM TREE - BODY CHILD - FIRST ELEMENT
+					let wrapper_ref: JsValue = wrapper.dom_ref().clone();
+					let wrapper_ref: web_sys::Element = From::from(wrapper_ref);
+					let body: dom::Body = dom::window().document.body;
+					let body: wasm_bindgen::JsValue = body.dom_ref().clone();
+					let body: web_sys::Element = web_sys::Element::from(body);
+					body.insert_adjacent_element("afterbegin", &wrapper.dom_ref_as_element);
 					GlobalCssMount {wrapper,local,state,media}
 				},
 				node_locals_api: NodeLocalsApi{},
 				node_states_api: NodeStatesApi{},
+				node_keyframes_api: NodeKeyframesApi{},
 				global_media_api: GlobalMediaApi{},
 				offline: OfflineGlobalStylesheet {
 					node_locals: Rc::new(HashMap::new()),
 					node_states: Rc::new(HashMap::new()),
 					global_media: Rc::new(HashMap::new()),
+					node_keyframes: Rc::new(HashMap::new()),
 				},
 				online: OnlineGlobalStylesheet {
 					node_locals: SMap::default(),
 					node_states: SMap::default(),
 					global_media: SMap::default(),
+					node_keyframes: SMap::default(),
 				},
 			})
 		};
@@ -113,6 +125,7 @@ pub struct LiveCssRegistry {
 	mount: GlobalCssMount,
 	node_locals_api: NodeLocalsApi,
 	node_states_api: NodeStatesApi,
+	node_keyframes_api: NodeKeyframesApi,
 	global_media_api: GlobalMediaApi,
 	offline: OfflineGlobalStylesheet,
 	online: OnlineGlobalStylesheet,
@@ -122,14 +135,14 @@ impl LiveCssRegistry {
 	pub fn upsert(&mut self, sheet: &LiveStylesheet) {
 		// SETUP
 		let css_id = sheet.css_id;
-		let RenderedStylesheet{local, state, media} = sheet.value.borrow().render_css_syntax(&css_id);
-		let local: RenderedSelector = local;
-		let state: HashMap<StateSelectorType, RenderedSelector> = state;
-		let media: HashMap<MediaSelectorType, RenderedSelector> = media;
+		let RenderedStylesheet{local, state, media, keyframes} = sheet.value.borrow().render_css_syntax(&css_id);
 		// UPSERTS
 		self.offline.get_node_locals().insert(css_id, Rc::new(local));
 		for (selector, rendered_selector) in state {
 			self.offline.get_node_states().insert((css_id, selector), Rc::new(rendered_selector));
+		}
+		for (kid, rendered_selector) in keyframes {
+			self.offline.get_node_keyframes().insert((css_id, kid), Rc::new(rendered_selector));
 		}
 		for (media_type, rendered_selector) in media {
 			if let Some(existing) = self.offline.get_global_media().get_mut(&media_type) {
@@ -156,6 +169,16 @@ impl LiveCssRegistry {
 		for key in node_states {
 			self.offline.get_node_states().remove(&key);
 		}
+		// GO - KEYFRAMES
+		let mut node_keyframes: Vec<(CssId, KeyframeHash)> = Vec::new();
+		for (id, kid) in self.offline.node_keyframes.keys() {
+			if css_id == id {
+				node_keyframes.push((id.clone(), kid.clone()));
+			}
+		}
+		for key in node_keyframes {
+			self.offline.get_node_keyframes().remove(&key);
+		}
 		// GO - GLOBAL MEDIA
 		for inner in self.offline.get_global_media().values_mut() {
 			let mut inner = Rc::make_mut(inner);
@@ -173,6 +196,7 @@ impl LiveCssRegistry {
 	pub fn sync(&mut self) {
 		self.online.node_locals.sync_ref(&self.node_locals_api, &self.mount, self.offline.node_locals.as_ref());
 		self.online.node_states.sync_ref(&self.node_states_api, &self.mount, self.offline.node_states.as_ref());
+		self.online.node_keyframes.sync_ref(&self.node_keyframes_api, &self.mount, self.offline.node_keyframes.as_ref());
 		self.online.global_media.sync_ref(&self.global_media_api, &self.mount, self.offline.global_media.as_ref());
 	}
 } 
@@ -186,6 +210,7 @@ impl LiveCssRegistry {
 pub struct OfflineGlobalStylesheet {
 	node_locals: Rc<HashMap<CssId, Rc<RenderedSelector>>>,
 	node_states: Rc<HashMap<(CssId, StateSelectorType), Rc<RenderedSelector>>>,
+	node_keyframes: Rc<HashMap<(CssId, KeyframeHash), Rc<RenderedSelector>>>,
 	global_media: Rc<HashMap<MediaSelectorType, Rc<HashMap<CssId, RenderedSelector>>>>,
 }
 
@@ -199,12 +224,16 @@ impl OfflineGlobalStylesheet {
 	fn get_global_media(&mut self) -> &mut HashMap<MediaSelectorType, Rc<HashMap<CssId, RenderedSelector>>> {
 		Rc::make_mut(&mut self.global_media)
 	}
+	fn get_node_keyframes(&mut self) -> &mut HashMap<(CssId, KeyframeHash), Rc<RenderedSelector>> {
+		Rc::make_mut(&mut self.node_keyframes)
+	}
 }
 
 #[derive(Debug, PartialEq)]
 pub struct OnlineGlobalStylesheet {
 	node_locals: SMap<GlobalCssMount, CssId, LiveSelector, Rc<RenderedSelector>>,
 	node_states: SMap<GlobalCssMount, (CssId, StateSelectorType), LiveSelector, Rc<RenderedSelector>>,
+	node_keyframes: SMap<GlobalCssMount, (CssId, KeyframeHash), LiveSelector, Rc<RenderedSelector>>,
 	global_media: SMap<GlobalCssMount, MediaSelectorType, LiveMediaSelector, Rc<HashMap<CssId, RenderedSelector>>>,
 }
 
@@ -248,14 +277,17 @@ pub struct NodeLocalsApi {}
 pub struct NodeStatesApi {}
 
 #[derive(Debug, PartialEq)]
+pub struct NodeKeyframesApi {}
+
+#[derive(Debug, PartialEq)]
 pub struct GlobalMediaApi {}
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL-STYLESHEET-CONTROLLER - COMMON
 ///////////////////////////////////////////////////////////////////////////////
-pub fn selector_create(attached: &GlobalCssMount, new: Rc<RenderedSelector>) -> LiveSelector {
+pub fn selector_create(parent_dom_ref: &dom::DomRef, new: Rc<RenderedSelector>) -> LiveSelector {
 	let live_selector = LiveSelector::new(new);
-	attached.local.append_child(&live_selector.dom_ref);
+	parent_dom_ref.append_child(&live_selector.dom_ref);
 	live_selector
 }
 fn selector_modified(attached: &GlobalCssMount, old: &mut LiveSelector, new: Rc<RenderedSelector>) {
@@ -264,8 +296,8 @@ fn selector_modified(attached: &GlobalCssMount, old: &mut LiveSelector, new: Rc<
 		old.value = new;
 	}
 }
-fn selector_remove(attached: &GlobalCssMount, old: LiveSelector) {
-	attached.local.remove_child(&old.dom_ref);
+fn selector_remove(parent_dom_ref: &dom::DomRef, old: LiveSelector) {
+	parent_dom_ref.remove_child(&old.dom_ref);
 }
 fn selector_unchanged(old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
 	&old.value == new
@@ -291,13 +323,13 @@ fn render_media_selector(key: &MediaSelectorType, value: &Rc<HashMap<CssId, Rend
 ///////////////////////////////////////////////////////////////////////////////
 impl MapApi<GlobalCssMount, CssId, LiveSelector, Rc<RenderedSelector>> for NodeLocalsApi {
 	fn create(&self, attached: &GlobalCssMount, key: &CssId, new: Rc<RenderedSelector>) -> LiveSelector {
-		selector_create(attached, new)
+		selector_create(&attached.local, new)
 	}
 	fn modified(&self, attached: &GlobalCssMount, key: &CssId, old: &mut LiveSelector, new: Rc<RenderedSelector>) {
 		selector_modified(attached, old, new)
 	}
 	fn remove(&self, attached: &GlobalCssMount, key: CssId, old: LiveSelector) {
-		selector_remove(attached, old)
+		selector_remove(&attached.local, old)
 	}
 	fn unchanged(&self, old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
 		selector_unchanged(old, new)
@@ -307,19 +339,33 @@ impl MapApi<GlobalCssMount, CssId, LiveSelector, Rc<RenderedSelector>> for NodeL
 
 impl MapApi<GlobalCssMount, (CssId, StateSelectorType), LiveSelector, Rc<RenderedSelector>> for NodeStatesApi {
 	fn create(&self, attached: &GlobalCssMount, key: &(CssId, StateSelectorType), new: Rc<RenderedSelector>) -> LiveSelector {
-		selector_create(attached, new)
+		selector_create(&attached.state, new)
 	}
 	fn modified(&self, attached: &GlobalCssMount, key: &(CssId, StateSelectorType), old: &mut LiveSelector, new: Rc<RenderedSelector>) {
 		selector_modified(attached, old, new)
 	}
 	fn remove(&self, attached: &GlobalCssMount, key: (CssId, StateSelectorType), old: LiveSelector) {
-		selector_remove(attached, old)
+		selector_remove(&attached.state, old)
 	}
 	fn unchanged(&self, old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
 		selector_unchanged(old, new)
 	}
 }
 
+impl MapApi<GlobalCssMount, (CssId, KeyframeHash), LiveSelector, Rc<RenderedSelector>> for NodeKeyframesApi {
+	fn create(&self, attached: &GlobalCssMount, key: &(CssId, KeyframeHash), new: Rc<RenderedSelector>) -> LiveSelector {
+		selector_create(&attached.state, new)
+	}
+	fn modified(&self, attached: &GlobalCssMount, key: &(CssId, KeyframeHash), old: &mut LiveSelector, new: Rc<RenderedSelector>) {
+		selector_modified(attached, old, new)
+	}
+	fn remove(&self, attached: &GlobalCssMount, key: (CssId, KeyframeHash), old: LiveSelector) {
+		selector_remove(&attached.state, old)
+	}
+	fn unchanged(&self, old: &LiveSelector, new: &Rc<RenderedSelector>) -> bool {
+		selector_unchanged(old, new)
+	}
+}
 
 
 impl MapApi<GlobalCssMount, MediaSelectorType, LiveMediaSelector, Rc<HashMap<CssId, RenderedSelector>>> for GlobalMediaApi {

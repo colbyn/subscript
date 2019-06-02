@@ -41,6 +41,7 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
         let mount = Meta::Tag {
             dom_ref: {
                 let mount = window.document.create_element("div");
+                mount.set_attribute("view-wrapper", "");
                 window.document.body.append_child(&mount);
                 Rc::new(mount)
             },
@@ -120,34 +121,59 @@ pub type AttributesMap<Msg> = SMap<LiveNode<Msg>, String, AttributeValue, Attrib
 #[derive(Debug, PartialEq, Clone)]
 pub struct AttributesApi {}
 
+pub fn upsert_attribute<Msg>(attached: &LiveNode<Msg>, key: &String, new: &AttributeValue)
+where
+    Msg: PartialEq + 'static + Debug + Clone
+{
+    match (attached.tag.as_str(), key.as_str()) {
+        ("input", "value") => {
+            if let Some(value) = new.get_string() {
+                set_input_text_value(attached.dom_ref.as_ref(), value);
+            }
+        }
+        ("input", "checked") => {
+            if let Some(value) = new.get_string() {
+                if value == "true" {
+                    set_input_checked_value(attached.dom_ref.as_ref(), true);
+                }
+                if value == "false" {
+                    set_input_checked_value(attached.dom_ref.as_ref(), false);
+                }
+            }
+            if let Some(value) = new.get_bool() {
+                set_input_checked_value(attached.dom_ref.as_ref(), value);
+            }
+        }
+        _ => ()
+    }
+    // SET ATTRIBUTE
+    match &new {
+        AttributeValue::Value(str) => {
+            attached.dom_ref.set_attribute(key, str)
+        }
+        AttributeValue::Toggle(state) if key == "checked" => {
+            attached.dom_ref.set_attribute(key, format!("{}", state).as_str())
+        }
+        AttributeValue::Toggle(true) => {
+            assert!(key != "checked");
+            attached.dom_ref.set_attribute(key, "")
+        }
+        AttributeValue::Toggle(false) => {
+            assert!(key != "checked");
+        }
+    }
+}
+
 impl<Msg> MapApi<LiveNode<Msg>, String, AttributeValue, AttributeValue> for AttributesApi
 where
     Msg: PartialEq + 'static + Debug + Clone
 {
     fn create(&self, attached: &LiveNode<Msg>, key: &String, new: AttributeValue) -> AttributeValue {
-    	match &new {
-            AttributeValue::Value(str) => attached.dom_ref.set_attribute(key, str),
-            AttributeValue::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
-            AttributeValue::Toggle(false) => (),
-        }
+        upsert_attribute(attached, key, &new);
         new
     }
     fn modified(&self, attached: &LiveNode<Msg>, key: &String, old: &mut AttributeValue, new: AttributeValue) {
-        // SPECIAL - SYNC STATEFUL ATTRIBUTE CONTROLLED DOM VALUES
-        match (attached.tag.as_str(), key.as_str()) {
-            ("input", "value") => {
-                if let Some(value) = new.get_string() {
-                    set_input_value(attached.dom_ref.as_ref(), value);
-                }
-            },
-            _ => ()
-        }
-        // UPDATE ATTRIBUTE
-        match &new {
-            AttributeValue::Value(str) => attached.dom_ref.set_attribute(key, str),
-            AttributeValue::Toggle(true) => attached.dom_ref.set_attribute(key, ""),
-            AttributeValue::Toggle(false) => attached.dom_ref.remove_attribute(key),
-        }
+        upsert_attribute(attached, key, &new);
         *old = new;
     }
     fn remove(&self, attached: &LiveNode<Msg>, key: String, old: AttributeValue) {
@@ -161,10 +187,15 @@ where
 
 
 /// Helper for AttributesApi.
-fn set_input_value(dom_ref: &dom::Tag, value: &str) {
+fn set_input_text_value(dom_ref: &dom::Tag, value: &str) {
     let node_ref: JsValue = From::from(dom_ref.dom_ref_as_element());
     let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
     node_ref.set_value(value);
+}
+fn set_input_checked_value(dom_ref: &dom::Tag, value: bool) {
+    let node_ref: JsValue = From::from(dom_ref.dom_ref_as_element());
+    let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+    node_ref.set_checked(value);
 }
 
 
@@ -562,6 +593,7 @@ where
             }
             ViewLeaf::Component(value) => {
                 let dom_ref = self.window.document.create_element("div");
+                dom_ref.set_attribute("component-wrapper", "");
                 LiveLeaf::Component {
                     dom_ref: Rc::new(dom_ref),
                     value: value.clone(),

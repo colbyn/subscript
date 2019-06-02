@@ -142,15 +142,23 @@ where
             .collect();
         let mut stage1 = new.0
             .iter()
-            .map(|new: &ITree<IN, IL>| -> Stage1<M, SN, SL, IN, IL> {
+            .enumerate()
+            .map(|(new_pos, new)| -> Stage1<M, SN, SL, IN, IL> {
                 let mut get_unchanged = |this: &mut Vec<(usize, Rc<RefCell<STree<M,SN,SL,IN,IL>>>)>| {
                     let pos = this.iter().position(|x| x.1.borrow().unchanged(Intensity::Deep, api, &new))?;
-                    let (ix, x) = this.remove(pos);
-                    assert!(available.remove(&ix));
-                    Some((pos, (ix, x)))
+                    let ref_value = this.get(pos)?;
+                    let old_pos: usize = ref_value.0;
+                    // TEMPORARY FIX
+                    if old_pos == new_pos {
+                        let result = this.remove(pos);
+                        assert!(available.remove(&old_pos));
+                        Some((pos, result))
+                    } else {
+                        None
+                    }
                 };
-                if let Some((poped_pos, (old_ix, old))) = get_unchanged(&mut this) {
-                    Stage1::Unchanged(Unchanged {old, new})
+                if let Some((poped_pos, (ols_pos, old))) = get_unchanged(&mut this) {
+                    Stage1::Unchanged(Unchanged {old, new, poped_pos, ols_pos})
                 } else {
                     Stage1::Unset(new)
                 }
@@ -158,19 +166,27 @@ where
             .collect::<Vec<_>>();
         let mut stage2 = stage1
             .into_iter()
-            .map(|stage1: Stage1<M, SN, SL, IN, IL>| -> Stage2<M, SN, SL, IN, IL> {
+            .enumerate()
+            .map(|(new_pos, stage1) : (usize, Stage1<M, SN, SL, IN, IL>)| -> Stage2<M, SN, SL, IN, IL> {
                 let mut get_changed = |new: &ITree<IN, IL>, this: &mut Vec<(usize, Rc<RefCell<STree<M,SN,SL,IN,IL>>>)>| {
                     let pos = this.iter().position(|x| x.1.borrow().recyclable(Intensity::Deep, api, new))?;
-                    let (ix, x) = this.remove(pos);
-                    assert!(available.remove(&ix));
-                    Some((pos, (ix, x)))
+                    let ref_value = this.get(pos)?;
+                    let old_pos: usize = ref_value.0;
+                    // TEMPORARY FIX
+                    if old_pos == new_pos {
+                        let result = this.remove(pos);
+                        assert!(available.remove(&old_pos));
+                        Some((pos, result))
+                    } else {
+                        None
+                    }
                 };
                 match stage1 {
                     Stage1::Unchanged(x) => {Stage2::Unchanged(x)}
                     Stage1::Unset(new) => {
                         // CHANGED
                         if let Some((poped_pos, (ols_pos, old))) = get_changed(new, &mut this) {
-                            Stage2::Changed(Changed{old, new})
+                            Stage2::Changed(Changed{old, new, poped_pos, ols_pos})
                         }
                         // NEW
                         else {
@@ -217,11 +233,20 @@ where
             .collect::<Vec<_>>();
         let get_insert_op = |ix: usize, new: M| -> InsertOp<M> {
             // NEW - FIRST CHILD - APPEND
-            if (ix == 0) && (metas.len() == 1) {
-                InsertOp::Append{
-                    parent: parent.clone(),
-                    new: vec![new],
+            if ix == 0 {
+                if metas.len() == 1 {
+                    InsertOp::Append{
+                        parent: parent.clone(),
+                        new: vec![new],
+                    }
                 }
+                else if let Some(old) = metas.get(1) {
+                    InsertOp::InsertBefore{
+                        new: vec![new],
+                        old: old.clone(),
+                    }
+                }
+                else {panic!()}
             }
             // CHECK INSERT AFTER
             else if let Some(old) = metas.get(ix - 1) {
@@ -243,7 +268,22 @@ where
         let mut stage3 = stage2
             .into_iter()
             .enumerate()
-            .map(|(ix, entry)| -> Stage3<M, SN, SL, IN, IL> {
+            .map(|(new_pos, entry)| -> Stage3<M, SN, SL, IN, IL> {
+                // if let Some(Stage2PosInfo{poped_pos, ols_pos}) = entry.get_pos_info() {
+                //     let (old, new) = match &entry {
+                //         Stage2::Unchanged(Unchanged{old, new, ..}) => {
+                //             (old, new)
+                //         },
+                //         Stage2::Changed(Changed{old, new, ..}) => {
+                //             (old, new)
+                //         }
+                //         _ => {panic!()}
+                //     };
+                //     assert!(ols_pos <= new_pos);
+                //     // if ols_pos > new_pos {
+                //     //     console::log(format!("{:#?}", (ols_pos, new_pos)));
+                //     // }
+                // }
                 match entry {
                     Stage2::Unchanged(Unchanged{old, new, ..}) => {
                         old.borrow_mut().traverse_sync(api, parent, new, f);
@@ -254,7 +294,7 @@ where
                         Stage3::PositionUnchanged {data: old}
                     },
                     Stage2::New(New{created, new}) => {
-                        let insert_op = get_insert_op(ix, created.borrow().get_meta(api));
+                        let insert_op = get_insert_op(new_pos, created.borrow().get_meta(api));
                         new.traverse_sync(parent, &ITreeSyncTraversal {
                             node: f.new_node,
                             leaf: f.new_leaf,
@@ -303,13 +343,41 @@ pub enum Stage3<M, SN, SL, IN, IL> {
     },
 }
 
+impl<'a, M, SN, SL, IN, IL> Stage2<'a, M, SN, SL, IN, IL> {
+    fn get_pos_info(&self) -> Option<Stage2PosInfo> {
+        match self {
+            Stage2::Changed(Changed{poped_pos, ols_pos, ..}) => {
+                let poped_pos = poped_pos.clone();
+                let ols_pos = ols_pos.clone();
+                Some(Stage2PosInfo{poped_pos, ols_pos})
+            }
+            Stage2::Unchanged(Unchanged{poped_pos, ols_pos, ..}) => {
+                let poped_pos = poped_pos.clone();
+                let ols_pos = ols_pos.clone();
+                Some(Stage2PosInfo{poped_pos, ols_pos})
+            }
+            _ => None
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Stage2PosInfo {
+    poped_pos: usize,
+    ols_pos: usize,
+}
+
 #[derive(Debug)]
 pub struct Unchanged<'a, M, SN, SL, IN, IL> {
+    poped_pos: usize,
+    ols_pos: usize,
     old: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
     new: &'a ITree<IN, IL>,
 }
 #[derive(Debug)]
 pub struct Changed<'a, M, SN, SL, IN, IL> {
+    poped_pos: usize,
+    ols_pos: usize,
     old: Rc<RefCell<STree<M, SN, SL, IN, IL>>>,
     new: &'a ITree<IN, IL>,
 }

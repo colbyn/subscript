@@ -46,122 +46,149 @@ macro_rules! media_types {
     }};
 }
 
+
+#[macro_export]
+macro_rules! keyframe_interval {
+    (from => {$($x:tt)*}) => {{
+        use std::iter::FromIterator;
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        let value = String::from("from");
+        keyframe_interval(value, body)
+    }};
+    (to => {$($x:tt)*}) => {{
+        use std::iter::FromIterator;
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        let value = String::from("to");
+        keyframe_interval(value, body)
+    }};
+    ($value:expr => {$($x:tt)*}) => {{
+        use std::iter::FromIterator;
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        let value: u8 = $value;
+        let value: String = format!("{}", value);
+        keyframe_interval(value, body)
+    }};
+}
+
 #[macro_export]
 macro_rules! state_selector {
     ($ctx:expr; :active {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(active(body));
+        $ctx.merge(active(body));
     }};
     ($ctx:expr; :after {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(after(body));
+        $ctx.merge(after(body));
     }};
     ($ctx:expr; :before {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(before(body));
+        $ctx.merge(before(body));
     }};
     ($ctx:expr; :checked {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(checked(body));
+        $ctx.merge(checked(body));
     }};
     ($ctx:expr; :disabled {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(disabled(body));
+        $ctx.merge(disabled(body));
     }};
     ($ctx:expr; :empty {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(empty(body));
+        $ctx.merge(empty(body));
     }};
     ($ctx:expr; :enabled {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(enabled(body));
+        $ctx.merge(enabled(body));
     }};
     ($ctx:expr; :first-child {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(first_child(body));
+        $ctx.merge(first_child(body));
     }};
     ($ctx:expr; :first-letter {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(first_letter(body));
+        $ctx.merge(first_letter(body));
     }};
     ($ctx:expr; :first-line {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(first_line(body));
+        $ctx.merge(first_line(body));
     }};
     ($ctx:expr; :focus {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(focus(body));
+        $ctx.merge(focus(body));
     }};
     ($ctx:expr; :hover {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(hover(body));
+        $ctx.merge(hover(body));
     }};
     ($ctx:expr; :last-child {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(last_child(body));
+        $ctx.merge(last_child(body));
     }};
     ($ctx:expr; :only-child {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(only_child(body));
+        $ctx.merge(only_child(body));
     }};
     ($ctx:expr; :link {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(link(body));
+        $ctx.merge(link(body));
     }};
     ($ctx:expr; :visited {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(visited(body));
+        $ctx.merge(visited(body));
     }};
     ($ctx:expr; :spelling-error {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(spelling_error(body));
+        $ctx.merge(spelling_error(body));
     }};
     ($ctx:expr; :grammar-error {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(grammar_error(body));
+        $ctx.merge(grammar_error(body));
     }};
     ($ctx:expr; :selection {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(selection(body));
+        $ctx.merge(selection(body));
     }};
     ($ctx:expr; :placeholder {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(placeholder(body));
+        $ctx.merge(placeholder(body));
     }};
     ($ctx:expr; :marker {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(marker(body));
+        $ctx.merge(marker(body));
     }};
     ($ctx:expr; :cue {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(cue(body));
+        $ctx.merge(cue(body));
     }};
     ($ctx:expr; :backdrop {$($x:tt)*}) => {{
         let mut body: Vec<Style> = Vec::new();
         styles!(body; $($x)*);
-        $ctx.extend(backdrop(body));
+        $ctx.merge(backdrop(body));
     }};
 }
 
@@ -180,7 +207,15 @@ macro_rules! view_arguments {
         let mut body: Vec<Style> = Vec::new();
         media_types!(selector; $($xs)*);
         // styles!(body; $($ys)*);
-        $ctx.extend(media(selector, body));
+        $ctx.merge(media(selector, body));
+        view_arguments!($ctx; $($rest)*);
+    }};
+    ($ctx:expr; @keyframes {$($val:tt => $body:tt)*}; $($rest:tt)*) => {{
+        let mut xs: Vec<KeyframeInterval> = Vec::new();
+        $({
+            xs.push(keyframe_interval!($val => $body));
+        })*
+        $ctx.merge(keyframes(xs));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :active {$($x:tt)*}; $($rest:tt)*) => {{
@@ -306,14 +341,14 @@ macro_rules! view_arguments {
     ($ctx:expr; $tag:ident {$($x:tt)*} $($rest:tt)*) => {{
         let mut node = View::new_tag(stringify!($tag));
         view_arguments!(node; $($x)*);
-        $ctx.extend(node);
+        $ctx.merge(node);
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $key:ident = $value:expr; $($rest:tt)*) => {{
         let value: AttributeValue = internal_normalize_attribute_value($value);
         let key = String::from(stringify!($key));
         let ket = key.replace("_", "-");
-        $ctx.extend((key, value));
+        $ctx.merge((key, value));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $prop:ident: $value:expr; $($rest:tt)*) => {{
@@ -321,17 +356,23 @@ macro_rules! view_arguments {
         let value: String = String::from(value);
         let property = String::from(stringify!($prop));
         let property = property.replace("_", "-");
-        $ctx.extend(Style::Untyped(Untyped{
+        $ctx.merge(Style::Untyped(Untyped{
             property,
             value,
         }));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; $viewable:expr; $($rest:tt)*) => {{
-        $ctx.extend($viewable);
+        $ctx.merge($viewable);
         view_arguments!($ctx; $($rest)*);
     }};
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+// PUBLIC VIEW MACROS
+///////////////////////////////////////////////////////////////////////////////
+
 
 #[macro_export]
 macro_rules! v {
@@ -344,6 +385,15 @@ macro_rules! v {
         let mut node = View::new_tag("div");
         view_arguments!(node; $($x)*);
         node
+    }};
+}
+
+#[macro_export]
+macro_rules! mix {
+    ($($x:tt)*) => {{
+        let mut mixin: Mixin<_> = Mixin::default();
+        view_arguments!(mixin; $($x)*);
+        mixin
     }};
 }
 
@@ -406,6 +456,20 @@ pub fn dev() {
 
     fn view(model: &Model) -> View<Msg> {
         v!{
+            @keyframes {
+                0 => {
+                    // ... (CSS PROPERTIES) ...
+                }
+                50 => {
+                    // ... (CSS PROPERTIES) ...
+                }
+                80 => {
+                    // ... (CSS PROPERTIES) ...
+                }
+                100 => {
+                    // ... (CSS PROPERTIES) ...
+                }
+            };
             h1{
                 @media [min_width: "100px"] {
                     display: "flex";
@@ -424,6 +488,13 @@ pub fn dev() {
             }
             main {
                 
+            }
+        }
+    }
+    fn button() -> Mixin<Msg> {
+        mix!{
+            button {
+
             }
         }
     }

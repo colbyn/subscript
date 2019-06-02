@@ -1,8 +1,15 @@
+use std::iter::FromIterator;
 use crate::styling::*;
 
 /// The '@media' at-rule.
 pub fn media<Msg>(selector: Vec<Style>, body: Vec<Style>) -> impl Viewable<Msg> {
 	MediaQuerySelector {selector, body}
+}
+pub fn keyframes<Msg>(intervals: Vec<KeyframeInterval>) -> impl Viewable<Msg> {
+	KeyframeSelector(intervals)
+}
+pub fn keyframe_interval(value: String, body: Vec<Style>) -> KeyframeInterval {
+	KeyframeInterval {value, body}
 }
 /// The 'active' pseudo selector.
 pub fn active<Msg>(body: Vec<Style>) -> impl Viewable<Msg> {

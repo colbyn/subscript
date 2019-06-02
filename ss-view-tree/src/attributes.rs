@@ -13,6 +13,12 @@ impl AttributeValue {
 			_ => None
 		}
 	}
+	pub fn get_bool(&self) -> Option<bool> {
+		match self {
+			AttributeValue::Toggle(x) => Some(x.clone()),
+			_ => None
+		}	
+	}
 }
 
 pub trait AttributeValueInterface {

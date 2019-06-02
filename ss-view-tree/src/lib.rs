@@ -35,6 +35,12 @@ use crate::styling::*;
 // MISCELLANEOUS
 ///////////////////////////////////////////////////////////////////////////////
 
+pub struct Env<'a, Msg> {
+    attributes: &'a mut HashMap<String, AttributeValue>,
+    events: &'a mut HashMap<events::EventType, EventHandler<Msg>>,
+    styling: &'a mut Stylesheet,
+    children: &'a mut Vec<View<Msg>>,
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,38 +64,29 @@ impl<'a, Msg> View<Msg> {
         let view_leaf = ViewLeaf::Text(String::from(value));
         View(ITree::new(Right(view_leaf)))
     }
-    pub fn extend(&mut self, something: impl Viewable<Msg>) {
+    pub fn merge(&mut self, something: impl Viewable<Msg>) {
         if let Some(node) = self.0.get_node_mut() {
             let mut children = Vec::new();
-            let mixin = Mixin {
+            let env = Env {
                 attributes: &mut node.attributes,
                 events: &mut node.events,
                 styling: &mut node.styling,
                 children: &mut children,
             };
-            something.mixin(mixin);
-            if !children.is_empty() {
-                for child in children {
-                    self.0.add_child(child.0);
-                }
+            something.extend(env);
+            for child in children {
+                self.0.add_child(child.0);
             }
         }
     }
 }
 
-pub struct Mixin<'a, Msg> {
-    attributes: &'a mut HashMap<String, AttributeValue>,
-    events: &'a mut HashMap<events::EventType, EventHandler<Msg>>,
-    styling: &'a mut Stylesheet,
-    children: &'a mut Vec<View<Msg>>,
-}
-
 pub trait Viewable<Msg> {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>);
+    fn extend<'a>(self, env: Env<'a, Msg>);
 }
 
 impl<Msg> Viewable<Msg> for () {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+    fn extend<'a>(self, env: Env<'a, Msg>) {
         // let warning = vec![
         //     "Something in your view isn’t returning anything",
         //     "(i.e. returning ‘()’); perhaps theres a mistake somewhere?"
@@ -98,34 +95,79 @@ impl<Msg> Viewable<Msg> for () {
     }
 }
 impl<Msg> Viewable<Msg> for &str {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.children.push(View::new_text(self));
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.children.push(View::new_text(self));
     }
 }
 impl<Msg> Viewable<Msg> for String {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.children.push(View::new_text(self.as_str()));
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.children.push(View::new_text(self.as_str()));
     }
 }
 impl<Msg> Viewable<Msg> for View<Msg> {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.children.push(self);
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.children.push(self);
     }
 }
 impl<Msg> Viewable<Msg> for Vec<View<Msg>> {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
+    fn extend<'a>(self, env: Env<'a, Msg>) {
         let mut this = self;
-        mixin.children.append(&mut this);
+        env.children.append(&mut this);
     }   
 }
 impl<Msg> Viewable<Msg> for (String, AttributeValue) {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.attributes.insert(self.0, self.1);
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.attributes.insert(self.0, self.1);
     }
 }
 impl<Msg> Viewable<Msg> for (&str, AttributeValue) {
-    fn mixin<'a>(self, mixin: Mixin<'a, Msg>) {
-        mixin.attributes.insert(String::from(self.0), self.1);
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.attributes.insert(String::from(self.0), self.1);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// MIXINS
+///////////////////////////////////////////////////////////////////////////////
+
+/// Comes with the `mix!{}` macro.
+/// Works with any `Viewable`.
+#[derive(Debug, PartialEq)]
+pub struct Mixin<Msg> {
+    attributes: HashMap<String, AttributeValue>,
+    events: HashMap<events::EventType, EventHandler<Msg>>,
+    styling: Stylesheet,
+    children: Vec<View<Msg>>,
+}
+
+impl<Msg> Mixin<Msg> {
+    /// Alias for `Mixin::default()`.
+    pub fn new() -> Self {Mixin::default()}
+    pub fn merge(&mut self, something: impl Viewable<Msg>) {
+        let env = Env {
+            attributes: &mut self.attributes,
+            events: &mut self.events,
+            styling: &mut self.styling,
+            children: &mut self.children,
+        };
+        something.extend(env);
+    }
+}
+impl<Msg> Viewable<Msg> for Mixin<Msg> {
+    fn extend<'a>(self, env: Env<'a, Msg>) {
+        env.attributes.extend(self.attributes);
+        env.events.extend(self.events);
+        env.children.extend(self.children);
+        env.styling.merge(self.styling);
+    }
+}
+impl<Msg> Default for Mixin<Msg> {
+    fn default() -> Self {
+        let attributes = HashMap::new();
+        let events = HashMap::new();
+        let styling = Stylesheet::default();
+        let children = Vec::new();
+        Mixin {attributes, events, styling, children}
     }
 }
 

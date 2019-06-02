@@ -406,14 +406,29 @@ where
             new: &'a ITree<IN, IL>,
         }
         let mut available: HashSet<usize> = (0 .. self.0.borrow().len()).collect();
-        let ref this = self.0.borrow();
+        let this: Vec<(usize, Rc<RefCell<STree<M,SN,SL,IN,IL>>>)> = self.0
+            .borrow()
+            .iter()
+            .enumerate()
+            .map(|(ix, x)| (ix, x.clone()))
+            .collect();
         let stage1 = other.0
             .iter()
-            .map(|new: &ITree<IN, IL>| {
-                let maybe_unused = get_item_by(&mut available, &this, &move |old: &Rc<RefCell<STree<M, SN, SL, IN, IL>>>| {
-                    old.borrow().unchanged(Intensity::Deep, api, &new)
-                });
-                if let Some(old) = maybe_unused {
+            .enumerate()
+            .map(|(new_pos, new): (usize, &ITree<IN, IL>)| {
+                let mut get_unchanged = || {
+                    let pos = this.iter().position(|x| x.1.borrow().unchanged(Intensity::Deep, api, &new))?;
+                    let result = this.get(pos)?;
+                    let old_pos: usize = result.0;
+                    // TEMPORARY FIX
+                    if old_pos == new_pos {
+                        assert!(available.remove(&old_pos));
+                        Some(result)
+                    } else {
+                        None
+                    }
+                };
+                if let Some((old_pos, old)) = get_unchanged() {
                     Stage1::Unchanged(Unchanged {old, new})
                 } else {
                     Stage1::Unset(new)
@@ -422,17 +437,26 @@ where
             .collect::<Vec<_>>();
         let stage2 = stage1
             .into_iter()
-            .map(|stage1: Stage1<M, SN, SL, IN, IL>| -> Stage2<M, SN, SL, IN, IL> {
-                let mut maybe_changed = |new: &ITree<IN, IL>| {
-                    get_item_by(&mut available, &this, &move |old: &Rc<RefCell<STree<M, SN, SL, IN, IL>>>| {
-                        old.borrow().recyclable(Intensity::Deep, api, &new)
-                    })
+            .enumerate()
+            .map(|(new_pos, stage1) : (usize, Stage1<M, SN, SL, IN, IL>)| -> Stage2<M, SN, SL, IN, IL> {
+                let new_pos: usize = new_pos;
+                let mut get_changed = |new| {
+                    let pos = this.iter().position(|x| x.1.borrow().recyclable(Intensity::Deep, api, new))?;
+                    let result = this.get(pos)?;
+                    let old_pos: usize = result.0;
+                    // TEMPORARY FIX
+                    if old_pos == new_pos {
+                        assert!(available.remove(&old_pos));
+                        Some(result)
+                    } else {
+                        None
+                    }
                 };
                 match stage1 {
                     Stage1::Unchanged(x) => {Stage2::Unchanged(x)}
                     Stage1::Unset(new) => {
                         // CHANGED
-                        if let Some(old) = maybe_changed(new) {
+                        if let Some((old_pos, old)) = get_changed(new) {
                             Stage2::Changed(Changed{old, new})
                         }
                         // NEW

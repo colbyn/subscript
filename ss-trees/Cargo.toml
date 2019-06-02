@@ -11,4 +11,3 @@ repository = "https://github.com/colbyn/subscript"
 either = "1.5.2"
 itertools = "0.8.0"
 ss-web-utils = {path = "../ss-web-utils", version="0.1.1"}
-
