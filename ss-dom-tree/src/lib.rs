@@ -4,6 +4,7 @@ pub mod css;
 use std::fmt::Debug;
 use std::cell::*;
 use std::convert::From;
+use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::rc::Rc;
@@ -96,21 +97,51 @@ impl<Msg: 'static> LiveView<Msg> where Msg: PartialEq + Debug + Clone {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct LiveStylesheet {
-    css_id: u32,
+    css_id: RefCell<u64>,
     value: RefCell<Stylesheet>,
 }
 
 impl LiveStylesheet {
-    pub fn new(value: Stylesheet) -> Self {
-        let css_id = rand::random::<u32>();
+    pub fn sync(&self, new: &Stylesheet, dom_ref: &dom::Tag) {
+        let styling_unchanged = {
+            &*self.value.borrow() == new
+        };
+        if !styling_unchanged {
+            let css_id = calculate_hash(new);
+            dom_ref.set_attribute("css", trim_css_id(&css_id).as_str());
+            let new = new.clone();
+            self.value.replace(new);
+            css::upsert(&self);
+        }
+    }
+    pub fn new(value: Stylesheet, dom_ref: &dom::Tag) -> Self {
+        let css_id = RefCell::new(calculate_hash(&value));
+        let x: u64 = calculate_hash(&value);
+        let x: u32 = x as u32;
         let value = RefCell::new(value);
-        LiveStylesheet{value, css_id}
+        let result = LiveStylesheet{value, css_id};
+        if !result.value.borrow().is_empty() {
+            let css_id: u64 = result.css_id.borrow().clone();
+            dom_ref.set_attribute("css", trim_css_id(&css_id).as_str());
+            css::upsert(&result);
+        }
+        result
     }
     pub fn is_empty(&self) -> bool {
         self.value.borrow().is_empty()
     }
 }
 
+pub fn trim_css_id(x: &u64) -> String {
+    let mut x = format!("{}", x);
+    x
+}
+
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ATTRIBUTES
@@ -494,11 +525,12 @@ where
                 new_events,
             );
         }
-        if !styling_unchanged {
-            let new_styling: Stylesheet = new.styling.clone();
-            old.styling.value.replace(new_styling);
-            css::upsert(&old.styling);
-        }
+        old.styling.sync(&new.styling, &old.dom_ref);
+        // if !styling_unchanged {
+        //     let new_styling: Stylesheet = new.styling.clone();
+        //     old.styling.value.replace(new_styling);
+        //     css::upsert(&old.styling);
+        // }
     }
     fn node_crate(&self, new: &ViewNode<Msg>) -> LiveNode<Msg> {
         let new_attributes: HashMap<String, AttributeValue> = new.attributes.clone();
@@ -524,7 +556,7 @@ where
         let auto_listeners = Rc::new(auto_listeners);
         let result = LiveNode {
             auto_listeners,
-            styling: LiveStylesheet::new(new_styling),
+            styling: LiveStylesheet::new(new_styling, &dom_ref),
             dom_ref: Rc::new(dom_ref),
             tag: new.tag.clone(),
             attributes: Rc::new(RefCell::new(SMap::default())),
@@ -540,11 +572,6 @@ where
             &result,
             new_events,
         );
-        let css_id: CssId = result.styling.css_id;
-        result.dom_ref.set_attribute("css", &format!("{}", &css_id));
-        if !result.styling.is_empty() {
-            css::upsert(&result.styling);
-        }
         result
     }
     fn leaf_unchanged(&self, new: &ViewLeaf, old: &LiveLeaf) -> bool {

@@ -1,3 +1,4 @@
+// #![recursion_limit="128"]
 #![allow(dead_code, unused, unused_variables)]
 
 
@@ -36,10 +37,10 @@ use crate::styling::*;
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct Env<'a, Msg> {
-    attributes: &'a mut HashMap<String, AttributeValue>,
-    events: &'a mut HashMap<events::EventType, EventHandler<Msg>>,
-    styling: &'a mut Stylesheet,
-    children: &'a mut Vec<View<Msg>>,
+    pub attributes: &'a mut HashMap<String, AttributeValue>,
+    pub events: &'a mut HashMap<events::EventType, EventHandler<Msg>>,
+    pub styling: &'a mut Stylesheet,
+    pub children: &'a mut Vec<View<Msg>>,
 }
 
 

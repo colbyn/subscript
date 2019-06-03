@@ -21,13 +21,12 @@ ss-view-tree = {path = "../ss-view-tree", version="0.1.1"}
 ###############################################################################
 # RUST-WASM
 ###############################################################################
-js-sys = "0.3.20"
-wasm-bindgen = "0.2.43"
+js-sys = "0.3.22"
+wasm-bindgen = "0.2.45"
 console_error_panic_hook = "0.1.6"
 
-
 [dependencies.web-sys]
-version = "0.3.20"
+version = "0.3.22"
 features = [
     "console",
     "Comment",
@@ -53,7 +52,8 @@ features = [
     "CssStyleRule",
     "CssStyleSheet",
     "Storage",
-    "DocumentFragment",
+    "DocumentFragment"
 ]
+
 
 

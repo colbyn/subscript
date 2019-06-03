@@ -17,7 +17,7 @@ pub struct RenderedStylesheet {
 pub struct RenderedSelector(pub String);
 
 impl Stylesheet {
-	pub fn render_css_syntax(&self, css_id: &CssId) -> RenderedStylesheet {
+	pub fn render_css_syntax(&self, css_id: &str) -> RenderedStylesheet {
 		let mut local: Vec<String> = Vec::with_capacity(self.local.len());
 		let mut state: HashMap<StateSelectorType, RenderedSelector> = HashMap::new();
 		let mut keyframes: HashMap<KeyframeHash, RenderedSelector> = HashMap::new();

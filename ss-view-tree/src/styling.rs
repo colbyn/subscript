@@ -10,9 +10,9 @@ use crate::{Env, Viewable};
 // STYLESHEET
 ///////////////////////////////////////////////////////////////////////////////
 
-pub type CssId = u32;
+pub type CssId = u64;
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct Stylesheet {
 	local: Vec<Style>,
 	media: Vec<MediaQuerySelector>,

@@ -39,7 +39,6 @@ impl<S: 'static +   Spec> Program<S> {
                 proc_reg.borrow_mut().prune_and_tick_global_events(&self.global_tick_registry);
             });
             self.global_tick_registry.components.borrow_mut().clear();
-            ss_dom_tree::css::sync()
         }
     }
     pub fn start(self) {

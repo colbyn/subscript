@@ -204,7 +204,6 @@ pub trait DomRef {
 
 pub trait DomNode: DomRef {
     fn dom_ref_as_element(&self) -> &web_sys::Element;
-    
     fn set_attribute(&self, key: &str, value: &str) {
         self.dom_ref_as_element().set_attribute(key, value)
             .expect("setAttribute failed");
@@ -555,6 +554,10 @@ impl DomRef for Tag {
 impl DomNode for Tag {
     fn dom_ref_as_element(&self) -> &web_sys::Element {
         &self.dom_ref_as_element
+    }
+    fn set_attribute(&self, key: &str, value: &str) {
+        self.dom_ref_as_element.set_attribute(key, value)
+            .expect("setAttribute failed");
     }
 }
 

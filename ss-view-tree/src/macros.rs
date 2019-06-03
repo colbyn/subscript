@@ -7,18 +7,20 @@
 #[macro_export]
 macro_rules! styles {
     ($ctx:expr;) => {{}};
-    ($ctx:expr; $prop:ident: $value:expr; $($rest:tt)*) => {{
-        let value: &str = $value;
-        let value: String = String::from(value);
-        let property = String::from(stringify!($prop));
-        let property = property.replace("_", "-");
-        $ctx.push(Style::Untyped(Untyped{
-            property,
-            value,
-        }));
-        styles!($ctx; $($rest)*);
+    ($ctx:expr; $($prop:ident: $value:expr;)*) => {{
+        $({
+            let value: &str = $value;
+            let value: String = String::from(value);
+            let property = String::from(stringify!($prop));
+            let property = property.replace("_", "-");
+            $ctx.push(Style::Untyped(Untyped{
+                property,
+                value,
+            }));
+        })*
     }};
 }
+
 #[macro_export]
 macro_rules! media_types {
     ($ctx:expr;) => {{}};
@@ -73,124 +75,6 @@ macro_rules! keyframe_interval {
     }};
 }
 
-#[macro_export]
-macro_rules! state_selector {
-    ($ctx:expr; :active {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(active(body));
-    }};
-    ($ctx:expr; :after {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(after(body));
-    }};
-    ($ctx:expr; :before {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(before(body));
-    }};
-    ($ctx:expr; :checked {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(checked(body));
-    }};
-    ($ctx:expr; :disabled {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(disabled(body));
-    }};
-    ($ctx:expr; :empty {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(empty(body));
-    }};
-    ($ctx:expr; :enabled {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(enabled(body));
-    }};
-    ($ctx:expr; :first-child {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(first_child(body));
-    }};
-    ($ctx:expr; :first-letter {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(first_letter(body));
-    }};
-    ($ctx:expr; :first-line {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(first_line(body));
-    }};
-    ($ctx:expr; :focus {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(focus(body));
-    }};
-    ($ctx:expr; :hover {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(hover(body));
-    }};
-    ($ctx:expr; :last-child {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(last_child(body));
-    }};
-    ($ctx:expr; :only-child {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(only_child(body));
-    }};
-    ($ctx:expr; :link {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(link(body));
-    }};
-    ($ctx:expr; :visited {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(visited(body));
-    }};
-    ($ctx:expr; :spelling-error {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(spelling_error(body));
-    }};
-    ($ctx:expr; :grammar-error {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(grammar_error(body));
-    }};
-    ($ctx:expr; :selection {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(selection(body));
-    }};
-    ($ctx:expr; :placeholder {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(placeholder(body));
-    }};
-    ($ctx:expr; :marker {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(marker(body));
-    }};
-    ($ctx:expr; :cue {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(cue(body));
-    }};
-    ($ctx:expr; :backdrop {$($x:tt)*}) => {{
-        let mut body: Vec<Style> = Vec::new();
-        styles!(body; $($x)*);
-        $ctx.merge(backdrop(body));
-    }};
-}
 
 
 #[macro_export]
@@ -219,125 +103,147 @@ macro_rules! view_arguments {
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :active {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :active {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(active(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :after {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :after {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(after(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :before {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :before {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(before(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :checked {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :checked {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(checked(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :disabled {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :disabled {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(disabled(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :empty {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :empty {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(empty(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :enabled {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :enabled {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(enabled(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :first-child {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :first-child {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :first_child {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :first-child {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(first_child(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :first-letter {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :first-letter {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :first_letter {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :first-letter {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(first_letter(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :first-line {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :first-line {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :first_line {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :first-line {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(first_line(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :focus {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :focus {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(focus(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :hover {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :hover {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(hover(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :last-child {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :last-child {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :last_child {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :last-child {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(last_child(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :only-child {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :only-child {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :only_child {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :only-child {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(only_child(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :link {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :link {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(link(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :visited {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :visited {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(visited(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :spelling-error {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :spelling-error {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :spelling_error {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :spelling-error {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(spelling_error(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :grammar-error {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :grammar-error {$($x)*});
-        view_arguments!($ctx; $($rest)*);
-    }};
-    ($ctx:expr; :grammar_error {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :grammar-error {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(grammar_error(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :selection {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :selection {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(selection(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :placeholder {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :placeholder {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(placeholder(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :marker {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :marker {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(marker(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :cue {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :cue {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(cue(body));
         view_arguments!($ctx; $($rest)*);
     }};
     ($ctx:expr; :backdrop {$($x:tt)*}; $($rest:tt)*) => {{
-        state_selector!($ctx; :backdrop {$($x)*});
+        let mut body: Vec<Style> = Vec::new();
+        styles!(body; $($x)*);
+        $ctx.merge(backdrop(body));
         view_arguments!($ctx; $($rest)*);
     }};
+
+
+
+
     ($ctx:expr; $tag:ident {$($x:tt)*} $($rest:tt)*) => {{
         let mut node = View::new_tag(stringify!($tag));
         view_arguments!(node; $($x)*);
@@ -423,12 +329,24 @@ macro_rules! extend_ident_arguments {
 
 #[macro_export]
 macro_rules! extend {
+    ([], $body:expr) => {{
+        {
+            $body
+        }
+    }};
+    ([$($x:tt)*], $body:expr) => {{
+        extend_ident_arguments!($($x)*);
+        {
+            $body
+        }
+    }};
+
     ($fn_name:ident, [], $body:expr) => {{
         $fn_name(($body))
     }};
     ($fn_name:ident, [$($x:tt)*], $body:expr) => {{
         extend_ident_arguments!($($x)*);
-        $fn_name(($body))
+        $fn_name($body)
     }};
 }
 
@@ -475,7 +393,7 @@ pub fn dev() {
                     display: "flex";
                     display: "flex";
                 };
-                :first_line {
+                :first-line {
                     display: "flex";
                 };
                 display: "flex";
@@ -501,6 +419,174 @@ pub fn dev() {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// VIEW - SPEC/COMPONENT AGNOSTIC REUSABLE UTILS
+///////////////////////////////////////////////////////////////////////////////
 
 
+use crate::styling::selectors::*;
+use crate::*;
 
+pub struct Checkbox<'a, Msg, F> where F: Fn(bool) -> Msg + 'static + std::marker::Sized {
+    pub checked: bool,
+    pub label: &'a str,
+    pub on_click: F,
+}
+
+impl<'a, Msg, F> Viewable<Msg> for Checkbox<'a, Msg, F> where F: Fn(bool) -> Msg + 'static + std::marker::Sized {
+    fn extend<'b>(self, env: Env<'b, Msg>) {
+        env.children.push(mk_checkbox(self));
+    }
+}
+
+fn mk_checkbox<'a, Msg>(data: Checkbox<'a, Msg, impl Fn(bool) -> Msg + 'static>) -> View<Msg> {v!{div|
+    box_sizing: "border-box";
+    position: "relative";
+    display: "inline-block";
+    margin_right: "1em";
+    white_space: "nowrap";
+    line_height: "1";
+
+    input {
+        box_sizing: "border-box";
+        position: "absolute";
+        left: "0";
+        top: "0";
+        min_width: "1em";
+        width: "100%";
+        height: "100%";
+        z_index: "2";
+        opacity: "0";
+        margin: "0";
+        padding: "0";
+        cursor: "pointer";
+        // checked = data.checked;
+        on_check(Box::new(data.on_click));
+        type="checkbox";
+    }
+    div {
+        box_sizing: "border-box";
+        position: "relative";
+        display: "inline-block";
+        margin_right: "1em";
+        white_space: "nowrap";
+        line_height: "1";
+        span {
+            display: "inline-block";
+            margin_right: "1em";
+            white_space: "nowrap";
+            line_height: "1";
+            box_sizing: "border-box";
+            position: "absolute";
+            font_size: "1em";
+            width: "calc(1em + 2px)";
+            height: "calc(1em + 2px)";
+            left: "0";
+            z_index: "1";
+            text_align: "center";
+            line_height: "normal";
+            top: "calc((0% - (100% - 1em)) - 8%)";
+            border: "1px solid transparent";
+            border_radius: "100%";
+            overflow: "hidden";
+
+            :before {
+                _webkit_transform: "scale(.8)";
+                _ms_transform: "scale(.8)";
+                transform: "scale(.8)";
+                margin: "0";
+                width: "100%";
+                height: "100%";
+                text_align: "center";
+                display: "-webkit-box";
+                display: "-ms-flexbox";
+                display: "flex";
+                _webkit_box_flex: "1";
+                _ms_flex: "1";
+                flex: "1";
+                _webkit_box_pack: "center";
+                _ms_flex_pack: "center";
+                justify_content: "center";
+                _webkit_box_align: "center";
+                _ms_flex_align: "center";
+                align_items: "center";
+                line_height: "1";
+            };
+            if (data.checked) {
+                i {
+                    display: "inline-block";
+                    margin_right: "1em";
+                    white_space: "nowrap";
+                    line_height: "1";
+                    box_sizing: "border-box";
+                    position: "absolute";
+                    font_size: "1em";
+                    width: "calc(1em + 2px)";
+                    height: "calc(1em + 2px)";
+                    left: "0";
+                    z_index: "1";
+                    text_align: "center";
+                    line_height: "normal";
+                    top: "calc((0% - (100% - 1em)) - 8%)";
+                    border: "1px solid transparent";
+                    border_radius: "100%";
+                    overflow: "hidden";
+
+                    :before {
+                        _webkit_transform: "scale(.8)";
+                        _ms_transform: "scale(.8)";
+                        transform: "scale(.8)";
+                        margin: "0";
+                        width: "100%";
+                        height: "100%";
+                        text_align: "center";
+                        display: "-webkit-box";
+                        display: "-ms-flexbox";
+                        display: "flex";
+                        // _webkit_box_flex: "1";
+                        // _ms_flex: "1";
+                        // flex: "1";
+                        // _webkit_box_pack: "center";
+                        // _ms_flex_pack: "center";
+                        // justify_content: "center";
+                        // _webkit_box_align: "center";
+                        // _ms_flex_align: "center";
+                        // align_items: "center";
+                        // line_height: "1";
+                    };
+                    
+                    class="icon fas fa-check";
+                }
+            };
+        }
+        label {
+            box_sizing: "border-box";
+            font_weight: "400";
+            margin: "0";
+            text_indent: "1.5em";
+            min_width: "calc(1em + 2px)";
+            position: "relative";
+            display: "inline-block";
+            margin_right: "1em";
+            white_space: "nowrap";
+            line_height: "1";
+            text_align: "-webkit-match-parent";
+            :before {
+                content: "''";
+                width: "calc(1em + 2px)";
+                height: "calc(1em + 2px)";
+                display: "block";
+                box_sizing: "border-box";
+                border: "1px solid transparent";
+                z_index: "0";
+                position: "absolute";
+                left: "0";
+                top: "calc((0% - (100% - 1em)) - 8%)";
+                background_color: "transparent";
+                border_color: "#5a656b";
+                border_radius: "100%";
+            };
+            "Click Me";
+        }
+    }
+}}
