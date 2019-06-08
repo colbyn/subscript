@@ -42,22 +42,23 @@ impl<S: 'static +   Spec> Program<S> {
         }
     }
     pub fn start(self) {
-        let window = dom::window();
-        let handler: js::VoidCallback = js::VoidCallback::new({
-            let this = self.clone();
-            move |_| {
-                this.tick();
-                dom::window().request_animation_frame(
-                    this.js_tick_callback
-                        .borrow()
-                        .as_ref()
-                        .expect("failed to tick")
-                );
-            }
-        });
-        self.js_tick_callback.replace(Some(handler.clone()));
-        dom::window().request_animation_frame(&handler);
-        std::mem::forget(self);
+        unimplemented!()
+        // let window = dom::window();
+        // let handler: js::VoidCallback = js::VoidCallback::new({
+        //     let this = self.clone();
+        //     move |_| {
+        //         this.tick();
+        //         dom::window().request_animation_frame(
+        //             this.js_tick_callback
+        //                 .borrow()
+        //                 .as_ref()
+        //                 .expect("failed to tick")
+        //         );
+        //     }
+        // });
+        // self.js_tick_callback.replace(Some(handler.clone()));
+        // dom::window().request_animation_frame(&handler);
+        // std::mem::forget(self);
     }
 }
 

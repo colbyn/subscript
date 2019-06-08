@@ -1,6 +1,9 @@
 use std::cell::*;
 use std::rc::Rc;
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
+use wasm_bindgen::closure;
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 
 
@@ -200,6 +203,14 @@ pub trait DomRef {
             .replace_child(&new_child.dom_ref_as_node(), &old_child.dom_ref_as_node())
             .expect("replacedNode failed");
     }
+    fn insert_before(&self, new_child: &DomRef, ref_child: &DomRef) {
+        self.dom_ref_as_node()
+            .insert_before(
+                &new_child.dom_ref_as_node(),
+                Some(&ref_child.dom_ref_as_node()),
+            )
+            .expect("replacedNode failed");
+    }
 }
 
 pub trait DomNode: DomRef {
@@ -253,15 +264,20 @@ impl Window {
     pub fn device_pixel_ratio(&self) -> f64 {
         self.instance.device_pixel_ratio()
     }
-    pub fn request_animation_frame(&self, cb: &Callback) {
-        self.instance.request_animation_frame(cb.as_js_function())
+    pub fn request_animation_frame(&self, callback: impl Fn() + 'static) {
+        let callback = Closure::once(callback);
+        let js_function: &js_sys::Function = callback.as_ref().unchecked_ref();
+        self.instance.request_animation_frame(js_function)
             .expect("request_animation_frame failed");
     }
-    pub fn set_timeout(&self, cb: &Callback, timeout: i32) {
+    pub fn set_timeout(&self, timeout: i32, callback: impl FnOnce() + 'static) -> Closure<FnMut()> {
+        let callback: Closure<FnMut()> = Closure::once(callback);
+        let js_function: &js_sys::Function = callback.as_ref().unchecked_ref();
         self.instance.set_timeout_with_callback_and_timeout_and_arguments_0(
-            cb.as_js_function(),
+            js_function,
             timeout
         ).expect("set_timeout_with_callback_and_timeout_and_arguments_0 failed");
+        callback
     }
 }
 
@@ -595,6 +611,43 @@ impl Text {
 }
 
 impl DomRef for Text {
+    fn dom_ref_as_node(&self) -> &web_sys::Node {
+        &self.dom_ref_as_node
+    }
+    fn dom_ref(&self) -> &JsValue {
+        &self.dom_ref
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// DOCUMENT-FRAGMENT
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone, Debug)]
+/// Generic HTML tag
+pub struct DocumentFragment {
+    pub dom_ref: JsValue,
+    pub dom_ref_as_node: web_sys::Node,
+}
+
+impl PartialEq for DocumentFragment {
+    fn eq(&self, other: &DocumentFragment) -> bool {true}
+}
+
+impl DocumentFragment {
+    pub fn new() -> Self {
+        let fragment = web_sys::DocumentFragment::new()
+            .expect("new DocumentFragment failed");
+        let dom_ref: JsValue = From::from(fragment);
+        DocumentFragment {
+            dom_ref_as_node: From::from(dom_ref.clone()),
+            dom_ref: dom_ref,
+        }
+    }
+}
+
+impl DomRef for DocumentFragment {
     fn dom_ref_as_node(&self) -> &web_sys::Node {
         &self.dom_ref_as_node
     }
