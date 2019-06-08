@@ -1,6 +1,6 @@
 [workspace]
 members = [
-	"prototype",
+	# "prototype",
 	"ss-trees",
     "ss-dom-tree",
     "ss-view-tree",
