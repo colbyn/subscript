@@ -8,7 +8,8 @@ use either::{Either, Either::*};
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
 use crate::model::incremental::{IVecSub};
-use crate::view::dsl::{self as dsl, Dsl, View, SubComponent, EventHandler, Value};
+use crate::view::dsl::{self as dsl, Dsl, View, SubComponent};
+use crate::view::shared::*;
 use crate::view::dom::*;
 
 

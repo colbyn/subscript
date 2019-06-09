@@ -9,7 +9,7 @@ use wasm_bindgen::JsValue;
 use crate::model::reactive::{Signal, SignalSub, Status};
 use crate::model::incremental::{IVecSub, IVec};
 use crate::program::spec::Spec;
-
+use crate::view::shared::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW
@@ -152,69 +152,6 @@ impl std::fmt::Debug for SubComponent {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// SPECIAL - COMPONENTS
-///////////////////////////////////////////////////////////////////////////////
-
-pub(crate) trait SubComponentImpl {}
-impl<S: Spec> SubComponentImpl for Component<S> {}
-
-
-pub struct Component<S: Spec> {
-	pub name: String,
-	pub spec: S
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// SPECIAL - PROPERTIES
-///////////////////////////////////////////////////////////////////////////////
-pub(crate) struct EventHandler<Msg>(pub Rc<EventHandlerImpl<Msg>>);
-pub(crate) trait EventHandlerImpl<Msg> {
-	fn apply(&self, event: JsValue) -> Msg;
-	fn event_type(&self) -> String;
-}
-impl<Msg>  EventHandler<Msg> {
-	pub(crate) fn apply(&self, event: JsValue) -> Msg {self.0.apply(event)}
-	pub(crate) fn event_type(&self) -> String {self.0.event_type()}
-}
-impl<Msg> Clone for EventHandler<Msg> {
-	fn clone(&self) -> Self {
-		EventHandler(self.0.clone())
-	}
-}
-
-#[derive(Debug)]
-pub struct Attribute {
-	pub key: String,
-	pub value: Either<Value<String>, Value<bool>>,
-}
-
-impl<Msg> std::fmt::Debug for EventHandler<Msg> {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(f, "EventHandler")
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// MISCELLANEOUS
-///////////////////////////////////////////////////////////////////////////////
-
-#[derive(Debug, Clone)]
-pub enum Value<T> {
-	Static(T),
-	Dynamic(SignalSub<T>),
-}
-impl<T> Value<T> {
-	pub(crate) fn if_changed(&self, f: impl Fn(&T)) {
-		match &self {
-			Value::Dynamic(sub) => {
-				sub.if_changed(f);
-			}
-			Value::Static(_) => {}
-		}
-	}
-}
 
 pub struct Env<'a, Msg> {
     pub(crate) attributes: &'a mut HashMap<String, Either<Value<String>, Value<bool>>>,
