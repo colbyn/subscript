@@ -1,6 +1,7 @@
+/docs
 /target
 /dist
-node_modules
+/node_modules
 **/*.rs.bk
 .commands.out.sh
 rls.toml
