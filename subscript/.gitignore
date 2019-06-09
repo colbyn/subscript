@@ -7,3 +7,4 @@
 rls.toml
 /pkg
 .DS_Store
+Cargo.lock
