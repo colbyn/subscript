@@ -3,3 +3,4 @@ pub mod dsl;
 pub mod dom;
 pub mod runtime;
 pub mod extras;
+pub mod shared;

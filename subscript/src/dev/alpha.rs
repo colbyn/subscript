@@ -21,7 +21,7 @@ pub fn view() -> View<Msg> {
 		h1.text("Hello World")
 	});
 	root.push_child(View::new_toggle_control(&toggle_signal, toggle_pane));
-	std::mem::forget(toggle_signal.clone());
+	// std::mem::forget(toggle_signal.clone());
 	let timeout = browser::window().set_timeout(3000, {
 		let mut toggle_signal = toggle_signal;
 		move || {
