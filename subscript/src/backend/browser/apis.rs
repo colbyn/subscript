@@ -88,7 +88,10 @@ impl Document {
             	.create_element(tag)
                 .expect("failed to create element")
         };
-        Element {instance: From::from(instance)}
+        let class_list = ClassList {
+        	instance: From::from(instance.class_list())
+        };
+        Element {instance: From::from(instance), class_list}
 	}
 	pub fn create_text_node(&self, value: &str) -> Text {
 		let instance = self.instance_as_document().create_text_node(value);

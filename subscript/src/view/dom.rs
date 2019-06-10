@@ -38,6 +38,7 @@ pub(crate) struct Element<Msg> {
 	pub dom_ref: browser::Element,
 	pub auto_listeners: Vec<browser::VoidCallback>,
 	pub tag: String,
+	pub styling: Styling,
 	pub attributes: HashMap<String, Either<Value<String>, Value<bool>>>,
 	pub events: Vec<LiveEventHandler<Msg>>,
 	pub children: Vec<Dom<Msg>>,
@@ -45,6 +46,7 @@ pub(crate) struct Element<Msg> {
 
 #[derive(Debug)]
 pub(crate) struct Mixin<Msg> {
+	pub styling: Styling,
 	pub attributes: HashMap<String, Either<Value<String>, Value<bool>>>,
 	pub events: Vec<LiveEventHandler<Msg>>,
 	pub children: Vec<Dom<Msg>>,

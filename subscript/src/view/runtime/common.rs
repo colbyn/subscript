@@ -52,6 +52,8 @@ impl<Msg> Dom<Msg> {
 					dom_ref: &value.dom_ref,
 					rightward: &RefCell::new(None),
 				};
+				let styling_env = crate::view::runtime::css::removed(&value.styling);
+				value.dom_ref.class_list.remove(&styling_env.css_id());
 				for event in value.events.iter() {
 					env.dom_ref.remove_event_listener(&event.event_type(), &event.backend_callback);
 				}
@@ -61,6 +63,8 @@ impl<Msg> Dom<Msg> {
 				env.dom_ref.remove_child(&value.dom_ref);
 			}
 			Dom::Mixin(value) => {
+				let styling_env = crate::view::runtime::css::removed(&value.styling);
+				env.dom_ref.class_list.remove(&styling_env.css_id());
 				for key in value.attributes.keys() {
 					env.dom_ref.remove_attribute(key.as_str());
 				}

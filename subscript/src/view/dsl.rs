@@ -28,6 +28,7 @@ impl<Msg: 'static> View<Msg> {
 	pub fn new_element(tag: &str) -> Self {
 		View(Dsl::Element(Element {
 			tag: String::from(tag),
+			styling: Styling::default(),
 			attributes: HashMap::new(),
 			events: Vec::new(),
 			children: Vec::new(),
@@ -35,6 +36,7 @@ impl<Msg: 'static> View<Msg> {
 	}
 	pub fn new_mixin() -> Self {
 		View(Dsl::Mixin(Mixin {
+			styling: Styling::default(),
 			attributes: HashMap::new(),
 			events: Vec::new(),
 			children: Vec::new(),
@@ -75,10 +77,16 @@ impl<Msg: 'static> View<Msg> {
 			env.children.push(child);
 		}
 	}
+	pub fn add_styling(&mut self, new: Styling) {
+		if let Some(env) = self.get_env() {
+			env.styling.extend(new);
+		}
+	}
 	pub fn get_env<'a>(&'a mut self) -> Option<Env<'a, Msg>> {
 		match &mut self.0 {
 			Dsl::Element(element) => {
 				Some(Env {
+					styling: &mut element.styling,
 					attributes: &mut element.attributes,
 					events: &mut element.events,
 					children: &mut element.children,
@@ -86,6 +94,7 @@ impl<Msg: 'static> View<Msg> {
 			}
 			Dsl::Mixin(mixin) => {
 				Some(Env {
+					styling: &mut mixin.styling,
 					attributes: &mut mixin.attributes,
 					events: &mut mixin.events,
 					children: &mut mixin.children,
@@ -123,6 +132,7 @@ pub(crate) struct Text(pub Value<String>);
 #[derive(Debug)]
 pub(crate) struct Element<Msg> {
 	pub(crate) tag: String,
+	pub(crate) styling: Styling,
 	pub(crate) attributes: HashMap<String, Either<Value<String>, Value<bool>>>,
 	pub(crate) events: Vec<EventHandler<Msg>>,
 	pub(crate) children: Vec<View<Msg>>,
@@ -130,6 +140,7 @@ pub(crate) struct Element<Msg> {
 
 #[derive(Debug)]
 pub(crate) struct Mixin<Msg> {
+	pub(crate) styling: Styling,
 	pub(crate) attributes: HashMap<String, Either<Value<String>, Value<bool>>>,
 	pub(crate) events: Vec<EventHandler<Msg>>,
 	pub(crate) children: Vec<View<Msg>>,
@@ -154,6 +165,7 @@ impl std::fmt::Debug for SubComponent {
 
 
 pub struct Env<'a, Msg> {
+	pub(crate) styling: &'a mut Styling,
     pub(crate) attributes: &'a mut HashMap<String, Either<Value<String>, Value<bool>>>,
     pub(crate) events: &'a mut Vec<EventHandler<Msg>>,
     pub(crate) children: &'a mut Vec<View<Msg>>,

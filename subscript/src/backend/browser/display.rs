@@ -7,6 +7,9 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsValue, JsCast};
 use js_sys::Function;
 
+use crate::backend::css;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // COMMON DOM APIs
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,6 +74,37 @@ pub trait ElementApi: NodeApi {
 	    	.remove_attribute(key)
 	        .expect("removeAttribute failed");
 	}
+	fn insert_adjacent_element(&self, position: AdjacentPosition, element: &ElementApi) {
+		self.dom_ref_as_element()
+			.insert_adjacent_element(
+				position.as_str(),
+				&element.dom_ref_as_element(),
+			)
+			.expect("ElementApi.insert_adjacent_element failed");
+	}
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum AdjacentPosition {
+	/// Before the targetElement
+	BeforeBegin,
+	/// Inside the targetElement; before its <b>first child</b>.
+	AfterBegin,
+	/// Inside the targetElement; after its <b>last child</b>.
+	BeforeEnd,
+	/// After the targetElement.
+	AfterEnd,
+}
+
+impl AdjacentPosition {
+	pub fn as_str(&self) -> &str {
+		match self {
+			AdjacentPosition::BeforeBegin => "beforebegin",
+			AdjacentPosition::AfterBegin => "afterbegin",
+			AdjacentPosition::BeforeEnd => "beforeend",
+			AdjacentPosition::AfterEnd => "afterend",
+		}
+	}
 }
 
 
@@ -88,8 +122,12 @@ pub struct Text {
 #[derive(Clone, Debug)]
 pub struct Element {
 	pub instance: JsValue,
+	pub class_list: ClassList,
 }
-
+#[derive(Clone, Debug)]
+pub struct ClassList {
+	pub instance: JsValue,
+}
 
 impl NodeApi for Text {
 	fn box_clone(&self) -> Box<NodeApi> {Box::new(self.clone())}
@@ -116,6 +154,80 @@ impl Text {
 			.set_text_content(Some(new_value));
 	}
 }
+
+impl ClassList {
+	pub fn dom_ref_as_dom_token_list(&self) -> web_sys::DomTokenList {
+		From::from(self.instance.clone())
+	}
+	pub fn add(&self, class: &str) {
+		let interface = self.dom_ref_as_dom_token_list();
+		interface
+			.add_1(class)
+			.expect("ClassList.add() method failed");
+	}
+	pub fn remove(&self, class: &str) {
+		let interface = self.dom_ref_as_dom_token_list();
+		interface
+			.remove_1(class)
+			.expect("ClassList.remove() method failed");
+	}
+}
+
+impl Element {
+	pub fn dom_ref_as_html_style_element(&self) -> web_sys::HtmlStyleElement {
+		From::from(self.instance.clone())
+	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// CSSOM
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct Stylesheet {
+	instance: Element,
+}
+
+impl Stylesheet {
+	pub fn dom_ref_as_css_style_sheet(&self) -> web_sys::CssStyleSheet {
+		let interface = self.instance.dom_ref_as_html_style_element();
+		let sheet: web_sys::StyleSheet = interface
+			.sheet()
+			.expect("sheet getter failed");
+		let sheet: JsValue = From::from(sheet);
+		let sheet: web_sys::CssStyleSheet = From::from(sheet);
+		sheet
+	}
+
+	pub fn from_element(element: Element) -> Self {
+		Stylesheet {instance: element}
+	}
+	
+	pub fn push_declaration(&self, value: css::Declaration) {
+		let interface = self.dom_ref_as_css_style_sheet();
+		interface
+			.insert_rule(&value.as_str())
+			.expect("insertRule() method failed");
+	}
+	pub fn push_keyframes(&self, value: css::Keyframes) {
+		let interface = self.dom_ref_as_css_style_sheet();
+		interface
+			.insert_rule(&value.as_str())
+			.expect("insertRule() method failed");
+	}
+	pub fn push_media(&self, value: css::Media) {
+		let interface = self.dom_ref_as_css_style_sheet();
+		interface
+			.insert_rule(&value.as_str())
+			.expect("insertRule() method failed");
+
+	}
+}
+
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // CALLBACKS - MISCELLANEOUS

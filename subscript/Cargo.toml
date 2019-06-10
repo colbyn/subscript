@@ -44,5 +44,7 @@ features = [
     "CssStyleRule",
     "CssStyleSheet",
     "Storage",
+    "DomTokenList",
+    "CssStyleSheet",
 ]
 

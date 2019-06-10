@@ -21,6 +21,7 @@ impl<Msg> View<Msg> {
 				dom_ref: browser::window().document.create_element("div"),
 				auto_listeners: Vec::new(),
 				tag: String::from("div"),
+				styling: Styling::default(),
 				attributes: HashMap::new(),
 				events: Vec::new(),
 				children: Vec::new(),
@@ -57,13 +58,14 @@ impl<Msg> View<Msg> {
 					rightward: &RefCell::new(None),
 				};
 				let auto_listeners = get_and_add_auto_listeners::<Msg>(&new_env);
-				let DomSegment{attributes,events, children} = build_dom_segment(&new_env, ViewSegment {
+				let DomSegment{styling,attributes,events, children} = build_dom_segment(&new_env, ViewSegment {
+					styling: &x.styling,
 					attributes: &x.attributes,
 					events: &x.events,
 					children: &x.children,
 				});
 				insert_child(&dom_ref, env);
-				Dom::Element(Element {dom_ref,auto_listeners,tag,attributes,events,children})
+				Dom::Element(Element {styling,dom_ref,auto_listeners,tag,attributes,events,children})
 			}
 			Dsl::Component(x) => {
 				let dom_ref = window.document
@@ -72,12 +74,13 @@ impl<Msg> View<Msg> {
 				Dom::Component(LiveComponent{dom_ref, inner: x.clone()})
 			}
 			Dsl::Mixin(x) => {
-				let DomSegment{attributes,events, children} = build_dom_segment(env, ViewSegment {
+				let DomSegment{styling,attributes,events, children} = build_dom_segment(env, ViewSegment {
+					styling: &x.styling,
 					attributes: &x.attributes,
 					events: &x.events,
 					children: &x.children,
 				});
-				Dom::Mixin(Mixin {attributes,events,children})
+				Dom::Mixin(Mixin {styling,attributes,events,children})
 			}
 			Dsl::Control(dsl::Control::Toggle{pred, value}) => {
 				let mut dom: Option<Dom<Msg>> = None;
@@ -93,6 +96,7 @@ impl<Msg> View<Msg> {
 			Dsl::Control(dsl::Control::Linked(sub)) => {
 				sub.build(|children| {
 					let results = build_dom_segment(env, ViewSegment{
+						styling: &Styling::default(),
 						attributes: &HashMap::new(),
 						events: &Vec::new(),
 						children: &children,
@@ -110,12 +114,14 @@ impl<Msg> View<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 struct ViewSegment<'a, Msg> {
+	styling: &'a Styling,
 	attributes: &'a HashMap<String, Either<Value<String>, Value<bool>>>,
 	events: &'a Vec<EventHandler<Msg>>,
 	children: &'a Vec<View<Msg>>,
 }
 
 struct DomSegment<Msg> {
+	styling: Styling,
 	attributes: HashMap<String, Either<Value<String>, Value<bool>>>,
 	events: Vec<LiveEventHandler<Msg>>,
 	children: Vec<Dom<Msg>>,
@@ -123,12 +129,18 @@ struct DomSegment<Msg> {
 
 fn build_dom_segment<'a, Msg>(env: &ElementEnv<'a>, view_segment: ViewSegment<Msg>) -> DomSegment<Msg> {
 	// SETUP
-	let ViewSegment{attributes,events,children} = view_segment;
+	let ViewSegment{styling,attributes,events,children} = view_segment;
 	let mut dom_segment = DomSegment {
+		styling: styling.clone(),
 		attributes: HashMap::new(),
 		events: Vec::new(),
 		children: Vec::new(),
 	};
+	// STYLING
+	if !styling.is_empty() {
+		let styling_env = crate::view::runtime::css::upsert(&styling);
+		env.dom_ref.class_list.add(&styling_env.css_id());
+	}
 	// ATTRIBUTES
 	for (key, value) in attributes.iter() {
 		set_attribute(&key, &value, env);
