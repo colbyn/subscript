@@ -38,7 +38,7 @@ impl StylingEnv {
     pub fn animation_ids(&self) -> Vec<String> {
         self.animation_ids
             .iter()
-            .map(|x| format!("cid-{}-{}", self.css_id(), x))
+            .map(|x| format!("_{}-{}", self.css_id(), x))
             .collect()
     }
 }
@@ -46,7 +46,11 @@ impl StylingEnv {
 fn css_id_format(x: u64) -> String {
     let hasher = hashids::HashIds::new();
     let short_id = hasher.encode(&[x]);
-    format!("cid-{}", short_id)
+    if short_id.chars().nth(0).expect("css_id_format failed").is_ascii_alphabetic() {
+        short_id
+    } else {
+        format!("_{}", short_id)
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -159,7 +163,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
     };
     // DEFAULT
     let default = css::Declaration {
-        selector: css_id_format(hash),
+        selector: format!(".{}", css_id_format(hash)),
         properties: to_properties(&styling.default.0),
     };
     mount.local.push_declaration(default);
@@ -184,7 +188,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
             })
             .collect::<Vec<_>>();
         let keyfrmaes = css::Keyframes {
-            name: format!("{}-{}", css_id_format(hash), aid),
+            name: format!("_{}-{}", css_id_format(hash), aid),
             keyframes: keyfrmaes,
         };
         mount.state.push_keyframes(keyfrmaes);

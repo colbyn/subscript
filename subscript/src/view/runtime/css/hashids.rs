@@ -1,4 +1,7 @@
-//! COPIED FROM https://github.com/Dr-Emann/hashids_rust/blob/master/src/lib.rs
+//! COPIED FROM: https://github.com/Dr-Emann/hashids_rust/tree/2436f7508f282cf8acb3e233fed8b5b76ebb4d78
+//! COMMIT: 2436f7508f282cf8acb3e233fed8b5b76ebb4d78
+//! LICENSE: MIT
+//! 
 //!
 //! Hashes and restores values using the "hashids" algorithm.
 //!
