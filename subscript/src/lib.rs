@@ -19,7 +19,7 @@ pub fn main() -> Result<(), wasm_bindgen::JsValue> {
 
 #[wasm_bindgen]
 pub fn tick() {
-	dev::alpha::tick();
+    dev::alpha::tick();
 }
 
 
