@@ -33,16 +33,21 @@ pub struct StylingEnv {
 
 impl StylingEnv {
     pub fn css_id(&self) -> String {
-        format!("cid-{}", self.css_id)
+        css_id_format(self.css_id)
     }
     pub fn animation_ids(&self) -> Vec<String> {
         self.animation_ids
             .iter()
-            .map(|x| format!("cid-{}-{}", self.css_id, x))
+            .map(|x| format!("cid-{}-{}", self.css_id(), x))
             .collect()
     }
 }
 
+fn css_id_format(x: u64) -> String {
+    let hasher = hashids::HashIds::new();
+    let short_id = hasher.encode(&[x]);
+    format!("cid-{}", short_id)
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -154,14 +159,14 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
     };
     // DEFAULT
     let default = css::Declaration {
-        selector: format!(".cid-{}", hash),
+        selector: css_id_format(hash),
         properties: to_properties(&styling.default.0),
     };
     mount.local.push_declaration(default);
     // STATE-SELECTOR
     for state in styling.state.iter() {
         let state = css::Declaration {
-            selector: format!(".cid-{}{}", hash, state.name.as_str()),
+            selector: format!(".{}{}", css_id_format(hash), state.name.as_str()),
             properties: to_properties(&state.body.0),
         };
         mount.state.push_declaration(state);
@@ -179,7 +184,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
             })
             .collect::<Vec<_>>();
         let keyfrmaes = css::Keyframes {
-            name: format!("cid-{}-{}", hash, aid),
+            name: format!("{}-{}", css_id_format(hash), aid),
             keyframes: keyfrmaes,
         };
         mount.state.push_keyframes(keyfrmaes);
@@ -189,7 +194,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
         let media = css::Media {
             condition: to_properties(&media.condition.0).0,
             declarations: vec![css::Declaration {
-                selector: format!(".cid-{}", hash),
+                selector: format!(".{}", css_id_format(hash)),
                 properties: to_properties(&media.body.0),
             }],
         };
