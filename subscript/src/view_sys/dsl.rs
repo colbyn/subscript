@@ -6,10 +6,10 @@ use std::rc::*;
 use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
-use crate::model::reactive::{Signal, SignalSub, Status};
-use crate::model::incremental::{IVecSub, IVec};
-use crate::program::spec::Spec;
-use crate::view::shared::*;
+use crate::model_sys::reactive::{Signal, SignalSub, Status};
+use crate::model_sys::incremental::{IVecSub, IVec};
+use crate::program_sys::spec::Spec;
+use crate::view_sys::shared::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW
@@ -82,10 +82,10 @@ impl<Msg: 'static> View<Msg> {
             env.styling.extend(new);
         }
     }
-    pub fn get_env<'a>(&'a mut self) -> Option<Env<'a, Msg>> {
+    pub fn get_env<'a>(&'a mut self) -> Option<ViewEnv<'a, Msg>> {
         match &mut self.0 {
             Dsl::Element(element) => {
-                Some(Env {
+                Some(ViewEnv {
                     styling: &mut element.styling,
                     attributes: &mut element.attributes,
                     events: &mut element.events,
@@ -93,7 +93,7 @@ impl<Msg: 'static> View<Msg> {
                 })
             }
             Dsl::Mixin(mixin) => {
-                Some(Env {
+                Some(ViewEnv {
                     styling: &mut mixin.styling,
                     attributes: &mut mixin.attributes,
                     events: &mut mixin.events,
@@ -123,8 +123,6 @@ pub(crate) enum Dsl<Msg> {
     Mixin(Mixin<Msg>),
     Control(Control<Msg>),
 }
-#[derive(Clone)]
-pub(crate) struct SubComponent(Rc<SubComponentImpl>);
 
 #[derive(Debug)]
 pub(crate) struct Text(pub Value<String>);
@@ -163,8 +161,7 @@ impl std::fmt::Debug for SubComponent {
 }
 
 
-
-pub struct Env<'a, Msg> {
+pub struct ViewEnv<'a, Msg> {
     pub(crate) styling: &'a mut Styling,
     pub(crate) attributes: &'a mut HashMap<String, Either<Value<String>, Value<bool>>>,
     pub(crate) events: &'a mut Vec<EventHandler<Msg>>,

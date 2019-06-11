@@ -1,3 +1,5 @@
+use wasm_bindgen::JsValue;
+
 pub fn is_svg_tag(tag: &str) -> bool {
     match tag.to_lowercase().as_str() {
         "animate" => true,
@@ -64,3 +66,17 @@ pub fn is_svg_tag(tag: &str) -> bool {
         _ => false,
     }
 }
+
+
+pub fn get_oninput_value(event: &JsValue) -> String {
+    let event: web_sys::Event = From::from(event.clone());
+    let target: web_sys::EventTarget = event
+        .target()
+        .expect("target failed");
+    let target: JsValue = From::from(target);
+    let target: web_sys::HtmlInputElement = From::from(target);
+    let value = target.value();
+    value
+}
+
+

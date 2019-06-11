@@ -7,11 +7,12 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model::incremental::{IVecSub};
-use crate::view::dsl::{self as dsl, Dsl, View, SubComponent};
-use crate::view::shared::*;
-use crate::view::dom::*;
-use crate::view::runtime::common::*;
+use crate::model_sys::incremental::{IVecSub};
+use crate::view_sys::dsl::{self as dsl, Dsl, View};
+use crate::view_sys::shared::*;
+use crate::view_sys::dom::*;
+use crate::view_sys::runtime::common::*;
+use crate::view_sys::runtime::css as css_runtime;
 
 
 impl<Msg> View<Msg> {
@@ -26,6 +27,7 @@ impl<Msg> View<Msg> {
                 events: Vec::new(),
                 children: Vec::new(),
             };
+            css_runtime::register_defaults(&mount.dom_ref);
             mount.children.push(view.build(&ElementEnv {
                 tag: mount.tag.as_str(),
                 dom_ref: &mount.dom_ref,
@@ -52,6 +54,7 @@ impl<Msg> View<Msg> {
             Dsl::Element(x) => {
                 let tag = x.tag.clone();
                 let dom_ref = browser::window().document.create_element(tag.as_str());
+                css_runtime::register_defaults(&dom_ref);
                 let new_env = ElementEnv {
                     tag: tag.as_str(),
                     dom_ref: &dom_ref,
@@ -68,10 +71,11 @@ impl<Msg> View<Msg> {
                 Dom::Element(Element {styling,dom_ref,auto_listeners,tag,attributes,events,children})
             }
             Dsl::Component(x) => {
+                use crate::view_sys::shared::SubComponentImpl;
                 let dom_ref = window.document
                     .create_element("div");
                 insert_child(&dom_ref, env);
-                Dom::Component(LiveComponent{dom_ref, inner: x.clone()})
+                Dom::Component(LiveComponent(x.build()))
             }
             Dsl::Mixin(x) => {
                 let DomSegment{styling,attributes,events, children} = build_dom_segment(env, ViewSegment {
@@ -138,7 +142,7 @@ fn build_dom_segment<'a, Msg>(env: &ElementEnv<'a>, view_segment: ViewSegment<Ms
     };
     // STYLING
     if !styling.is_empty() {
-        let styling_env = crate::view::runtime::css::upsert(&styling);
+        let styling_env = crate::view_sys::runtime::css::upsert(&styling);
         env.dom_ref.class_list.add(&styling_env.css_id());
     }
     // ATTRIBUTES

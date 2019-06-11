@@ -7,11 +7,10 @@ use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
-use crate::model::reactive::{Signal, SignalSub, Status};
-use crate::model::incremental::{IVecSub};
-use crate::view::dsl::{View, SubComponent};
-use crate::view::shared::*;
-
+use crate::model_sys::reactive::{Signal, SignalSub, Status};
+use crate::model_sys::incremental::{IVecSub};
+use crate::view_sys::dsl::{View};
+use crate::view_sys::shared::*;
 
 
 
@@ -71,9 +70,15 @@ pub(crate) struct Toggle<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug)]
-pub struct LiveComponent {
-    pub(crate) dom_ref: browser::Element,
-    pub(crate) inner: SubComponent,
+pub struct LiveComponent(pub(crate) SubProcess);
+
+impl LiveComponent {
+    pub(crate) fn dom_ref(&self) -> browser::Element {
+        (self.0).0.dom_ref()
+    }
+    pub(crate) fn tick(&mut self) {
+        (self.0).0.tick()
+    }
 }
 
 
@@ -92,7 +97,7 @@ impl<Msg> LiveEventHandler<Msg> {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// DATA - MISCELLANEOUS
+// MISCELLANEOUS - DATA
 ///////////////////////////////////////////////////////////////////////////////
 
 pub enum Link<New, Old> {
@@ -101,4 +106,16 @@ pub enum Link<New, Old> {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// MISCELLANEOUS
+///////////////////////////////////////////////////////////////////////////////
+
+impl<Msg> Dom<Msg> {
+    pub(crate) fn unsafe_get_element(&self) -> &Element<Msg> {
+        match self {
+            Dom::Element(x) => x,
+            _ => panic!()
+        }
+    }
+}
 

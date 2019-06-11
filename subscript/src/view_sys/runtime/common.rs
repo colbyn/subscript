@@ -7,10 +7,11 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model::incremental::{IVecSub};
-use crate::view::dsl::{self as dsl, Dsl, View, SubComponent};
-use crate::view::shared::*;
-use crate::view::dom::*;
+use crate::model_sys::incremental::{IVecSub};
+use crate::view_sys::dsl::{self as dsl, Dsl, View};
+use crate::view_sys::shared::*;
+use crate::view_sys::shared::SubProcessImpl;
+use crate::view_sys::dom::*;
 
 
 pub(crate) struct ElementEnv<'a> {
@@ -38,10 +39,30 @@ pub(crate) fn insert_child<'a>(new: &browser::NodeApi, env: &ElementEnv<'a>) {
 }
 
 impl<Msg> Dom<Msg> {
+    pub(crate) fn unsafe_remove_root(self) {
+        match self {
+            Dom::Element(element) => {
+                let env = ElementEnv {
+                    tag: &element.tag,
+                    dom_ref: &element.dom_ref,
+                    rightward: &RefCell::new(None),
+                };
+                let styling_env = crate::view_sys::runtime::css::removed(&element.styling);
+                element.dom_ref.class_list.remove(&styling_env.css_id());
+                for event in element.events.iter() {
+                    env.dom_ref.remove_event_listener(&event.event_type(), &event.backend_callback);
+                }
+                for child in element.children {
+                    child.remove(&env);
+                }
+            }
+            _ => panic!()
+        }
+    }
     pub(crate) fn remove<'a>(self, env: &ElementEnv<'a>) {
         match self {
             Dom::Component(value) => {
-                env.dom_ref.remove_child(&value.dom_ref);
+                env.dom_ref.remove_child(&value.dom_ref());
             }
             Dom::Text(value) => {
                 env.dom_ref.remove_child(&value.dom_ref);
@@ -52,7 +73,7 @@ impl<Msg> Dom<Msg> {
                     dom_ref: &value.dom_ref,
                     rightward: &RefCell::new(None),
                 };
-                let styling_env = crate::view::runtime::css::removed(&value.styling);
+                let styling_env = crate::view_sys::runtime::css::removed(&value.styling);
                 value.dom_ref.class_list.remove(&styling_env.css_id());
                 for event in value.events.iter() {
                     env.dom_ref.remove_event_listener(&event.event_type(), &event.backend_callback);
@@ -63,7 +84,7 @@ impl<Msg> Dom<Msg> {
                 env.dom_ref.remove_child(&value.dom_ref);
             }
             Dom::Mixin(value) => {
-                let styling_env = crate::view::runtime::css::removed(&value.styling);
+                let styling_env = crate::view_sys::runtime::css::removed(&value.styling);
                 env.dom_ref.class_list.remove(&styling_env.css_id());
                 for key in value.attributes.keys() {
                     env.dom_ref.remove_attribute(key.as_str());
@@ -192,7 +213,7 @@ impl<Msg> Dom<Msg> {
                 result
             }
             Dom::Mixin(x) => check_children(&x.children),
-            Dom::Component(x) => Some(x.dom_ref.box_clone()),
+            Dom::Component(x) => Some(Box::new(x.dom_ref())),
             Dom::Text(x) => Some(x.dom_ref.box_clone()),
             Dom::Element(x) => Some(x.dom_ref.box_clone()),
         }

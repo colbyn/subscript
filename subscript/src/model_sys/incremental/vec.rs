@@ -4,8 +4,8 @@ use std::marker::*;
 use std::cell::*;
 use std::rc::*;
 use either::{Either, Either::*};
-use crate::view::{dsl::View, dom::Dom};
-use crate::view::extras::{DomThunk, EvalDomThunk};
+use crate::view_sys::{dsl::View, dom::Dom};
+use crate::view_sys::extras::{DomThunk, EvalDomThunk};
 
 
 ///////////////////////////////////////////////////////////////////////////////

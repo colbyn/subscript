@@ -9,12 +9,12 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model::incremental::{IVecSub, IVecSync};
-use crate::view::dsl::{self as dsl, Dsl, View, SubComponent};
-use crate::view::shared::*;
-use crate::view::extras::{DomThunk, EvalDomThunk};
-use crate::view::dom::*;
-use crate::view::runtime::common::*;
+use crate::model_sys::incremental::{IVecSub, IVecSync};
+use crate::view_sys::dsl::{self as dsl, Dsl, View};
+use crate::view_sys::shared::*;
+use crate::view_sys::extras::{DomThunk, EvalDomThunk};
+use crate::view_sys::dom::*;
+use crate::view_sys::runtime::common::*;
 
 
 

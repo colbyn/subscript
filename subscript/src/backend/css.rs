@@ -77,6 +77,6 @@ impl Media {
 			.map(|x| x.as_str())
 			.collect::<Vec<_>>()
 			.join("");
-		format!("@keyframes {} {{{}}}", condition, declarations)
+		format!("@media {} {{{}}}", condition, declarations)
 	}
 }

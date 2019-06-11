@@ -9,7 +9,7 @@ pub use vec::*;
 // use std::rc::*;
 // use either::{Either, Either::*};
 // use ss_web_utils::{dom, js, js::console, prelude::*};
-// use crate::view::{dsl::View, dom::Dom};
+// use crate::view_sys::{dsl::View, dom::Dom};
 
 
 // ///////////////////////////////////////////////////////////////////////////////

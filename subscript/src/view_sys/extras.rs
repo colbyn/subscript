@@ -7,10 +7,10 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model::incremental::{IVecSub};
-use crate::view::dsl::{self as dsl, Dsl, View, SubComponent};
-use crate::view::shared::*;
-use crate::view::dom::*;
+use crate::model_sys::incremental::{IVecSub};
+use crate::view_sys::dsl::{self as dsl, Dsl, View};
+use crate::view_sys::shared::*;
+use crate::view_sys::dom::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
