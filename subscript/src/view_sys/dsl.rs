@@ -55,8 +55,8 @@ impl<Msg: 'static> View<Msg> {
         let observer = ViewVecObserver::new(&vec, init);
         View(Dsl::Control(Control::Linked(observer)))
     }
-    pub fn new_toggle_control(pred: &Signal<bool>, value: View<Msg>) -> Self {
-        let pred = CellObserver::new(&pred);
+    pub fn new_toggle_control(pred: &Reactive<bool>, value: View<Msg>) -> Self {
+        let pred = CellObserver::new(pred);
         View(Dsl::Control(Control::Toggle {
             pred,
             value: Rc::new(value),
@@ -71,7 +71,7 @@ impl<Msg: 'static> View<Msg> {
     pub fn text(&mut self, value: &str) {
         self.push_child(View::new_text(value));
     }
-    pub fn text_cell(&mut self, value: &Signal<String>) {
+    pub fn text_cell(&mut self, value: &Reactive<String>) {
         self.push_child(View::new_text_signal(value));
     }
     pub fn tag(&mut self, tag: &str, inner: impl FnMut(&mut View<Msg>)) {

@@ -41,12 +41,12 @@ pub struct Model {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct TodoEntry {
-    display: Signal<bool>,
+    display: ComputedSignal<Display, bool>,
     completed: bool,
     value: Signal<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum Display {
     All,
     Active,
@@ -65,17 +65,17 @@ impl Default for Display {
 
 impl TodoEntry {
     pub fn set_display(&mut self, current: Display) {
-        match current {
-            Display::All => {
-                self.display.set(true);
-            }
-            Display::Active => {
-                self.display.set(!self.completed);
-            }
-            Display::Completed => {
-                self.display.set(self.completed);
-            }
-        }
+        // match current {
+        //     Display::All => {
+        //         self.display.set(true);
+        //     }
+        //     Display::Active => {
+        //         self.display.set(!self.completed);
+        //     }
+        //     Display::Completed => {
+        //         self.display.set(self.completed);
+        //     }
+        // }
     }
 }
 
@@ -114,8 +114,12 @@ impl Spec for AppSpec {
             Msg::SubmitTodo => {
                 if !model.new_todo.get().is_empty() {
                     let text = model.new_todo.map_mut(|x| x.drain(..).collect::<String>());
+                    let display: ComputedSignal<Display, bool> = model.display
+                        .computed(move |display: &Display| -> bool {
+                            display == &Display::All
+                        });
                     model.entries.push(TodoEntry {
-                        display: Signal::new(true),
+                        display,
                         completed: false,
                         value: Signal::new(text),
                     });

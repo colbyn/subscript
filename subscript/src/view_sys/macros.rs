@@ -54,6 +54,19 @@ macro_rules! s1 {
 #[macro_export]
 macro_rules! v1_impl {
     ($env:expr;) => {};
+    
+    ///////////////////////////////////////////////////////////////////////////
+    // CONTROL-FLOW
+    ///////////////////////////////////////////////////////////////////////////
+    ($env:expr; if $pred:expr => {$($x:tt)*}; $($rest:tt)*) => {{
+        let mut mixin = View::new_mixin();
+        if let Some(mut inner_env) = mixin.get_env() {
+            v1_impl!(&mut inner_env; $($x)*);
+        }
+        $env.children.push(View::new_toggle_control($pred, mixin));
+        v1_impl!($env; $($rest)*);
+    }};
+
     ///////////////////////////////////////////////////////////////////////////
     // EVENTS
     ///////////////////////////////////////////////////////////////////////////
@@ -385,34 +398,44 @@ macro_rules! clone_ident_arguments_inner {
 // DEV
 ///////////////////////////////////////////////////////////////////////////////
 
-// use crate::view_sys::dsl::View;
+pub mod dev {
+    use crate::view_sys::dsl::View;
+    use crate::signals_sys::*;
 
-// pub enum Msg {
-//     NoOP,
-//     Value(String),
-// }
+    pub enum Msg {
+        NoOP,
+        Value(String),
+    }
 
-// #[derive(Clone)]
-// pub struct Model {
-//     value: String,
-// }
+    pub struct Model {
+        value: Signal<String>,
+        display: ComputedSignal<String, bool>
+    }
 
-// pub fn dev(model: &Model) -> View<Msg> {v1!{
-//     h1 {
-//         css.media[max_width: "900px"] => s1!{
-//             background_color: "red";
-//         };
-//         css.hover => s1!{
-//             color: "blue";
-//         };
-//         css.animation => {
-//             from => s1!{
-//                 color: "#fff";
-//             };
-//             to => s1!{
-//                 color: "#000";
-//             };
-//         };
-//     }
-// }}
+    pub fn dev(model: &Model) -> View<Msg> {v1!{
+        h1 {
+            if &model.display => {
+                h1 {
+                    "Hello World";
+                }
+            };
+
+            css.media[max_width: "900px"] => s1!{
+                background_color: "red";
+            };
+            css.hover => s1!{
+                color: "blue";
+            };
+            css.animation => {
+                from => s1!{
+                    color: "#fff";
+                };
+                to => s1!{
+                    color: "#000";
+                };
+            };
+        }
+    }}
+}
+
 
