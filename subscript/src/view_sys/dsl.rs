@@ -22,11 +22,16 @@ impl<Msg: 'static> View<Msg> {
     pub fn new_text(value: &str) -> Self {
         View(Dsl::Text(Text(Value::Static(String::from(value)))))
     }
-    pub fn new_text_signal(cell: &Signal<String>) -> Self {
+    pub fn new_text_signal(cell: &Reactive<String>) -> Self
+    {
         let observer: CellObserver<String> = CellObserver::new(cell);
+        let value = match cell.get_either_val_or_ref() {
+            Left(x) => x,
+            Right(x) => x.clone(),
+        };
         View(Dsl::Text(Text(Value::Dynamic(DynamicValue {
             observer,
-            current: RefCell::new(cell.value.clone()),
+            current: RefCell::new(value),
         }))))
     }
     pub fn new_element(tag: &str) -> Self {

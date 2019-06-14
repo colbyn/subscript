@@ -115,9 +115,9 @@ macro_rules! v1_impl {
     }};
     ($env:expr; event.input[$($x:tt)*] => $expr:expr; $($rest:tt)*) => {{
         clone_ident_arguments_outer!($($x)*);
-        $env.events.push(EventHandler::new_on_input(move || {
+        $env.events.push(EventHandler::new_on_input(move |txt| {
             clone_ident_arguments_inner!($($x)*);
-            ($expr)()
+            ($expr)(txt)
         }));
         v1_impl!($env; $($rest)*);
     }};
@@ -288,7 +288,7 @@ macro_rules! v1_impl {
     // VIEWABLE EXPRESSIONS
     ///////////////////////////////////////////////////////////////////////////
     ($env:expr; $value:expr; $($rest:tt)*) => {{
-        extend_env_with_viewable($env, $value);
+        extend_env_with_mixable($env, $value);
         v1_impl!($env; $($rest)*);
     }};
 }
@@ -299,7 +299,7 @@ macro_rules! v1 {
         use crate::view_sys::dsl::*;
         use crate::view_sys::shared::*;
         use crate::view_sys::macros::*;
-        use crate::view_sys::viewable::{Viewable, extend_env_with_viewable};
+        use crate::view_sys::adapters::*;
         use ::either::{Either, Either::*};
         let mut mixin = View::new_mixin();
         if let Some(mut env) = mixin.get_env() {

@@ -299,6 +299,7 @@ impl<Msg> Clone for EventHandler<Msg> {
     }
 }
 
+#[derive(PartialEq)]
 pub(crate) enum EventType {
     OnClick,
     OnMouseDown,
@@ -339,13 +340,13 @@ pub struct OnClick<Msg>(Box<Fn() -> Msg>); // click
 pub struct OnMouseDown<Msg>(Box<Fn()->Msg>); // mousedown
 pub struct OnMouseUp<Msg>(Box<Fn()->Msg>); // mouseup
 pub struct OnMouseEnter<Msg>(Box<Fn()->Msg>); // mouseenter
-pub struct OnMouseLeave<Msg>(Box<Fn()->Msg>); // mouseenter
+pub struct OnMouseLeave<Msg>(Box<Fn()->Msg>); // mouseleave
 pub struct OnMouseOver<Msg>(Box<Fn()->Msg>); // mouseover
 pub struct OnMouseOut<Msg>(Box<Fn()->Msg>); // mouseout
 
 
 // FORMS
-pub struct OnInput<Msg>(Box<Fn(String)->Msg>); // change
+pub struct OnInput<Msg>(Box<Fn(String)->Msg>); // input
 pub struct OnCheck<Msg>(Box<Fn(bool)->Msg>); // click
 pub struct OnSubmit<Msg>(Box<Fn()->Msg>); // submit
 
@@ -420,7 +421,7 @@ impl<Msg> EventHandlerImpl<Msg> for OnInput<Msg> {
         self.0(value)
     }
     fn event_type(&self) -> String {
-        String::from(EventType::OnMouseLeave.as_str())
+        String::from(EventType::OnInput.as_str())
     }
 }
 impl<Msg> EventHandlerImpl<Msg> for OnCheck<Msg> {
@@ -506,6 +507,15 @@ impl AttributeValue for String {
 impl AttributeValue for bool {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
         Right(Value::Static(self.clone()))
+    }
+}
+impl AttributeValue for &Signal<String> {
+    fn normalize(&self) -> Either<Value<String>, Value<bool>> {
+        let observer = CellObserver::new(self);
+        Left(Value::Dynamic(DynamicValue {
+            current: RefCell::new(self.value.clone()),
+            observer,
+        }))
     }
 }
 

@@ -29,8 +29,10 @@ pub trait VecObserver<T> {
 // SIGNAL
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Serialize, Deserialize)]
 pub struct VecSignal<T> {
     value: Vec<T>,
+    #[serde(skip)]
     observers: RefCell<Vec<Box<VecObserver<T>>>>,
 }
 

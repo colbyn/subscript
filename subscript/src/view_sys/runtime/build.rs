@@ -151,7 +151,12 @@ fn build_dom_segment<'a, Msg: 'static>(env: &ElementEnv<'a>, view_segment: ViewS
         let backend_callback = QueueCallback::new(
             env.dom_ref,
             event.event_type().as_str(),
-            CallbackSettings::default()
+            CallbackSettings {
+                prevent_default: {
+                    event.event_type() == "submit"
+                },
+                ..CallbackSettings::default()
+            },
         );
         dom_segment.events.push(LiveEventHandler{
             backend_callback,

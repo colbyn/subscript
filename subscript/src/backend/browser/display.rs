@@ -9,6 +9,7 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsValue, JsCast};
 use js_sys::Function;
 
+use crate::{console};
 use crate::backend::css;
 
 

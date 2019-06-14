@@ -1,4 +1,4 @@
-pub mod viewable;
+pub mod adapters;
 pub mod dsl;
 pub mod dom;
 pub mod runtime;
