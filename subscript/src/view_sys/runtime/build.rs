@@ -7,15 +7,16 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model_sys::incremental::{IVecSub};
+use crate::signals_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
 use crate::view_sys::dom::*;
 use crate::view_sys::runtime::common::*;
 use crate::view_sys::runtime::css as css_runtime;
+use crate::program_sys::instances::*;
 
 
-impl<Msg> View<Msg> {
+impl<Msg: 'static> View<Msg> {
     pub(crate) fn build_root(&self) -> Dom<Msg> {
         let build_root = |view: &View<Msg>| -> Dom<Msg> {
             let mut mount: Element<Msg> = Element {
@@ -41,15 +42,11 @@ impl<Msg> View<Msg> {
     pub(crate) fn build(&self, env: &ElementEnv) -> Dom<Msg> {
         let window = browser::window();
         match &self.0 {
-            Dsl::Text(x) => {
-                let value = match &x.0 {
-                    Value::Dynamic(cell) => cell.value.borrow().clone(),
-                    Value::Static(value) => value.clone(),
-                };
+            Dsl::Text(text) => {
                 let dom_ref = window.document
-                    .create_text_node(value.as_str());
+                    .create_text_node(text.0.get().as_str());
                 insert_child(&dom_ref, env);
-                Dom::Text(Text{value: x.0.clone(), dom_ref})
+                Dom::Text(Text{value: text.0.clone(), dom_ref})
             }
             Dsl::Element(x) => {
                 let tag = x.tag.clone();
@@ -71,7 +68,6 @@ impl<Msg> View<Msg> {
                 Dom::Element(Element {styling,dom_ref,auto_listeners,tag,attributes,events,children})
             }
             Dsl::Component(x) => {
-                use crate::view_sys::shared::SubComponentImpl;
                 let dom_ref = window.document
                     .create_element("div");
                 insert_child(&dom_ref, env);
@@ -88,7 +84,7 @@ impl<Msg> View<Msg> {
             }
             Dsl::Control(dsl::Control::Toggle{pred, value}) => {
                 let mut dom: Option<Dom<Msg>> = None;
-                if pred.value.borrow().clone() {
+                if pred.get() {
                     dom = Some(value.build(env));
                 }
                 Dom::Control(Control::Toggle(Box::new(Toggle{
@@ -98,7 +94,7 @@ impl<Msg> View<Msg> {
                 })))
             }
             Dsl::Control(dsl::Control::Linked(sub)) => {
-                sub.build(|children| {
+                sub.build(&|children| {
                     let results = build_dom_segment(env, ViewSegment{
                         styling: &Styling::default(),
                         attributes: &HashMap::new(),
@@ -131,7 +127,7 @@ struct DomSegment<Msg> {
     children: Vec<Dom<Msg>>,
 }
 
-fn build_dom_segment<'a, Msg>(env: &ElementEnv<'a>, view_segment: ViewSegment<Msg>) -> DomSegment<Msg> {
+fn build_dom_segment<'a, Msg: 'static>(env: &ElementEnv<'a>, view_segment: ViewSegment<Msg>) -> DomSegment<Msg> {
     // SETUP
     let ViewSegment{styling,attributes,events,children} = view_segment;
     let mut dom_segment = DomSegment {

@@ -1,3 +1,5 @@
+pub mod extra;
+
 use core::fmt::Debug;
 use std::fmt;
 use std::collections::*;
@@ -220,7 +222,6 @@ impl Stylesheet {
 		interface
 			.insert_rule(&value.as_str())
 			.expect("insertRule() method failed");
-
 	}
 }
 

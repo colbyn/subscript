@@ -1,3 +1,4 @@
+use core::fmt::Debug;
 use std::collections::*;
 use std::any::*;
 use std::marker::*;
@@ -7,9 +8,9 @@ use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
-use crate::model_sys::reactive::{Signal, SignalSub, Status};
-use crate::model_sys::incremental::{IVecSub, IVec};
+use crate::signals_sys::*;
 use crate::program_sys::spec::{Spec, StartupInfo};
+use crate::program_sys::instances::*;
 use crate::view_sys::dom::Dom;
 
 
@@ -235,96 +236,6 @@ impl StateSelectorName {
             StateSelectorName::Marker => "::marker",
             StateSelectorName::Cue => "::cue",
             StateSelectorName::Backdrop => "::backdrop",
-        }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// COMPONENTS
-///////////////////////////////////////////////////////////////////////////////
-
-#[derive(Clone)]
-pub(crate) struct SubComponent(pub(crate) Rc<SubComponentImpl>);
-pub(crate) trait SubComponentImpl {
-    fn build(&self) -> SubProcess;
-}
-#[derive(Clone)]
-pub struct Component<S: Spec> {
-    pub name: String,
-    pub spec: S
-}
-
-
-impl SubComponent {
-    pub(crate) fn build(&self) -> SubProcess {
-        self.0.as_ref().build()
-    }
-}
-
-impl<S: 'static +  Spec> SubComponentImpl for Component<S> {
-    fn build(&self) -> SubProcess {
-        let component = self.clone();
-        let init = component.spec.init(StartupInfo {
-            name: component.name.clone(),
-            saved_model: None,
-        });
-        let view = component.spec.view(&init.model);
-        let dom = view.build_root();
-        SubProcess(Box::new(Process {
-            component,
-            dom: unimplemented!(),
-        }))
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// PROCESSES
-///////////////////////////////////////////////////////////////////////////////
-
-pub(crate) struct SubProcess(pub(crate) Box<SubProcessImpl>);
-pub(crate) trait SubProcessImpl {
-    fn dom_ref(&self) -> browser::Element;
-    fn tick(&mut self);
-}
-pub struct Process<S: Spec> {
-    component: Component<S>,
-    dom: Option<Dom<S::Msg>>,
-}
-
-
-impl<S: Spec> SubProcessImpl for Process<S> {
-    fn dom_ref(&self) -> browser::Element {
-        match &self.dom {
-            Some(dom) => dom.unsafe_get_element().dom_ref.clone(),
-            None => panic!()
-        }
-    }
-    fn tick(&mut self) {
-        let dom = self.get_dom_mut();
-        dom.unsafe_tick_root();
-    }
-}
-impl<S: Spec> Process<S> {
-    fn get_dom_mut(&mut self) -> &mut Dom<S::Msg> {
-        match &mut self.dom {
-            Some(dom) => dom,
-            None => panic!()
-        }
-    }
-}
-impl std::fmt::Debug for SubProcess {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "SubProcess")
-    }
-}
-impl<S: Spec> Drop for Process<S> {
-    fn drop(&mut self) {
-        console!("Process.Drop");
-        match self.dom.take() {
-            Some(dom) => {
-                dom.unsafe_remove_root();
-            }
-            _ => panic!()
         }
     }
 }
@@ -605,19 +516,57 @@ impl AttributeValue for bool {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone)]
-pub enum Value<T> {
+pub enum Value<T: Clone> {
     Static(T),
-    Dynamic(SignalSub<T>),
+    Dynamic(DynamicValue<T>),
 }
-impl<T> Value<T> {
+#[derive(Debug, Clone)]
+pub struct DynamicValue<T: Clone> {
+    pub(crate) observer: CellObserver<T>,
+    pub(crate) current: RefCell<T>,
+}
+impl<T> Value<T> where T: Clone + Debug + PartialEq + 'static {
     pub(crate) fn if_changed(&self, f: impl Fn(&T)) {
         match &self {
-            Value::Dynamic(sub) => {
-                sub.if_changed(f);
+            Value::Dynamic(dynamic) => {
+                let upstream = dynamic.observer.get();
+                let unchanged = *dynamic.current.borrow() == upstream;
+                if !unchanged {
+                    f(&upstream);
+                    dynamic.current.replace(upstream);
+                }
             }
             Value::Static(_) => {}
         }
     }
+    pub(crate) fn get(&self) -> T {
+        match &self {
+            Value::Dynamic(dynamic) => {
+                let upstream = dynamic.observer.get();
+                let unchanged = *dynamic.current.borrow() == upstream;
+                if !unchanged {
+                    dynamic.current.replace(upstream.clone());
+                    upstream
+                } else {
+                    upstream
+                }
+            }
+            Value::Static(value) => {value.clone()}
+        }
+    }
+    pub(crate) fn is_dynamic(&self) -> bool {
+        match &self {
+            Value::Static(_) => {true}
+            Value::Dynamic(_) => {false}
+        }
+    }
+    pub(crate) fn is_static(&self) -> bool {
+        match &self {
+            Value::Static(_) => {true}
+            Value::Dynamic(_) => {false}
+        }
+    }
 }
+
 
 

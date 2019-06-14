@@ -385,34 +385,34 @@ macro_rules! clone_ident_arguments_inner {
 // DEV
 ///////////////////////////////////////////////////////////////////////////////
 
-use crate::view_sys::dsl::View;
+// use crate::view_sys::dsl::View;
 
-pub enum Msg {
-    NoOP,
-    Value(String),
-}
+// pub enum Msg {
+//     NoOP,
+//     Value(String),
+// }
 
-#[derive(Clone)]
-pub struct Model {
-    value: String,
-}
+// #[derive(Clone)]
+// pub struct Model {
+//     value: String,
+// }
 
-pub fn dev(model: &Model) -> View<Msg> {v1!{
-    h1 {
-        css.media[max_width: "900px"] => s1!{
-            background_color: "red";
-        };
-        css.hover => s1!{
-            color: "blue";
-        };
-        css.animation => {
-            from => s1!{
-                color: "#fff";
-            };
-            to => s1!{
-                color: "#000";
-            };
-        };
-    }
-}}
+// pub fn dev(model: &Model) -> View<Msg> {v1!{
+//     h1 {
+//         css.media[max_width: "900px"] => s1!{
+//             background_color: "red";
+//         };
+//         css.hover => s1!{
+//             color: "blue";
+//         };
+//         css.animation => {
+//             from => s1!{
+//                 color: "#fff";
+//             };
+//             to => s1!{
+//                 color: "#000";
+//             };
+//         };
+//     }
+// }}
 

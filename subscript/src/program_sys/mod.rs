@@ -1,32 +1,39 @@
 pub mod spec;
+pub mod instances;
+#[macro_use]
+pub mod macros;
 
 use std::collections::*;
 use std::rc::*;
 use std::any::*;
 use std::cell::*;
 
+use wasm_bindgen::prelude::*;
+
 use crate::program_sys::spec::*;
+use crate::program_sys::instances::*;
 use crate::view_sys::shared::*;
 
-///////////////////////////////////////////////////////////////////////////////
-// GLOABL MESSAGES
-///////////////////////////////////////////////////////////////////////////////
-thread_local! {
-    pub(crate) static GLOABL_MESSAGES: RefCell<VecDeque<Message>> = {
-        RefCell::new(VecDeque::new())
-    };
-}
 
-pub enum Message {
-    Public(Rc<Any>),
-    Private {
-        tid: TypeId,
-        value: Rc<Any>,
-    },
-}
 
 ///////////////////////////////////////////////////////////////////////////////
-// ROOT-PROCESS GLOBAL
+// ROOT-PROCESS TICK - EXTERNAL API
+///////////////////////////////////////////////////////////////////////////////
+
+#[wasm_bindgen]
+pub fn on_request_animation_frame() {
+    ROOT_PROCESS.with(|cell| {
+        let inner: Option<Box<ProgramImpl>> = cell.replace(None);
+        if let Some(mut process) = inner {
+            process.tick();
+            assert!(cell.replace(Some(process)).is_none());
+        }
+    });
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ROOT-PROCESS TICK - INTERNAL
 ///////////////////////////////////////////////////////////////////////////////
 
 thread_local! {
@@ -35,14 +42,17 @@ thread_local! {
     };
 }
 
-pub trait ProgramImpl {
+pub(crate) trait ProgramImpl {
     fn tick(&mut self);
 }
 
 
-impl<S: Spec> ProgramImpl for Program<S> {
+impl<S: Spec + 'static> ProgramImpl for Program<S> {
     fn tick(&mut self) {
-        self.process.tick();
+        let messages: Vec<SystemMessage> = GLOABL_MESSAGE_REGISTRY.with(|reg| {
+            reg.borrow_mut().drain(..).collect::<Vec<SystemMessage>>()
+        });
+        self.process.tick(&messages);
     }
 }
 
@@ -54,4 +64,17 @@ pub struct Program<S: Spec> {
     process: Process<S>,
 }
 
+
+impl<S: Spec + 'static> Program<S> {
+    pub fn from_component(root_component: Component<S>) -> Self {
+        let process = root_component.build_impl();
+        Program {process}
+    }
+    pub fn start(self) {
+        ROOT_PROCESS.with(move |cell| {
+            let old = cell.replace(Some(Box::new(self)));
+            assert!(old.is_none());
+        });
+    }
+}
 

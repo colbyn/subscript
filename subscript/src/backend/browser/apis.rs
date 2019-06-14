@@ -1,5 +1,7 @@
 use wasm_bindgen::{JsValue, JsCast};
 use wasm_bindgen::closure::Closure;
+use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
+
 use crate::backend::browser::display::*;
 use crate::backend::browser::utils::{is_svg_tag};
 
@@ -12,6 +14,15 @@ thread_local! {
     	let window_instance: web_sys::Window = web_sys::window().expect("window not available");
     	let document_instance: web_sys::Document = window_instance.document().expect("document not available");
     	let body_instance = document_instance.body().expect("document.body not available");
+        let local_storage_instance = window_instance
+            .local_storage()
+            .expect("localStorage failed")
+            .expect("localStorage missing");
+        let location_instance = window_instance
+            .location();
+        let history_instance = window_instance
+            .history()
+            .expect("window.history getter failed");
         let window = Window {
         	document: Document {
         		body: Body {
@@ -19,6 +30,11 @@ thread_local! {
         		},
 			    instance: From::from(document_instance),
         	},
+            local_storage: Storage {
+                instance: local_storage_instance,
+            },
+            location: Location {instance: location_instance},
+            history: History {instance: history_instance},
             instance: From::from(window_instance),
         };
         window
@@ -39,11 +55,26 @@ pub fn window() -> Window {
 pub struct Window {
 	pub instance: JsValue,
 	pub document: Document,
+    pub local_storage: Storage,
+    pub location: Location,
+    pub history: History,
 }
 #[derive(Clone, Debug)]
 pub struct Document {
 	pub instance: JsValue,
 	pub body: Body,
+}
+#[derive(Clone, Debug)]
+pub struct Storage {
+    pub instance: web_sys::Storage
+}
+#[derive(Clone, Debug)]
+pub struct Location {
+    pub instance: web_sys::Location
+}
+#[derive(Clone, Debug)]
+pub struct History {
+    pub instance: web_sys::History
 }
 
 
@@ -98,3 +129,49 @@ impl Document {
 	    Text {instance: From::from(instance)}
 	}
 }
+
+impl Storage {
+    pub fn get<Value>(&self, key: &str) -> Option<Value> where Value: DeserializeOwned {
+        let value = self.instance
+            .get_item(key)
+            .expect("getItem method failed");
+        match value {
+            None => None,
+            Some(value) => match serde_json::from_str(value.clone().as_str()) {
+                Err(msg) => None,
+                Ok(value) => Some(value)
+            }
+        }
+    }
+    pub fn set<Value: Serialize>(&self, key: &str, value: &Value) {
+        match serde_json::to_string(value) {
+            Err(msg) => (),
+            Ok(value) => self.instance
+                .set_item(key, value.as_str())
+                .expect("setItem method failed")
+        }
+    }
+    pub fn remove(&self, key: &str) {
+        self.instance
+            .remove_item(key)
+            .expect("removeItem method failed")
+    }
+}
+impl History {
+    pub fn push_state(&self, url_path: &str) {
+        self.instance.push_state_with_url(
+            &JsValue::null(),
+            "",
+            Some(url_path)
+        )
+        .expect("pushState failed");
+    }
+}
+impl Location {
+    pub fn pathname(&self) -> String {
+        self.instance
+            .pathname()
+            .expect("pathname failed")
+    }
+}
+

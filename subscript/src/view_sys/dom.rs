@@ -7,12 +7,11 @@ use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
-use crate::model_sys::reactive::{Signal, SignalSub, Status};
-use crate::model_sys::incremental::{IVecSub};
+use crate::signals_sys::*;
 use crate::view_sys::dsl::{View};
 use crate::view_sys::shared::*;
-
-
+use crate::program_sys::instances::*;
+use crate::program_sys::spec::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA - LIVE DOM TREE
@@ -53,13 +52,13 @@ pub(crate) struct Mixin<Msg> {
 
 #[derive(Debug)]
 pub(crate) enum Control<Msg> {
-    Linked(IVecSub<Msg>),
+    Linked(ViewVecObserver<Msg>),
     Toggle(Box<Toggle<Msg>>),
 }
 
 #[derive(Debug)]
 pub(crate) struct Toggle<Msg> {
-    pub pred: SignalSub<bool>,
+    pub pred: CellObserver<bool>,
     pub template: Rc<View<Msg>>,
     pub dom: RefCell<Option<Dom<Msg>>>,
 }
@@ -76,8 +75,8 @@ impl LiveComponent {
     pub(crate) fn dom_ref(&self) -> browser::Element {
         (self.0).0.dom_ref()
     }
-    pub(crate) fn tick(&mut self) {
-        (self.0).0.tick()
+    pub(crate) fn tick(&mut self, system_messages: &Vec<SystemMessage>) {
+        (self.0).0.tick(system_messages);
     }
 }
 
@@ -92,8 +91,13 @@ pub(crate) struct LiveEventHandler<Msg> {
 }
 
 impl<Msg> LiveEventHandler<Msg> {
-    pub(crate) fn apply(&self, event: JsValue) -> Msg {self.frontend_callback.apply(event)}
     pub(crate) fn event_type(&self) -> String {self.frontend_callback.event_type()}
+    pub(crate) fn tick(&self, tick_env: &mut TickEnv<Msg>) {
+        for event in self.backend_callback.drain() {
+            let msg = self.frontend_callback.apply(event);
+            tick_env.local_messages.push(msg);
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

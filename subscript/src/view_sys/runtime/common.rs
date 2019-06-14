@@ -4,14 +4,15 @@ use std::marker::*;
 use std::cell::*;
 use std::rc::*;
 use either::{Either, Either::*};
+use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model_sys::incremental::{IVecSub};
+use crate::signals_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
-use crate::view_sys::shared::SubProcessImpl;
 use crate::view_sys::dom::*;
+use crate::program_sys::instances::SubProcessImpl;
 
 
 pub(crate) struct ElementEnv<'a> {
@@ -102,13 +103,14 @@ impl<Msg> Dom<Msg> {
                     dom.remove(env);
                 }
             }
-            Dom::Control(Control::Linked(sub)) => {
-                if let Right(dom) = sub.terminate() {
+            Dom::Control(Control::Linked(observer)) => {
+                use crate::signals_sys::vec::view_observer::ViewItem;
+                if let Right(dom) = observer.terminate() {
                     for child in dom.removed {
                         child.remove(env);
                     }
-                    for child in dom.active {
-                        if let Right(dom) = child.into_inner() {
+                    for node in dom.active {
+                        if let ViewItem::Dom(dom) = node {
                             dom.remove(env);
                         }
                     }
@@ -120,41 +122,47 @@ impl<Msg> Dom<Msg> {
 
 
 pub(crate) fn set_attribute<'a>(key: &String, value: &Either<Value<String>, Value<bool>>, element: &ElementEnv<'a>) {
-    let attribute = |key: &String, value: &Either<Value<String>, Value<bool>>| match value {
-        Left(Value::Static(value)) => {
-            element.dom_ref.set_attribute(key.as_str(), value.as_str());
+    let attribute = || match value {
+        Left(value) => {
+            element.dom_ref.set_attribute(key.as_str(), value.get().as_str());
         }
-        Left(Value::Dynamic(cell)) => {
-            let value: &str = &cell.value.borrow();
-            element.dom_ref.set_attribute(key.as_str(), value);
-        }
-        Right(Value::Static(value)) => {
-            if value.clone() {
-                element.dom_ref.set_attribute(key.as_str(), "");
-            } else {
-                element.dom_ref.remove_attribute(key.as_str());
-            }
-        }
-        Right(Value::Dynamic(cell)) => {
-            if cell.value.borrow().clone() {
+        Right(value) => {
+            if value.get() {
                 element.dom_ref.set_attribute(key.as_str(), "");
             } else {
                 element.dom_ref.remove_attribute(key.as_str());
             }
         }
     };
-    let property = |key: &String, value: &Either<Value<String>, Value<bool>>| {
-        unimplemented!()
+    let value_property = || {
+        match value {
+            Left(value) => {
+                let node_ref: JsValue = element.dom_ref.dom_ref();
+                let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+                node_ref.set_value(&value.get());
+            }
+            _ => ()
+        }
+    };
+    let checked_property = || {
+        match value {
+            Right(value) => {
+                let node_ref: JsValue = element.dom_ref.dom_ref();
+                let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+                node_ref.set_checked(value.get());
+            }
+            _ => ()
+        }
     };
     match (element.tag, key.as_str()) {
-        ("input", "value") => property(key, value),
-        ("input", "checked") => property(key, value),
-        _ => attribute(key, value),
+        ("input", "value") => value_property(),
+        ("input", "checked") => checked_property(),
+        _ => attribute(),
     }
 }
 
 pub(crate) fn update_attribute<'a>(key: &String, value: &Either<Value<String>, Value<bool>>, element: &ElementEnv<'a>) {
-    let attribute = |key: &String, value: &Either<Value<String>, Value<bool>>| match value {
+    let attribute = || match value {
         Left(string) => {
             string.if_changed(|new_value| {
                 element.dom_ref.set_attribute(key.as_str(), new_value.as_str());
@@ -170,19 +178,40 @@ pub(crate) fn update_attribute<'a>(key: &String, value: &Either<Value<String>, V
             }); 
         }
     };
-    let property = |key: &String, value: &Either<Value<String>, Value<bool>>| {
-        unimplemented!()
+    let value_property = || {
+        match value {
+            Left(value) => {
+                value.if_changed(|new_value| {
+                    let node_ref: JsValue = element.dom_ref.dom_ref();
+                    let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+                    node_ref.set_value(new_value);
+                });
+            }
+            _ => ()
+        }
+    };
+    let checked_property = || {
+        match value {
+            Right(boolean) => {
+                boolean.if_changed(|new_value| {
+                    let node_ref: JsValue = element.dom_ref.dom_ref();
+                    let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
+                    node_ref.set_checked(new_value.clone());
+                });
+            }
+            _ => ()
+        }
     };
     match (element.tag, key.as_str()) {
-        ("input", "value") => property(key, value),
-        ("input", "checked") => property(key, value),
-        _ => attribute(key, value),
+        ("input", "value") => value_property(),
+        ("input", "checked") => checked_property(),
+        _ => attribute(),
     }
 }
 
-impl<Msg> Dom<Msg> {
+impl<Msg: 'static> Dom<Msg> {
     pub(crate) fn get_before_dom_ref(&self) -> Option<Box<browser::NodeApi>> {
-        fn check_children<Msg>(children: &Vec<Dom<Msg>>) -> Option<Box<browser::NodeApi>> {
+        fn check_children<Msg: 'static>(children: &Vec<Dom<Msg>>) -> Option<Box<browser::NodeApi>> {
             let mut result: Option<Box<browser::NodeApi>> = None;
             for child in children.iter() {
                 if result.is_none() {
@@ -192,18 +221,18 @@ impl<Msg> Dom<Msg> {
             result
         }
         match self {
-            Dom::Control(Control::Linked(sub)) => {
+            Dom::Control(Control::Linked(observer)) => {
                 let mut result: Option<Box<browser::NodeApi>> = None;
-                sub.inspect_dom(&mut |view| {
+                observer.for_each_dom_node(&mut |node: &Dom<Msg>| {
                     if result.is_none() {
-                        result = view.get_before_dom_ref();
+                        result = node.get_before_dom_ref();
                     }
                 });
                 result
             }
             Dom::Control(Control::Toggle(toggle)) => {
                 let mut result = None;
-                if toggle.pred.value.borrow().clone() {
+                if toggle.pred.get() {
                     let inner: &Option<Dom<Msg>> = &toggle.dom.borrow();
                     assert!(inner.is_some());
                     if let Some(dom) = inner {

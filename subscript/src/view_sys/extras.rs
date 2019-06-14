@@ -7,7 +7,7 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model_sys::incremental::{IVecSub};
+use crate::signals_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
 use crate::view_sys::dom::*;
@@ -56,7 +56,7 @@ impl<Msg> DomThunk<Msg> {
             ThunkState::Borrowed => {panic!()}
         }
     }
-    pub(crate) fn eval(&self, f: EvalDomThunk<impl Fn(View<Msg>)->Dom<Msg>, impl Fn(&mut Dom<Msg>)>) {
+    pub(crate) fn eval(&self, mut f: EvalDomThunk<impl FnMut(View<Msg>)->Dom<Msg>, impl FnMut(&mut Dom<Msg>)>) {
         match self.0.replace(ThunkState::Borrowed) {
             ThunkState::View(view) => {
                 self.0.replace(ThunkState::Dom((f.new)(view)));

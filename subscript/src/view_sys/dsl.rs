@@ -6,10 +6,10 @@ use std::rc::*;
 use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
-use crate::model_sys::reactive::{Signal, SignalSub, Status};
-use crate::model_sys::incremental::{IVecSub, IVec};
+use crate::signals_sys::*;
 use crate::program_sys::spec::Spec;
 use crate::view_sys::shared::*;
+use crate::program_sys::instances::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW
@@ -23,7 +23,11 @@ impl<Msg: 'static> View<Msg> {
         View(Dsl::Text(Text(Value::Static(String::from(value)))))
     }
     pub fn new_text_signal(cell: &Signal<String>) -> Self {
-        View(Dsl::Text(Text(Value::Dynamic(cell.new_subscriber()))))
+        let observer: CellObserver<String> = CellObserver::new(cell);
+        View(Dsl::Text(Text(Value::Dynamic(DynamicValue {
+            observer,
+            current: RefCell::new(cell.value.clone()),
+        }))))
     }
     pub fn new_element(tag: &str) -> Self {
         View(Dsl::Element(Element {
@@ -42,13 +46,14 @@ impl<Msg: 'static> View<Msg> {
             children: Vec::new(),
         }))
     }
-    pub fn new_linked_control<T: 'static>(vec: &IVec<T, Msg>, provision: impl Fn(&T)->View<Msg> + 'static) -> Self {
-        let sub = vec.new_subscriber(provision);
-        View(Dsl::Control(Control::Linked(sub)))
+    pub fn new_linked_control<T: 'static>(vec: &VecSignal<T>, init: impl Fn(&T)->View<Msg> + 'static) -> Self {
+        let observer = ViewVecObserver::new(&vec, init);
+        View(Dsl::Control(Control::Linked(observer)))
     }
     pub fn new_toggle_control(pred: &Signal<bool>, value: View<Msg>) -> Self {
+        let pred = CellObserver::new(&pred);
         View(Dsl::Control(Control::Toggle {
-            pred: pred.new_subscriber(),
+            pred,
             value: Rc::new(value),
         }))
     }
@@ -101,9 +106,11 @@ impl<Msg: 'static> View<Msg> {
                 })
             }
             Dsl::Control(Control::Toggle{pred, value}) => {
+                // Should this be None?
                 unimplemented!()
             }
             Dsl::Control(Control::Linked(sub)) => {
+                // Should this be None?
                 unimplemented!()
             }
             Dsl::Component(component) => None,
@@ -146,9 +153,9 @@ pub(crate) struct Mixin<Msg> {
 
 #[derive(Debug)]
 pub(crate) enum Control<Msg> {
-    Linked(IVecSub<Msg>),
+    Linked(ViewVecObserver<Msg>),
     Toggle {
-        pred: SignalSub<bool>,
+        pred: CellObserver<bool>,
         value: Rc<View<Msg>>,
     },
 }

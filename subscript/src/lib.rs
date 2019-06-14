@@ -2,11 +2,12 @@
 
 #[macro_use]
 pub mod backend;
-pub mod model_sys;
 #[macro_use]
 pub mod view_sys;
+#[macro_use]
 pub mod program_sys;
 pub mod dev;
+pub mod signals_sys;
 
 use wasm_bindgen::prelude::*;
 

@@ -9,18 +9,20 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::model_sys::incremental::{IVecSub, IVecSync};
+use crate::signals_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
 use crate::view_sys::extras::{DomThunk, EvalDomThunk};
 use crate::view_sys::dom::*;
 use crate::view_sys::runtime::common::*;
+use crate::program_sys::spec::*;
+use crate::program_sys::instances::TickEnv;
 
 
 
-impl<Msg> Dom<Msg> {
-    pub fn unsafe_tick_root(&mut self) {
-        let tick_element = |element: &mut Element<Msg>| {
+impl<Msg: 'static> Dom<Msg> {
+    pub fn unsafe_tick_root(&mut self, tick_env: &mut TickEnv<Msg>) {
+        let mut tick_element = |element: &mut Element<Msg>| {
             // SETUP
             let new_env = ElementEnv {
                 tag: &element.tag,
@@ -33,14 +35,14 @@ impl<Msg> Dom<Msg> {
                 children: &mut element.children,
             };
             // GO
-            tick_node_segment(segment, &new_env);
+            tick_node_segment(segment, &new_env, tick_env)
         };
         match self {
             Dom::Element(element) => tick_element(element),
             _ => panic!()
         }
     }
-    pub fn tick(&mut self, env: &ElementEnv) {
+    pub fn tick(&mut self, env: &ElementEnv, tick_env: &mut TickEnv<Msg>) {
         match self {
             Dom::Text(text) => {
                 text.value.if_changed(|value: &String| {
@@ -60,7 +62,7 @@ impl<Msg> Dom<Msg> {
                     children: &mut element.children,
                 };
                 // GO
-                tick_node_segment(segment, &new_env);
+                tick_node_segment(segment, &new_env, tick_env)
             }
             Dom::Mixin(mixin) => {
                 // SETUP
@@ -70,47 +72,51 @@ impl<Msg> Dom<Msg> {
                     children: &mut mixin.children,
                 };
                 // GO
-                tick_node_segment(segment, env);
+                tick_node_segment(segment, env, tick_env)
             }
             Dom::Control(Control::Toggle(toggle)) => {
-                toggle.pred.if_changed(|new_pred| {
-                    if new_pred.clone() {
+                if toggle.pred.get() {
+                    let current = toggle.dom.replace(None);
+                    if let Some(mut dom) = current {
+                        dom.tick(env, tick_env);
+                        toggle.dom.replace(Some(dom));
+                    } else {
                         let new_dom = toggle.template.build(env);
-                        let old = toggle.dom.replace(Some(new_dom));
-                        assert!(old.is_none());
+                        toggle.dom.replace(Some(new_dom));
                     }
-                    else {
-                        let old_dom = toggle.dom.replace(None);
-                        assert!(old_dom.is_some());
-                        if let Some(old_dom) = old_dom {
-                            old_dom.remove(env);
-                        }
+                } else {
+                    let current = toggle.dom.replace(None);
+                    if let Some(dom) = current {
+                        dom.remove(env);
                     }
-                });
+                }
             }
-            Dom::Control(Control::Linked(sub)) => {
-                sub.sync(IVecSync {
-                    active: move |children: &mut Vec<DomThunk<Msg>>| {
-                        for child in children.iter_mut().rev() {
-                            child.eval(EvalDomThunk {
-                                new: |view: View<Msg>| -> Dom<Msg> {
-                                    view.build(env)
-                                },
-                                update: |dom: &mut Dom<Msg>| {
-                                    dom.tick(&env);
-                                },
-                            });
-                            child.inspect(&mut |dom| {
-                                env.rightward.replace(dom.get_before_dom_ref());
-                            });
-                        }
-                    },
-                    remove: move |dom: Dom<Msg>| {
+            Dom::Control(Control::Linked(observer)) => {
+                use crate::signals_sys::vec::view_observer::{TickArgs, ViewItem};
+                observer.tick(TickArgs {
+                    removed: &mut |dom: Dom<Msg>| {
                         dom.remove(env);
                     },
+                    update: &mut |segment: &mut Vec<ViewItem<Msg>>| {
+                        for mut child in segment.iter_mut().rev() {
+                            match child {
+                                ViewItem::View(view) => {
+                                    let dom = view.build(env);
+                                    env.rightward.replace(dom.get_before_dom_ref());
+                                    *child = ViewItem::Dom(dom);
+                                }
+                                ViewItem::Dom(dom) => {
+                                    dom.tick(&env, tick_env);
+                                    env.rightward.replace(dom.get_before_dom_ref());
+                                }
+                            }
+                        }
+                    },
                 });
             }
-            Dom::Component(component) => {unimplemented!()}
+            Dom::Component(component) => {
+                component.tick(tick_env.system_messages);
+            }
         }
     }
 }
@@ -126,14 +132,18 @@ struct NodeSegment<'a, Msg> {
     children: &'a mut Vec<Dom<Msg>>,
 }
 
-fn tick_node_segment<'a, Msg>(segment: NodeSegment<'a, Msg>, env: &ElementEnv<'a>) {
+fn tick_node_segment<'a, Msg: 'static>(segment: NodeSegment<'a, Msg>, env: &ElementEnv<'a>, tick_env: &mut TickEnv<Msg>) {
+    // EVENTS
+    for handler in segment.events {
+        handler.tick(tick_env);
+    }
     // ATTRIBUTES
     for (key, value) in segment.attributes.iter() {
         update_attribute(key, value, env);
     }
     // CHILDREN
     for child in segment.children.iter_mut().rev() {
-        child.tick(&env);
+        child.tick(&env, tick_env);
         env.rightward.replace(child.get_before_dom_ref());
     }
 }

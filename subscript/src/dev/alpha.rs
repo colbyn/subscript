@@ -2,16 +2,31 @@ use std::marker::*;
 use std::rc::*;
 use std::collections::*;
 use std::any::*;
+use serde::{Serialize, Deserialize};
+
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi};
-use crate::model_sys::{incremental::*, reactive::*};
+use crate::signals_sys::*;
 use crate::view_sys::runtime::common::ElementEnv;
 use crate::view_sys::shared::*;
 use crate::view_sys::{dom, dsl, runtime, dom::{Dom, Element}, dsl::{View, Dsl}};
+use crate::program_sys::instances::Component;
+use crate::program_sys::spec::*;
+use crate::program_sys::{self, Program};
 
-#[derive(Debug, Default)]
+
+///////////////////////////////////////////////////////////////////////////////
+// DATA TYPES
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct AppSpec {
+
+}
+
+#[derive(Serialize, Deserialize, Default)]
 pub struct Model {
-
+    // entries: VecSignal<TodoItem>
 }
 
 #[derive(Debug)]
@@ -19,37 +34,42 @@ pub enum Msg {
 	NoOp
 }
 
-pub fn view(model: &Model) -> View<Msg> {v1!{
-    h1 {
-    	"Hello World";
+#[derive(Default)]
+pub struct TodoItem {
+    value: Signal<String>,
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SPEC
+///////////////////////////////////////////////////////////////////////////////
+
+impl Spec for AppSpec {
+    type Msg = Msg;
+    type Model = Model;
+
+    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
+        Init{
+            ..Default::default()
+        }
+    }
+    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut SubSystems<Self>) {
+        
+    }
+    fn view(&self, model: &Self::Model) -> View<Self::Msg> {v1!{
+        h1 {
+            "Todo";
+        }
+        // new_todo(model);
+    }}
+}
+
+pub fn new_todo(model: &Model) -> View<Msg> {v1!{
+    form {
+        input {
+            type = "text";
+        }
     }
 }}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// PROGRAM
-///////////////////////////////////////////////////////////////////////////////
-
-thread_local! {
-    pub(crate) static ROOT_PROCESS: std::cell::RefCell<Option<Process<Msg>>> = {
-    	std::cell::RefCell::new(None)
-    };
-}
-
-pub struct Process<Msg> {
-	dom: std::cell::RefCell<Dom<Msg>>,
-}
-
-impl<Msg> Process<Msg> {
-	fn new(view: View<Msg>) -> Self {
-		let dom = std::cell::RefCell::new(view.build_root());
-		Process{dom}
-	}
-	fn tick(&self) {
-		self.dom.borrow_mut().unsafe_tick_root();
-	}
-}
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -57,20 +77,15 @@ impl<Msg> Process<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn setup() {
-	let model = Model::default();
-	let process = Process::new(view(&model));
-	ROOT_PROCESS.with(|cell| {
-		cell.replace(Some(process));
-	});
+	let program = Program::from_component(Component {
+        name: String::from("root"),
+        spec: AppSpec{},
+    });
+    program.start();
 }
 
 pub fn tick() {
-	ROOT_PROCESS.with(|cell| {
-		let inner: &Option<Process<Msg>> = &cell.borrow();
-		if let Some(process) = inner {
-			process.tick();
-		}
-	});
+    program_sys::on_request_animation_frame();
 }
 
 
