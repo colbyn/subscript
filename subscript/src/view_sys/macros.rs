@@ -301,7 +301,7 @@ macro_rules! v1_impl {
     // VIEWABLE EXPRESSIONS
     ///////////////////////////////////////////////////////////////////////////
     ($env:expr; $value:expr; $($rest:tt)*) => {{
-        extend_env_with_mixable($env, $value);
+        run_view_extendable($env, $value);
         v1_impl!($env; $($rest)*);
     }};
 }

@@ -15,11 +15,13 @@ pub trait Viewable<Msg> {
 }
 
 
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // MIXABLE
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn extend_env_with_mixable<'a, Msg>(env: &mut ViewEnv<'a, Msg>, value: impl Mixable<Msg>) {
+pub fn run_view_extendable<'a, Msg>(env: &mut ViewEnv<'a, Msg>, value: impl ViewExt<Msg>) {
     value.extend(ViewEnv {
         styling: &mut env.styling,
         attributes: &mut env.attributes,
@@ -28,34 +30,34 @@ pub fn extend_env_with_mixable<'a, Msg>(env: &mut ViewEnv<'a, Msg>, value: impl 
     });
 }
 
-pub trait Mixable<Msg> {
+pub trait ViewExt<Msg> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>);
 }
 
-impl<Msg: 'static> Mixable<Msg> for &str {
+impl<Msg: 'static> ViewExt<Msg> for &str {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         env.children.push(View::new_text(self));
     }
 }
-impl<Msg: 'static> Mixable<Msg> for String {
+impl<Msg: 'static> ViewExt<Msg> for String {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         env.children.push(View::new_text(&self));
     }
 }
-impl<Msg: 'static> Mixable<Msg> for View<Msg> {
+impl<Msg: 'static> ViewExt<Msg> for View<Msg> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         env.children.push(self);
     }
 }
 
 
-impl<Msg: 'static> Mixable<Msg> for &Signal<String> {
+impl<Msg: 'static> ViewExt<Msg> for &Signal<String> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         let node = View::new_text_signal(self);
         env.children.push(node);
     }
 }
-impl<Msg: 'static, T: 'static> Mixable<Msg> for &VecSignal<T> where T: Viewable<Msg> {
+impl<Msg: 'static, T: 'static> ViewExt<Msg> for &VecSignal<T> where T: Viewable<Msg> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         env.children.push(View::new_linked_control(self, |item| item.view()));
     }
