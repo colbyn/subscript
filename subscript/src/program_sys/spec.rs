@@ -12,7 +12,8 @@ use crate::program_sys::instances::TickEnv;
 
 pub trait Spec where Self: Clone {
 	type Msg;
-	type Model: Serialize + DeserializeOwned;
+	// type Model: Serialize + DeserializeOwned;
+    type Model;
 	
 	fn init(&self, startup: StartupInfo<Self>) -> Init<Self>;
 	fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut SubSystems<Self>);
@@ -209,7 +210,8 @@ pub(crate) fn process_system_requests<S: Spec + 'static>(name: &str, model: &S::
     for msg in sys.requests.drain(..) {
         match msg {
             SystemRequest::Save => {
-                save_model::<S>(name, model);
+                // save_model::<S>(name, model);
+                unimplemented!()
             }
             SystemRequest::Message(msg) => {
                 register_message(msg);
@@ -227,15 +229,17 @@ pub(crate) fn spec_key<S: Spec + 'static>(name: &str) -> String {
 }
 
 pub(crate) fn save_model<S: Spec + 'static>(name: &str, model: &S::Model) {
-    browser::window()
-        .local_storage
-        .set::<S::Model>(&spec_key::<S>(name), model);
+    unimplemented!()
+    // browser::window()
+    //     .local_storage
+    //     .set::<S::Model>(&spec_key::<S>(name), model);
 }
 
 pub(crate) fn load_saved_model<S: Spec + 'static>(name: &str) -> Option<S::Model> {
-    browser::window()
-        .local_storage
-        .get::<S::Model>(&spec_key::<S>(name))
+    unimplemented!()
+    // browser::window()
+    //     .local_storage
+    //     .get::<S::Model>(&spec_key::<S>(name))
 }
 
 pub(crate) fn register_message(msg: SystemMessage) {

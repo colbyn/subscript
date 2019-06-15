@@ -8,7 +8,7 @@ use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::program_sys::spec::{Spec, StartupInfo};
 use crate::program_sys::instances::*;
 use crate::view_sys::dom::Dom;
@@ -491,30 +491,30 @@ pub trait AttributeValue {
 }
 impl AttributeValue for &str {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
-        Left(Value::Static(self.to_owned().to_string()))
+        Left(Value::Static(Rc::new(self.to_owned().to_string())))
     }
 }
 impl AttributeValue for str {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
-        Left(Value::Static(String::from(self)))
+        Left(Value::Static(Rc::new(String::from(self))))
     }
 }
 impl AttributeValue for String {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
-        Left(Value::Static(self.clone()))
+        Left(Value::Static(Rc::new(self.clone())))
     }
 }
 impl AttributeValue for bool {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
-        Right(Value::Static(self.clone()))
+        Right(Value::Static(Rc::new(self.clone())))
     }
 }
 impl AttributeValue for &Signal<String> {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
-        let observer = CellObserver::new(self);
+        let signal_output = self.signal_output();
         Left(Value::Dynamic(DynamicValue {
-            current: RefCell::new(self.value.clone()),
-            observer,
+            current: Rc::new(RefCell::new(signal_output.get())),
+            observer: signal_output,
         }))
     }
 }
@@ -525,17 +525,20 @@ impl AttributeValue for &Signal<String> {
 // MISCELLANEOUS
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
-pub enum Value<T: Clone> {
-    Static(T),
+#[derive(Debug)]
+pub enum Value<T> {
+    Static(Rc<T>),
     Dynamic(DynamicValue<T>),
 }
-#[derive(Debug, Clone)]
-pub struct DynamicValue<T: Clone> {
-    pub(crate) observer: CellObserver<T>,
-    pub(crate) current: RefCell<T>,
+
+#[derive(Debug)]
+pub struct DynamicValue<T> {
+    pub(crate) observer: SignalOutput<T>,
+    pub(crate) current: Rc<RefCell<Rc<T>>>,
 }
-impl<T> Value<T> where T: Clone + Debug + PartialEq + 'static {
+
+
+impl<T> Value<T> where T: PartialEq + 'static {
     pub(crate) fn if_changed(&self, f: impl Fn(&T)) {
         match &self {
             Value::Dynamic(dynamic) => {
@@ -549,7 +552,7 @@ impl<T> Value<T> where T: Clone + Debug + PartialEq + 'static {
             Value::Static(_) => {}
         }
     }
-    pub(crate) fn get(&self) -> T {
+    pub(crate) fn get(&self) -> Rc<T> {
         match &self {
             Value::Dynamic(dynamic) => {
                 let upstream = dynamic.observer.get();
@@ -577,6 +580,25 @@ impl<T> Value<T> where T: Clone + Debug + PartialEq + 'static {
         }
     }
 }
+
+
+impl<T> Clone for Value<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Value::Static(x) => Value::Static(x.clone()),
+            Value::Dynamic(x) => Value::Dynamic(x.clone()),
+        }
+    }
+}
+impl<T> Clone for DynamicValue<T> {
+    fn clone(&self) -> Self {
+        DynamicValue {
+            observer: self.observer.clone(),
+            current: self.current.clone(),
+        }
+    }
+}
+
 
 
 

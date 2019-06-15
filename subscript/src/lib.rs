@@ -7,7 +7,7 @@ pub mod view_sys;
 #[macro_use]
 pub mod program_sys;
 pub mod dev;
-pub mod signals_sys;
+pub mod reactive_sys;
 
 use wasm_bindgen::prelude::*;
 

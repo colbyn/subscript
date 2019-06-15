@@ -7,9 +7,7 @@ use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
-use crate::signals_sys::basic::{Signal, SignalObserver};
-use crate::signals_sys::vec::{VecSignal, VecObserver};
-use crate::signals_sys::vec::view_observer::{ViewVecObserver};
+use crate::reactive_sys::*;
 use crate::view_sys::dom::Dom;
 use crate::program_sys::spec::*;
 

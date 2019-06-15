@@ -7,7 +7,7 @@ use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::view_sys::dsl::{View};
 use crate::view_sys::shared::*;
 use crate::program_sys::instances::*;
@@ -58,7 +58,7 @@ pub(crate) enum Control<Msg> {
 
 #[derive(Debug)]
 pub(crate) struct Toggle<Msg> {
-    pub pred: CellObserver<bool>,
+    pub pred: SignalOutput<bool>,
     pub template: Rc<View<Msg>>,
     pub dom: RefCell<Option<Dom<Msg>>>,
 }

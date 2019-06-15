@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi};
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::view_sys::runtime::common::ElementEnv;
 use crate::view_sys::shared::*;
 use crate::view_sys::{dom, dsl, runtime, dom::{Dom, Element}, dsl::{View, Dsl}};
@@ -32,17 +32,17 @@ pub enum Msg {
     SubmitTodo
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Default)]
 pub struct Model {
     display: Signal<Display>,
     new_todo: Signal<String>,
     entries: VecSignal<TodoEntry>
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Default)]
 pub struct TodoEntry {
-    display: ComputedSignal<Display, bool>,
-    completed: bool,
+    display: Option<SignalOutput<bool>>,
+    completed: Signal<bool>,
     value: Signal<String>,
 }
 
@@ -109,26 +109,27 @@ impl Spec for AppSpec {
         }
     }
     fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut SubSystems<Self>) {
-        match msg {
-            Msg::NoOp => {}
-            Msg::SubmitTodo => {
-                if !model.new_todo.get().is_empty() {
-                    let text = model.new_todo.map_mut(|x| x.drain(..).collect::<String>());
-                    let display: ComputedSignal<Display, bool> = model.display
-                        .computed(move |display: &Display| -> bool {
-                            display == &Display::All
-                        });
-                    model.entries.push(TodoEntry {
-                        display,
-                        completed: false,
-                        value: Signal::new(text),
-                    });
-                }
-            }
-            Msg::NewTodo(x) => {
-                model.new_todo.set(x);
-            }
-        }
+        // match msg {
+        //     Msg::NoOp => {}
+        //     Msg::SubmitTodo => {
+        //         if !model.new_todo.get().is_empty() {
+        //             let text = model.new_todo.map_mut(|x| x.drain(..).collect::<String>());
+        //             let completed: Signal<bool> = Signal::new(false);
+        //             let display: ComputedSignal<Display, bool> = model.display
+        //                 .computed(move |display: &Display| -> bool {
+        //                     display == &Display::All
+        //                 });
+        //             model.entries.push(TodoEntry {
+        //                 display,
+        //                 completed,
+        //                 value: Signal::new(text),
+        //             });
+        //         }
+        //     }
+        //     Msg::NewTodo(x) => {
+        //         model.new_todo.set(x);
+        //     }
+        // }
     }
     fn view(&self, model: &Self::Model) -> View<Self::Msg> {v1!{
         h1 {

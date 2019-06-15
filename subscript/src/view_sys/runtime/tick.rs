@@ -9,7 +9,7 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
 use crate::view_sys::extras::{DomThunk, EvalDomThunk};
@@ -75,7 +75,7 @@ impl<Msg: 'static> Dom<Msg> {
                 tick_node_segment(segment, env, tick_env)
             }
             Dom::Control(Control::Toggle(toggle)) => {
-                if toggle.pred.get() {
+                if toggle.pred.get().as_ref().clone() {
                     let current = toggle.dom.replace(None);
                     if let Some(mut dom) = current {
                         dom.tick(env, tick_env);
@@ -92,7 +92,7 @@ impl<Msg: 'static> Dom<Msg> {
                 }
             }
             Dom::Control(Control::Linked(observer)) => {
-                use crate::signals_sys::vec::view_observer::{TickArgs, ViewItem};
+                use crate::reactive_sys::vec::view_observer::{TickArgs, ViewItem};
                 observer.tick(TickArgs {
                     removed: &mut |dom: Dom<Msg>| {
                         dom.remove(env);

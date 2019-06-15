@@ -8,7 +8,8 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::view_sys::{dsl::View, dom::Dom};
-use crate::signals_sys::vec::{VecSignal, VecObserver};
+use crate::reactive_sys::vec::{VecSignal, VecObserver};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // EXTERNAL INTERFACE

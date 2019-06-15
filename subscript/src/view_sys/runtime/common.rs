@@ -8,7 +8,7 @@ use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
 use crate::view_sys::dom::*;
@@ -104,7 +104,7 @@ impl<Msg> Dom<Msg> {
                 }
             }
             Dom::Control(Control::Linked(observer)) => {
-                use crate::signals_sys::vec::view_observer::ViewItem;
+                use crate::reactive_sys::vec::view_observer::ViewItem;
                 if let Right(dom) = observer.terminate() {
                     for child in dom.removed {
                         child.remove(env);
@@ -127,7 +127,7 @@ pub(crate) fn set_attribute<'a>(key: &String, value: &Either<Value<String>, Valu
             element.dom_ref.set_attribute(key.as_str(), value.get().as_str());
         }
         Right(value) => {
-            if value.get() {
+            if value.get().as_ref().clone() {
                 element.dom_ref.set_attribute(key.as_str(), "");
             } else {
                 element.dom_ref.remove_attribute(key.as_str());
@@ -149,7 +149,7 @@ pub(crate) fn set_attribute<'a>(key: &String, value: &Either<Value<String>, Valu
             Right(value) => {
                 let node_ref: JsValue = element.dom_ref.dom_ref();
                 let node_ref: web_sys::HtmlInputElement = From::from(node_ref);
-                node_ref.set_checked(value.get());
+                node_ref.set_checked(value.get().as_ref().clone());
             }
             _ => ()
         }
@@ -232,7 +232,7 @@ impl<Msg: 'static> Dom<Msg> {
             }
             Dom::Control(Control::Toggle(toggle)) => {
                 let mut result = None;
-                if toggle.pred.get() {
+                if toggle.pred.get().as_ref().clone() {
                     let inner: &Option<Dom<Msg>> = &toggle.dom.borrow();
                     assert!(inner.is_some());
                     if let Some(dom) = inner {

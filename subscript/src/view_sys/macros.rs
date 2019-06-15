@@ -400,7 +400,7 @@ macro_rules! clone_ident_arguments_inner {
 
 pub mod dev {
     use crate::view_sys::dsl::View;
-    use crate::signals_sys::*;
+    use crate::reactive_sys::*;
 
     pub enum Msg {
         NoOP,
@@ -409,7 +409,7 @@ pub mod dev {
 
     pub struct Model {
         value: Signal<String>,
-        display: ComputedSignal<String, bool>
+        display: Signal<bool>
     }
 
     pub fn dev(model: &Model) -> View<Msg> {v1!{

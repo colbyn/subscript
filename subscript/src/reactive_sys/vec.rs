@@ -18,13 +18,6 @@ pub trait VecObserver<T> {
     fn remove_op(&mut self, ix: usize);
 }
 
-// impl<Msg> std::fmt::Debug for VecSignal<Msg> {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "EventHandler")
-//     }
-// }
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // SIGNAL
 ///////////////////////////////////////////////////////////////////////////////
@@ -75,4 +68,3 @@ impl<T> VecSignal<T> {
         self.observers.borrow_mut().push(Box::new(new));
     }
 }
-

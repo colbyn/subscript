@@ -7,7 +7,7 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::view_sys::dsl::{self as dsl, Dsl, View};
 use crate::view_sys::shared::*;
 use crate::view_sys::dom::*;
@@ -84,7 +84,7 @@ impl<Msg: 'static> View<Msg> {
             }
             Dsl::Control(dsl::Control::Toggle{pred, value}) => {
                 let mut dom: Option<Dom<Msg>> = None;
-                if pred.get() {
+                if pred.get().as_ref().clone() {
                     dom = Some(value.build(env));
                 }
                 Dom::Control(Control::Toggle(Box::new(Toggle{

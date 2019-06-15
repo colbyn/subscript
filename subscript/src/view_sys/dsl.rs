@@ -6,7 +6,7 @@ use std::rc::*;
 use either::{Either, Either::*};
 use wasm_bindgen::JsValue;
 
-use crate::signals_sys::*;
+use crate::reactive_sys::*;
 use crate::program_sys::spec::Spec;
 use crate::view_sys::shared::*;
 use crate::program_sys::instances::*;
@@ -20,18 +20,14 @@ pub struct View<Msg>(pub(crate) Dsl<Msg>);
 
 impl<Msg: 'static> View<Msg> {
     pub fn new_text(value: &str) -> Self {
-        View(Dsl::Text(Text(Value::Static(String::from(value)))))
+        View(Dsl::Text(Text(Value::Static(Rc::new(String::from(value))))))
     }
-    pub fn new_text_signal(cell: &Reactive<String>) -> Self
+    pub fn new_text_signal(cell: &UnitSignal<String>) -> Self
     {
-        let observer: CellObserver<String> = CellObserver::new(cell);
-        let value = match cell.get_either_val_or_ref() {
-            Left(x) => x,
-            Right(x) => x.clone(),
-        };
+        let observer: SignalOutput<String> = cell.signal_output();
         View(Dsl::Text(Text(Value::Dynamic(DynamicValue {
+            current: Rc::new(RefCell::new(observer.get())),
             observer,
-            current: RefCell::new(value),
         }))))
     }
     pub fn new_element(tag: &str) -> Self {
@@ -55,11 +51,11 @@ impl<Msg: 'static> View<Msg> {
         let observer = ViewVecObserver::new(&vec, init);
         View(Dsl::Control(Control::Linked(observer)))
     }
-    pub fn new_toggle_control(pred: &Reactive<bool>, value: View<Msg>) -> Self {
-        let pred = CellObserver::new(pred);
+    pub fn new_toggle_control(pred: &UnitSignal<bool>, value: View<Msg>) -> Self {
+        let pred = pred.signal_output();
         View(Dsl::Control(Control::Toggle {
-            pred,
             value: Rc::new(value),
+            pred,
         }))
     }
     pub fn new_component<S: Spec + 'static >(name: &str, spec: S) -> Self {
@@ -71,7 +67,7 @@ impl<Msg: 'static> View<Msg> {
     pub fn text(&mut self, value: &str) {
         self.push_child(View::new_text(value));
     }
-    pub fn text_cell(&mut self, value: &Reactive<String>) {
+    pub fn text_cell(&mut self, value: &UnitSignal<String>) {
         self.push_child(View::new_text_signal(value));
     }
     pub fn tag(&mut self, tag: &str, inner: impl FnMut(&mut View<Msg>)) {
@@ -160,7 +156,7 @@ pub(crate) struct Mixin<Msg> {
 pub(crate) enum Control<Msg> {
     Linked(ViewVecObserver<Msg>),
     Toggle {
-        pred: CellObserver<bool>,
+        pred: SignalOutput<bool>,
         value: Rc<View<Msg>>,
     },
 }
