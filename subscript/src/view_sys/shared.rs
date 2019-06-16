@@ -520,6 +520,25 @@ impl AttributeValue for &Signal<String> {
 }
 
 
+// MAPPED-EVENT-HANDLER
+impl<Msg: 'static> EventHandler<Msg> {
+    pub(crate) fn map_msg_impl<T: 'static>(self, f: Rc<Fn(Msg)->T>) -> EventHandler<T> {
+        EventHandler(Rc::new(MappedEventHandler {inner: self,f}))
+    }
+}
+pub(crate) struct MappedEventHandler<T, U> {
+    f: Rc<Fn(T)->U>,
+    inner: EventHandler<T>,
+}
+impl<T, U> EventHandlerImpl<U> for MappedEventHandler<T, U> {
+    fn apply(&self, event: JsValue) -> U {
+        (self.f)(self.inner.apply(event))
+    }
+    fn event_type(&self) -> String {
+        self.inner.event_type()
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS

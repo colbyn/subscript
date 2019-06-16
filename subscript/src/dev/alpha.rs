@@ -25,9 +25,9 @@ pub struct AppSpec {
 
 }
 
-#[derive(Debug)]
 pub enum Msg {
     NoOp,
+    Display(Display),
     NewTodo(String),
     SubmitTodo
 }
@@ -41,9 +41,9 @@ pub struct Model {
 
 #[derive(Default)]
 pub struct TodoEntry {
-    display: Option<SignalOutput<bool>>,
+    visible: Option<SignalOutput<bool>>,
     completed: Signal<bool>,
-    value: Signal<String>,
+    value: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
@@ -53,29 +53,16 @@ pub enum Display {
     Completed,
 }
 
+type EntryCompleted = bool;
+
+///////////////////////////////////////////////////////////////////////////////
+// MISCELLANEOUS
+///////////////////////////////////////////////////////////////////////////////
+
+
 impl Default for Display {
     fn default() -> Self {
         Display::All
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// METHOD UTILS
-///////////////////////////////////////////////////////////////////////////////
-
-impl TodoEntry {
-    pub fn set_display(&mut self, current: Display) {
-        // match current {
-        //     Display::All => {
-        //         self.display.set(true);
-        //     }
-        //     Display::Active => {
-        //         self.display.set(!self.completed);
-        //     }
-        //     Display::Completed => {
-        //         self.display.set(self.completed);
-        //     }
-        // }
     }
 }
 
@@ -108,35 +95,54 @@ impl Spec for AppSpec {
             ..Default::default()
         }
     }
-    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut SubSystems<Self>) {
-        // match msg {
-        //     Msg::NoOp => {}
-        //     Msg::SubmitTodo => {
-        //         if !model.new_todo.get().is_empty() {
-        //             let text = model.new_todo.map_mut(|x| x.drain(..).collect::<String>());
-        //             let completed: Signal<bool> = Signal::new(false);
-        //             let display: ComputedSignal<Display, bool> = model.display
-        //                 .computed(move |display: &Display| -> bool {
-        //                     display == &Display::All
-        //                 });
-        //             model.entries.push(TodoEntry {
-        //                 display,
-        //                 completed,
-        //                 value: Signal::new(text),
-        //             });
-        //         }
-        //     }
-        //     Msg::NewTodo(x) => {
-        //         model.new_todo.set(x);
-        //     }
-        // }
+    fn update(&self, model: &mut Model, msg: Msg, sys: &mut SubSystems<Self>) {
+        // OPERATIONS
+        fn new_todo(model: &mut Model) {
+            let value = model.new_todo.get_copy();
+            let completed: Signal<bool> = Signal::new(false);
+            let visible: SignalOutput<bool> = model.display
+                .zip(&completed)
+                .map(move |(display, completed)| -> bool {
+                    match display {
+                        Display::All => true,
+                        Display::Active => {
+                            !completed.clone()
+                        }
+                        Display::Completed => {
+                            completed.clone()
+                        }
+                    }
+                });
+            model.entries.push(TodoEntry {
+                visible: Some(visible),
+                completed,
+                value,
+            });
+            model.new_todo.set(String::new());
+        }
+        // GO
+        match msg {
+            Msg::NoOp => {}
+            Msg::Display(display) => {
+                model.display.set(display);
+            }
+            Msg::SubmitTodo => {
+                if !model.new_todo.get().is_empty() {
+                    new_todo(model);
+                }
+            }
+            Msg::NewTodo(x) => {
+                model.new_todo.set(x);
+            }
+        }
     }
-    fn view(&self, model: &Self::Model) -> View<Self::Msg> {v1!{
+    fn view(&self, model: &Model) -> View<Msg> {v1!{
         h1 {
             "Todo";
         }
         new_todo(model);
         &model.entries;
+        footer(model);
     }}
 }
 
@@ -155,17 +161,38 @@ pub fn new_todo(model: &Model) -> View<Msg> {v1!{
     }
 }}
 
+pub fn footer(model: &Model) -> View<Msg> {v1!{
+    button {
+        event.click[] => || {
+            Msg::Display(Display::All)
+        };
+        "All";
+    }
+    button {
+        event.click[] => || {
+            Msg::Display(Display::Active)
+        };
+        "Active";
+    }
+    button {
+        event.click[] => || {
+            Msg::Display(Display::Completed)
+        };
+        "Completed";
+    }
+    // if &model.display.map(|display: &Display| display == &Display::All) => {
+
+    // };
+}}
 
 ///////////////////////////////////////////////////////////////////////////////
 // DEV
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn setup() {
-	let program = Program::from_component(Component {
-        name: String::from("root"),
-        spec: AppSpec{},
+	Program::run_spec(AppSpec{
+
     });
-    program.start();
 }
 
 pub fn tick() {

@@ -76,6 +76,7 @@ impl<Msg: 'static> ViewVecObserver<Msg> {
     pub(crate) fn tick(&mut self, args: TickArgs<Msg>) {
         self.0.tick(args);
     }
+
 }
 
 impl<Msg> ViewVecObserver<Msg> {
@@ -83,6 +84,7 @@ impl<Msg> ViewVecObserver<Msg> {
         self.0.terminate()
     }
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // INTERNAL INTERFACE
@@ -300,6 +302,7 @@ pub(crate) enum ViewItem<Msg> {
     View(View<Msg>),
     Dom(Dom<Msg>),
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

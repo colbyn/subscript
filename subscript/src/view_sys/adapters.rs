@@ -16,9 +16,8 @@ pub trait Viewable<Msg> {
 
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
-// MIXABLE
+// VIEW-EXT
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn run_view_extendable<'a, Msg>(env: &mut ViewEnv<'a, Msg>, value: impl ViewExt<Msg>) {
@@ -37,6 +36,11 @@ pub trait ViewExt<Msg> {
 impl<Msg: 'static> ViewExt<Msg> for &str {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         env.children.push(View::new_text(self));
+    }
+}
+impl<Msg: 'static> ViewExt<Msg> for &String {
+    fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
+        env.children.push(View::new_text(&self));
     }
 }
 impl<Msg: 'static> ViewExt<Msg> for String {

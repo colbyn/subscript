@@ -18,6 +18,12 @@ use crate::program_sys::instances::*;
 #[derive(Debug)]
 pub struct View<Msg>(pub(crate) Dsl<Msg>);
 
+impl<Msg> Clone for View<Msg> {
+    fn clone(&self) -> Self {
+        View(self.0.clone())
+    }
+}
+
 impl<Msg: 'static> View<Msg> {
     pub fn new_text(value: &str) -> Self {
         View(Dsl::Text(Text(Value::Static(Rc::new(String::from(value))))))
@@ -132,7 +138,7 @@ pub(crate) enum Dsl<Msg> {
     Control(Control<Msg>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Text(pub Value<String>);
 
 #[derive(Debug)]
@@ -161,6 +167,49 @@ pub(crate) enum Control<Msg> {
     },
 }
 
+impl<Msg> Clone for Dsl<Msg> {
+    fn clone(&self) -> Self {
+        match self {
+            Dsl::Component(x) => Dsl::Component(x.clone()),
+            Dsl::Text(x) => Dsl::Text(x.clone()),
+            Dsl::Element(x) => Dsl::Element(x.clone()),
+            Dsl::Mixin(x) => Dsl::Mixin(x.clone()),
+            Dsl::Control(x) => Dsl::Control(x.clone()),
+        }
+    }
+}
+impl<Msg> Clone for Element<Msg> {
+    fn clone(&self) -> Self {
+        Element {
+            tag: self.tag.clone(),
+            styling: self.styling.clone(),
+            attributes: self.attributes.clone(),
+            events: self.events.clone(),
+            children: self.children.clone(),
+        }
+    }
+}
+impl<Msg> Clone for Mixin<Msg> {
+    fn clone(&self) -> Self {
+        Mixin {
+            styling: self.styling.clone(),
+            attributes: self.attributes.clone(),
+            events: self.events.clone(),
+            children: self.children.clone(),
+        }
+    }
+}
+impl<Msg> Clone for Control<Msg> {
+    fn clone(&self) -> Self {
+        match self {
+            Control::Linked(x) => Control::Linked(x.clone()),
+            Control::Toggle{pred,value} => Control::Toggle{
+                pred: pred.clone(),
+                value: value.clone(),
+            },
+        }
+    }
+}
 
 impl std::fmt::Debug for SubComponent {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -175,5 +224,4 @@ pub struct ViewEnv<'a, Msg> {
     pub(crate) events: &'a mut Vec<EventHandler<Msg>>,
     pub(crate) children: &'a mut Vec<View<Msg>>,
 }
-
 

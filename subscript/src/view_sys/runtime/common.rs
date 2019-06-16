@@ -210,12 +210,12 @@ pub(crate) fn update_attribute<'a>(key: &String, value: &Either<Value<String>, V
 }
 
 impl<Msg: 'static> Dom<Msg> {
-    pub(crate) fn get_before_dom_ref(&self) -> Option<Box<browser::NodeApi>> {
+    pub(crate) fn get_first_dom_ref(&self) -> Option<Box<browser::NodeApi>> {
         fn check_children<Msg: 'static>(children: &Vec<Dom<Msg>>) -> Option<Box<browser::NodeApi>> {
             let mut result: Option<Box<browser::NodeApi>> = None;
             for child in children.iter() {
                 if result.is_none() {
-                    result = child.get_before_dom_ref();
+                    result = child.get_first_dom_ref();
                 }
             }
             result
@@ -225,7 +225,7 @@ impl<Msg: 'static> Dom<Msg> {
                 let mut result: Option<Box<browser::NodeApi>> = None;
                 observer.for_each_dom_node(&mut |node: &Dom<Msg>| {
                     if result.is_none() {
-                        result = node.get_before_dom_ref();
+                        result = node.get_first_dom_ref();
                     }
                 });
                 result
@@ -236,7 +236,7 @@ impl<Msg: 'static> Dom<Msg> {
                     let inner: &Option<Dom<Msg>> = &toggle.dom.borrow();
                     assert!(inner.is_some());
                     if let Some(dom) = inner {
-                        result = dom.get_before_dom_ref();
+                        result = dom.get_first_dom_ref();
                     }
                 }
                 result

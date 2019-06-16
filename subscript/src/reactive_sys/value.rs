@@ -170,7 +170,11 @@ impl<T: 'static> Value<T> {
     {
         let subscribers: SubscribersRef<(T, U)> =
             SubscribersRef::Own(Rc::new(RefCell::new(Vec::new())));
-        let current_value: Rc<RefCell<Rc<(T, U)>>> = Rc::new(RefCell::new(unimplemented!()));
+        let current_value: Rc<RefCell<Rc<(T, U)>>> = Rc::new(RefCell::new({
+            let left: T = (self.getter)().as_ref().clone();
+            let right: U = (other.getter)().as_ref().clone();
+            Rc::new((left, right))
+        }));
         let getter: Rc<Fn()->Rc<(T, U)>> = Rc::new({
             let current_value = current_value.clone();
             move || {

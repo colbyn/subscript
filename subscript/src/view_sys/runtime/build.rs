@@ -3,6 +3,7 @@ use std::any::*;
 use std::marker::*;
 use std::cell::*;
 use std::rc::*;
+use wasm_bindgen::JsValue;
 use either::{Either, Either::*};
 
 use crate::backend::browser;
@@ -17,25 +18,24 @@ use crate::program_sys::instances::*;
 
 
 impl<Msg: 'static> View<Msg> {
-    pub(crate) fn build_root(&self) -> Dom<Msg> {
-        let build_root = |view: &View<Msg>| -> Dom<Msg> {
-            let mut mount: Element<Msg> = Element {
-                dom_ref: browser::window().document.create_element("div"),
-                auto_listeners: Vec::new(),
-                tag: String::from("div"),
-                styling: Styling::default(),
-                attributes: HashMap::new(),
-                events: Vec::new(),
-                children: Vec::new(),
-            };
-            css_runtime::register_defaults(&mount.dom_ref);
-            mount.children.push(view.build(&ElementEnv {
-                tag: mount.tag.as_str(),
-                dom_ref: &mount.dom_ref,
+    pub(crate) fn build_root(self) -> Dom<Msg> {
+        let build_root = |view: View<Msg>| -> Dom<Msg> {
+            let tag = String::from("main");
+            let dom_ref = browser::window().document.create_element(tag.as_str());
+            css_runtime::register_defaults(&dom_ref);
+            let new_env = ElementEnv {
+                tag: tag.as_str(),
+                dom_ref: &dom_ref,
                 rightward: &RefCell::new(None),
-            }));
-            browser::window().document.body.append_child(&mount.dom_ref);
-            Dom::Element(mount)
+            };
+            let DomSegment{styling,attributes,events, children} = build_dom_segment(&new_env, ViewSegment {
+                styling: &Default::default(),
+                attributes: &Default::default(),
+                events: &Default::default(),
+                children: &vec![view],
+            });
+            browser::window().document.body.append_child(&dom_ref);
+            Dom::Element(Element {styling,dom_ref,auto_listeners: Vec::new(),tag,attributes,events,children})
         };
         build_root(self)
     }
@@ -46,9 +46,28 @@ impl<Msg: 'static> View<Msg> {
                 let dom_ref = window.document
                     .create_text_node(text.0.get().as_str());
                 insert_child(&dom_ref, env);
+                env.rightward.replace(Some(Box::new(dom_ref.clone())));
                 Dom::Text(Text{value: text.0.clone(), dom_ref})
             }
             Dsl::Element(x) => {
+                // {
+                //     let inner: &Option<Box<browser::NodeApi>> = &env.rightward.borrow();
+                //     match inner {
+                //         None => {
+                //             console!("---");
+                //             console!("> {parent} - {tag}", parent=env.tag, tag=&x.tag);
+                //             console!("---");
+                //         }
+                //         Some(value) => {
+                //             let value: JsValue = value.dom_ref();
+                //             console!("---");
+                //             console!("> {parent} - {tag}", parent=env.tag, tag=&x.tag);
+                //             web_sys::console::log_1(&value);
+                //             console!("---");
+                //         }
+                //     }
+                // }
+                // web_sys::console::log_1(env.rightward);
                 let tag = x.tag.clone();
                 let dom_ref = browser::window().document.create_element(tag.as_str());
                 css_runtime::register_defaults(&dom_ref);
@@ -65,12 +84,14 @@ impl<Msg: 'static> View<Msg> {
                     children: &x.children,
                 });
                 insert_child(&dom_ref, env);
+                env.rightward.replace(Some(Box::new(dom_ref.clone())));
                 Dom::Element(Element {styling,dom_ref,auto_listeners,tag,attributes,events,children})
             }
             Dsl::Component(x) => {
                 let dom_ref = window.document
                     .create_element("div");
                 insert_child(&dom_ref, env);
+                env.rightward.replace(Some(Box::new(dom_ref.clone())));
                 Dom::Component(LiveComponent(x.build()))
             }
             Dsl::Mixin(x) => {
@@ -166,7 +187,6 @@ fn build_dom_segment<'a, Msg: 'static>(env: &ElementEnv<'a>, view_segment: ViewS
     // CHILDREN
     for new_child in children.into_iter().rev() {
         let child = new_child.build(env);
-        env.rightward.replace(child.get_before_dom_ref());
         dom_segment.children.insert(0, child);
     }
     // DONE

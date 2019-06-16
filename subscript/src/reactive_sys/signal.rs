@@ -35,11 +35,17 @@ impl<T: 'static> Signal<T> {
     pub fn get(&self) -> Rc<T> {
         self.0.get()
     }
-    pub fn set(&self, x: T) {
+    pub fn get_copy(&self) -> T where T: Clone {
+        self.0.get().as_ref().clone()
+    }
+    pub fn set(&mut self, x: T) {
         self.0.set(x);
     }
     pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> SignalOutput<U> {
         SignalOutput(self.0.map(f))
+    }
+    pub(crate) fn map_mut<U: 'static>(&self, f: impl Fn(&mut T) -> U + 'static) -> SignalOutput<U> {
+        unimplemented!()
     }
     pub(crate) fn zip<U: 'static>(&self, other: &UnitSignal<U>) -> SignalOutput<(T, U)>
     where

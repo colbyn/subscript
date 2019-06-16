@@ -48,6 +48,8 @@ impl<Msg: 'static> Dom<Msg> {
                 text.value.if_changed(|value: &String| {
                     text.dom_ref.set_text_content(value);
                 });
+                // DONE
+                env.rightward.replace(Some(Box::new(text.dom_ref.clone())));
             }
             Dom::Element(element) => {
                 // SETUP
@@ -62,7 +64,9 @@ impl<Msg: 'static> Dom<Msg> {
                     children: &mut element.children,
                 };
                 // GO
-                tick_node_segment(segment, &new_env, tick_env)
+                tick_node_segment(segment, &new_env, tick_env);
+                // DONE
+                env.rightward.replace(Some(Box::new(element.dom_ref.clone())));
             }
             Dom::Mixin(mixin) => {
                 // SETUP
@@ -102,12 +106,10 @@ impl<Msg: 'static> Dom<Msg> {
                             match child {
                                 ViewItem::View(view) => {
                                     let dom = view.build(env);
-                                    env.rightward.replace(dom.get_before_dom_ref());
                                     *child = ViewItem::Dom(dom);
                                 }
                                 ViewItem::Dom(dom) => {
                                     dom.tick(&env, tick_env);
-                                    env.rightward.replace(dom.get_before_dom_ref());
                                 }
                             }
                         }
@@ -144,7 +146,6 @@ fn tick_node_segment<'a, Msg: 'static>(segment: NodeSegment<'a, Msg>, env: &Elem
     // CHILDREN
     for child in segment.children.iter_mut().rev() {
         child.tick(&env, tick_env);
-        env.rightward.replace(child.get_before_dom_ref());
     }
 }
 

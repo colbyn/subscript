@@ -63,6 +63,7 @@ macro_rules! v1_impl {
         if let Some(mut inner_env) = mixin.get_env() {
             v1_impl!(&mut inner_env; $($x)*);
         }
+        else {panic!()}
         $env.children.push(View::new_toggle_control($pred, mixin));
         v1_impl!($env; $($rest)*);
     }};
@@ -294,6 +295,7 @@ macro_rules! v1_impl {
         if let Some(mut inner_env) = new_element.get_env() {
             v1_impl!(&mut inner_env; $($x)*);
         }
+        else {panic!()}
         $env.children.push(new_element);
         v1_impl!($env; $($rest)*);
     }};
