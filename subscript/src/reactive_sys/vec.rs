@@ -54,28 +54,28 @@ impl<T> VecSignal<T> {
         for sub in self.ops_subscribers.borrow_mut().iter_mut() {
             sub.push_op(&value);
         }
+        self.value.borrow_mut().push(value);
         for sub in self.change_subscribers.borrow_mut().iter_mut() {
             sub(&self.value.borrow());
         }
-        self.value.borrow_mut().push(value);
     }
     pub fn insert(&mut self, ix: usize, value: T) {
         for sub in self.ops_subscribers.borrow_mut().iter_mut() {
             sub.insert_op(ix, &value);
         }
+        self.value.borrow_mut().insert(ix, value);
         for sub in self.change_subscribers.borrow_mut().iter_mut() {
             sub(&self.value.borrow());
         }
-        self.value.borrow_mut().insert(ix, value);
     }
     pub fn remove(&self, ix: usize) {
         for sub in self.ops_subscribers.borrow_mut().iter_mut() {
             sub.remove_op(ix);
         }
+        self.value.borrow_mut().remove(ix);
         for sub in self.change_subscribers.borrow_mut().iter_mut() {
             sub(&self.value.borrow());
         }
-        self.value.borrow_mut().remove(ix);
     }
     pub fn update_by(&mut self, pred: impl Fn(&T)->bool, f: impl FnMut(&mut T)) {
         let pos = self.value.borrow().iter().position(|x| pred(x));
