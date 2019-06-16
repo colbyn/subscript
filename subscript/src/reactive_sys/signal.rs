@@ -44,9 +44,6 @@ impl<T: 'static> Signal<T> {
     pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> SignalOutput<U> {
         SignalOutput(self.0.map(f))
     }
-    pub(crate) fn map_mut<U: 'static>(&self, f: impl Fn(&mut T) -> U + 'static) -> SignalOutput<U> {
-        unimplemented!()
-    }
     pub(crate) fn zip<U: 'static>(&self, other: &UnitSignal<U>) -> SignalOutput<(T, U)>
     where
         T: Clone,
@@ -68,6 +65,9 @@ pub struct SignalOutput<T>(Value<T>);
 impl<T: 'static> SignalOutput<T> {
     pub fn get(&self) -> Rc<T> {
         self.0.get()
+    }
+    pub fn get_copy(&self) -> T where T: Clone {
+        self.0.get().as_ref().clone()
     }
     pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> SignalOutput<U> {
         SignalOutput(self.0.map(f))
@@ -100,6 +100,11 @@ impl<T> Clone for SignalOutput<T> {
 impl<T: 'static +  Default> Default for Signal<T> {
     fn default() -> Self {
         Signal::new(Default::default())
+    }
+}
+impl<T: 'static +  Default> Default for SignalOutput<T> {
+    fn default() -> Self {
+        SignalOutput(Value::new_static(Default::default()))
     }
 }
 

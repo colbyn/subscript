@@ -122,7 +122,9 @@ impl<T: 'static> Value<T> {
     }
     pub(crate) fn set(&self, value: T) {
         if let Some(setter) = &self.setter {
-            (setter)(Rc::new(value));
+            let value = Rc::new(value);
+            self.notify_subscribers(&value);
+            (setter)(value);
         }
         else {panic!()}
     }
@@ -155,10 +157,12 @@ impl<T: 'static> Value<T> {
             }
         });
         self.subscribe({
+            let subscribers = subscribers.clone();
             let current_value = current_value.clone();
             move |value: &Rc<T>| {
                 let current_value = current_value.clone();
                 current_value.replace(apply(value));
+                subscribers.notify_subscribers(&current_value.borrow());
             }
         });
         Value{subscribers, getter, setter: None}

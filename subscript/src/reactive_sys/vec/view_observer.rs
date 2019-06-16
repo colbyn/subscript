@@ -48,6 +48,7 @@ impl<Msg: 'static> ViewVecObserver<Msg> {
     pub(crate) fn new<T: 'static>(vec_signal: &VecSignal<T>, new: impl Fn(&T) -> View<Msg> + 'static) -> Self {
         // SETUP
         let view_segment: Vec<View<Msg>> = vec_signal.value
+            .borrow()
             .iter()
             .map(|x| new(x))
             .collect::<Vec<View<Msg>>>();

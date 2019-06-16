@@ -174,6 +174,12 @@ impl ClassList {
 			.remove_1(class)
 			.expect("ClassList.remove() method failed");
 	}
+    pub fn replace(&self, old: &str, new: &str) {
+        let interface = self.dom_ref_as_dom_token_list();
+        interface
+            .replace(old, new)
+            .expect("ClassList.replace() method failed");
+    }
 }
 
 impl Element {

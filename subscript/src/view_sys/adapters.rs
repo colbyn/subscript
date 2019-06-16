@@ -33,6 +33,9 @@ pub trait ViewExt<Msg> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>);
 }
 
+impl<Msg: 'static> ViewExt<Msg> for () {
+    fn extend<'a>(self, env: ViewEnv<'a, Msg>) {}
+}
 impl<Msg: 'static> ViewExt<Msg> for &str {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         env.children.push(View::new_text(self));

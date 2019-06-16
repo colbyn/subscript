@@ -95,11 +95,7 @@ impl Program {
     }
 }
 
-// impl<Model, Msg> Program<ImmediateModeApp<Model, Msg>> {
-//     pub fn run(args: ImmediateMode<impl Fn(Option<Model>)-> Model, impl Fn(&mut Model, Msg), impl Fn(&Model) -> View<Msg>>) {
-//         unimplemented!()
-//     }
-// }
+
 
 
 

@@ -29,6 +29,7 @@ pub enum Msg {
     NoOp,
     Display(Display),
     NewTodo(String),
+    Completed(EntryId, IsEntryCompleted),
     SubmitTodo
 }
 
@@ -41,19 +42,21 @@ pub struct Model {
 
 #[derive(Default)]
 pub struct TodoEntry {
-    visible: Option<SignalOutput<bool>>,
-    completed: Signal<bool>,
+    id: EntryId,
     value: String,
+    completed: Signal<bool>,
+    visible: SignalOutput<bool>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Display {
     All,
     Active,
     Completed,
 }
 
-type EntryCompleted = bool;
+type EntryId = u32;
+type IsEntryCompleted = bool;
 
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS
@@ -73,9 +76,24 @@ impl Default for Display {
 
 impl Viewable<Msg> for TodoEntry {
     fn view(&self) -> View<Msg> {v1!{
-        form {
-            label {
-                &self.value;
+        li {
+            if &self.visible.map(|x| {
+                console!("TodoEntry - display check");
+                !x
+            }) => {
+                display: "none";
+            };
+            form {
+                input {
+                    event.check[id@self.id] => move |value: bool| {
+                        Msg::Completed(id, value)
+                    };
+                    checked = &self.completed;
+                    type = "checkbox";
+                };
+                label {
+                    &self.value;
+                };
             };
         };
     }}
@@ -97,6 +115,14 @@ impl Spec for AppSpec {
     }
     fn update(&self, model: &mut Model, msg: Msg, sys: &mut SubSystems<Self>) {
         // OPERATIONS
+        fn set_display(model: &mut Model, display: Display) {
+            let is_empty = model.entries.inspect(|x| x.is_empty());
+            if is_empty {
+                model.display.set(Display::All);
+            } else {
+                model.display.set(display);
+            }
+        }
         fn new_todo(model: &mut Model) {
             let value = model.new_todo.get_copy();
             let completed: Signal<bool> = Signal::new(false);
@@ -114,16 +140,26 @@ impl Spec for AppSpec {
                     }
                 });
             model.entries.push(TodoEntry {
-                visible: Some(visible),
+                id: rand::random::<EntryId>(),
+                visible,
                 completed,
                 value,
             });
             model.new_todo.set(String::new());
         }
+        fn entry_completed(model: &mut Model, id: EntryId, is_completed: IsEntryCompleted) {
+            let pred = |x: &TodoEntry| x.id == id;
+            let update = |x: &mut TodoEntry| {
+                assert!(x.id == id);
+                x.completed.set(is_completed);
+            };
+            model.entries.update_by(pred, update);
+        }
         // GO
         match msg {
             Msg::NoOp => {}
             Msg::Display(display) => {
+                // set_display(model, display);
                 model.display.set(display);
             }
             Msg::SubmitTodo => {
@@ -134,19 +170,28 @@ impl Spec for AppSpec {
             Msg::NewTodo(x) => {
                 model.new_todo.set(x);
             }
+            Msg::Completed(id, is_completed) => {
+                entry_completed(model, id, is_completed);
+            }
         }
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
         h1 {
+            color: "#999";
             "Todo";
         };
-        new_todo(model);
-        &model.entries;
+        create_todo(model);
+        ul {
+            list_style: "none";
+            padding: "0";
+            margin: "0";
+            &model.entries;
+        };
         footer(model);
     }}
 }
 
-pub fn new_todo(model: &Model) -> View<Msg> {v1!{
+pub fn create_todo(model: &Model) -> View<Msg> {v1!{
     form {
         event.submit[] => move || {
             Msg::SubmitTodo
@@ -162,27 +207,26 @@ pub fn new_todo(model: &Model) -> View<Msg> {v1!{
 }}
 
 pub fn footer(model: &Model) -> View<Msg> {v1!{
-    button {
-        event.click[] => || {
-            Msg::Display(Display::All)
+    footer {
+        button {
+            event.click[] => move || {
+                Msg::Display(Display::All)
+            };
+            "All";
         };
-        "All";
-    };
-    button {
-        event.click[] => || {
-            Msg::Display(Display::Active)
+        button {
+            event.click[] => move || {
+                Msg::Display(Display::Active)
+            };
+            "Active";
         };
-        "Active";
-    };
-    button {
-        event.click[] => || {
-            Msg::Display(Display::Completed)
+        button {
+            event.click[] => move || {
+                Msg::Display(Display::Completed)
+            };
+            "Completed";
         };
-        "Completed";
     };
-    // if &model.display.map(|display: &Display| display == &Display::All) => {
-
-    // };
 }}
 
 ///////////////////////////////////////////////////////////////////////////////

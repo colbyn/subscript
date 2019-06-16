@@ -518,6 +518,15 @@ impl AttributeValue for &Signal<String> {
         }))
     }
 }
+impl AttributeValue for &Signal<bool> {
+    fn normalize(&self) -> Either<Value<String>, Value<bool>> {
+        let signal_output = self.signal_output();
+        Right(Value::Dynamic(DynamicValue {
+            current: Rc::new(RefCell::new(signal_output.get())),
+            observer: signal_output,
+        }))
+    }
+}
 
 
 // MAPPED-EVENT-HANDLER

@@ -24,38 +24,58 @@ pub trait VecObserver<T> {
 
 #[derive(Serialize, Deserialize)]
 pub struct VecSignal<T> {
-    value: Vec<T>,
+    value: Rc<RefCell<Vec<T>>>,
     #[serde(skip)]
-    observers: RefCell<Vec<Box<VecObserver<T>>>>,
+    observers: Rc<RefCell<Vec<Box<VecObserver<T>>>>>,
 }
 
 impl<T> VecSignal<T> {
     pub fn new() -> Self {
         VecSignal {
-            value: Vec::new(),
-            observers: RefCell::new(Vec::new()),
+            value: Rc::new(RefCell::new(Vec::new())),
+            observers: Rc::new(RefCell::new(Vec::new())),
         }
     }
     pub fn push(&mut self, value: T) {
         for observer in self.observers.borrow_mut().iter_mut() {
             observer.push_op(&value);
         }
-        self.value.push(value);
+        self.value.borrow_mut().push(value);
     }
     pub fn insert(&mut self, ix: usize, value: T) {
         for observer in self.observers.borrow_mut().iter_mut() {
             observer.insert_op(ix, &value);
         }
-        self.value.insert(ix, value);
+        self.value.borrow_mut().insert(ix, value);
+    }
+    pub fn update_by(&mut self, pred: impl Fn(&T)->bool, f: impl FnMut(&mut T)) {
+        let pos = self.value.borrow().iter().position(|x| pred(x));
+        match pos {
+            None => {}
+            Some(ix) => {
+                let mut f = Box::new(f);
+                f(self.value.borrow_mut().get_mut(ix).expect("update_by internal error"));
+            }
+        }
+    }
+    pub fn inspect<U>(&self, f: impl Fn(&Vec<T>)->U) -> U {
+        f(&self.value.borrow())
     }
 }
 
 impl<T: Default> Default for VecSignal<T> {
     fn default() -> Self {
         VecSignal {
-            value: Vec::new(),
-            observers: RefCell::new(Vec::new())
+            value: Rc::new(RefCell::new(Vec::new())),
+            observers: Rc::new(RefCell::new(Vec::new()))
         }
+    }
+}
+impl<T> Clone for VecSignal<T> {
+    fn clone(&self) -> Self {
+        let value = self.value.clone();
+        let observers = self.observers.clone();
+        VecSignal{value, observers}
     }
 }
 

@@ -17,7 +17,7 @@ use crate::view_sys::shared::*;
 pub(crate) fn upsert(styling: &Styling) -> StylingEnv {
     CSS_REGISTRY.with(move |reg| {
         reg .borrow_mut()
-            .notify(styling);
+            .upsert(styling);
     });
     styling_env(&styling)
 }
@@ -43,7 +43,7 @@ impl StylingEnv {
     }
 }
 
-fn css_id_format(x: u64) -> String {
+pub(crate) fn css_id_format(x: u64) -> String {
     let hasher = hashids::HashIds::new();
     let short_id = hasher.encode(&[x]);
     if short_id.chars().nth(0).expect("css_id_format failed").is_ascii_alphabetic() {
@@ -60,6 +60,11 @@ fn css_id_format_pair(x: u64, y: u64) -> String {
     } else {
         format!("_{}", short_id)
     }
+}
+
+pub(crate) fn is_empty_hash(x: u64) -> bool {
+    let empty: Styling = Styling::default();
+    x == calculate_hash(&empty)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -149,13 +154,14 @@ impl CssRegistry {
             }
         }
     }
-    fn notify(&mut self, styling: &Styling) {
+    fn upsert(&mut self, styling: &Styling) {
         let hash = calculate_hash(&styling);
         let live = self.get_live();
         let already_added = live.added.contains(&hash);
         if !already_added {
             console!("new stylesheet");
             insert_styling(styling, hash, &live.mount);
+            live.added.insert(hash);
         }
     }
 }

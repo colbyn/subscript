@@ -15,6 +15,7 @@ use crate::view_sys::dom::*;
 use crate::view_sys::runtime::common::*;
 use crate::view_sys::runtime::css as css_runtime;
 use crate::program_sys::instances::*;
+use crate::view_sys::runtime::css;
 
 
 impl<Msg: 'static> View<Msg> {
@@ -159,8 +160,8 @@ fn build_dom_segment<'a, Msg: 'static>(env: &ElementEnv<'a>, view_segment: ViewS
     };
     // STYLING
     if !styling.is_empty() {
-        let styling_env = crate::view_sys::runtime::css::upsert(&styling);
-        env.dom_ref.class_list.add(&styling_env.css_id());
+        let styling_env = css::upsert(&styling);
+        env.dom_ref.class_list.add(&css::css_id_format(styling_env.css_id));
     }
     // ATTRIBUTES
     for (key, value) in attributes.iter() {

@@ -17,6 +17,7 @@ use crate::view_sys::dom::*;
 use crate::view_sys::runtime::common::*;
 use crate::program_sys::spec::*;
 use crate::program_sys::instances::TickEnv;
+use crate::view_sys::runtime::css;
 
 
 
@@ -30,6 +31,7 @@ impl<Msg: 'static> Dom<Msg> {
                 rightward: &RefCell::new(None),
             };
             let segment = NodeSegment {
+                styling: &mut element.styling,
                 attributes: &mut element.attributes,
                 events: &mut element.events,
                 children: &mut element.children,
@@ -59,6 +61,7 @@ impl<Msg: 'static> Dom<Msg> {
                     rightward: &RefCell::new(None),
                 };
                 let segment = NodeSegment {
+                    styling: &mut element.styling,
                     attributes: &mut element.attributes,
                     events: &mut element.events,
                     children: &mut element.children,
@@ -71,6 +74,7 @@ impl<Msg: 'static> Dom<Msg> {
             Dom::Mixin(mixin) => {
                 // SETUP
                 let segment = NodeSegment {
+                    styling: &mut mixin.styling,
                     attributes: &mut mixin.attributes,
                     events: &mut mixin.events,
                     children: &mut mixin.children,
@@ -79,18 +83,20 @@ impl<Msg: 'static> Dom<Msg> {
                 tick_node_segment(segment, env, tick_env)
             }
             Dom::Control(Control::Toggle(toggle)) => {
-                if toggle.pred.get().as_ref().clone() {
+                if toggle.pred.get_copy() {
                     let current = toggle.dom.replace(None);
                     if let Some(mut dom) = current {
                         dom.tick(env, tick_env);
                         toggle.dom.replace(Some(dom));
                     } else {
+                        console!("Dom::Control(Control::Toggle(...)): new-build");
                         let new_dom = toggle.template.build(env);
                         toggle.dom.replace(Some(new_dom));
                     }
                 } else {
                     let current = toggle.dom.replace(None);
                     if let Some(dom) = current {
+                        console!("Dom::Control(Control::Toggle(...)): remove");
                         dom.remove(env);
                     }
                 }
@@ -129,6 +135,7 @@ impl<Msg: 'static> Dom<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 struct NodeSegment<'a, Msg> {
+    styling: &'a mut Styling,
     attributes: &'a mut HashMap<String, Either<Value<String>, Value<bool>>>,
     events: &'a mut Vec<LiveEventHandler<Msg>>,
     children: &'a mut Vec<Dom<Msg>>,
