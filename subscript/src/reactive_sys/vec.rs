@@ -13,6 +13,7 @@ use serde::{Serialize, Deserialize, de::DeserializeOwned};
 // SIGNAL-OBSERVERS
 ///////////////////////////////////////////////////////////////////////////////
 pub trait VecObserver<T> {
+    fn change_op(&mut self, new: &T);
     fn push_op(&mut self, new: &T);
     fn insert_op(&mut self, ix: usize, new: &T);
     fn remove_op(&mut self, ix: usize);

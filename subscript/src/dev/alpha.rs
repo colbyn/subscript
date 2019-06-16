@@ -243,8 +243,10 @@ impl Spec for AppSpec {
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
         text_theme();
+        overflow: "auto";
         width: "100%";
         height: "100%";
+        padding_bottom: "100px";
         background_color: "#efefef";
         display: "flex";
         flex_direction: "column";
@@ -270,6 +272,14 @@ impl Spec for AppSpec {
             background_color: "#fff";
             create_todo(model);
             ul {
+                // css.animation => {
+                //     from => s1!{
+                        
+                //     };
+                //     to => s1!{
+                        
+                //     };
+                // };
                 width: "100%";
                 list_style: "none";
                 padding: "0";

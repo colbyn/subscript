@@ -102,6 +102,9 @@ enum ViewVecSignal<T, Msg> {
 }
 
 impl<T, Msg> VecObserver<T> for ViewVecSignal<T, Msg> {
+    fn change_op(&mut self, new: &T) {
+        
+    }
     fn push_op(&mut self, new: &T) {
         self.ensure_from_vec_op();
         self.for_each_segment(ForEachSegment {
