@@ -76,8 +76,8 @@ impl Viewable<Msg> for TodoEntry {
         form {
             label {
                 &self.value;
-            }
-        }
+            };
+        };
     }}
 }
 
@@ -139,7 +139,7 @@ impl Spec for AppSpec {
     fn view(&self, model: &Model) -> View<Msg> {v1!{
         h1 {
             "Todo";
-        }
+        };
         new_todo(model);
         &model.entries;
         footer(model);
@@ -157,8 +157,8 @@ pub fn new_todo(model: &Model) -> View<Msg> {v1!{
                 Msg::NewTodo(txt)
             };
             type = "text";
-        }
-    }
+        };
+    };
 }}
 
 pub fn footer(model: &Model) -> View<Msg> {v1!{
@@ -167,19 +167,19 @@ pub fn footer(model: &Model) -> View<Msg> {v1!{
             Msg::Display(Display::All)
         };
         "All";
-    }
+    };
     button {
         event.click[] => || {
             Msg::Display(Display::Active)
         };
         "Active";
-    }
+    };
     button {
         event.click[] => || {
             Msg::Display(Display::Completed)
         };
         "Completed";
-    }
+    };
     // if &model.display.map(|display: &Display| display == &Display::All) => {
 
     // };
