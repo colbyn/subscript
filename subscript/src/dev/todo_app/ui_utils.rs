@@ -28,7 +28,7 @@ impl<'b, Msg: 'static> ViewExt<Msg> for Checkbox<'b, Msg> {
     }
 }
 
-pub fn mk_checkbox<'a, Msg: 'static>(label: &str, checked: &Signal<bool>, mixin: View<Msg>) -> View<Msg> {v1!{
+fn mk_checkbox<'a, Msg: 'static>(label: &str, checked: &Signal<bool>, mixin: View<Msg>) -> View<Msg> {v1!{
     span {
         width: "28px";
         height: "26px";

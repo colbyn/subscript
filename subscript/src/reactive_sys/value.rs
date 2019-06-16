@@ -9,7 +9,7 @@ use either::{Either, Either::*};
 
 type Subscribers<T> = RefCell<Vec<Box<FnMut(&Rc<T>)>>>;
 
-enum SubscribersRef<T> {
+pub(crate) enum SubscribersRef<T> {
     Own(Rc<Subscribers<T>>),
     Weak(Weak<Subscribers<T>>),
 }
@@ -50,10 +50,10 @@ impl<T> Clone for SubscribersRef<T> {
 // VALUE
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct Value<T> {
-    subscribers: SubscribersRef<T>,
-    getter: Rc<Fn()->Rc<T>>,
-    setter: Option<Rc<Fn(Rc<T>)>>,
+pub(crate) struct Value<T> {
+    pub(crate) subscribers: SubscribersRef<T>,
+    pub(crate) getter: Rc<Fn()->Rc<T>>,
+    pub(crate) setter: Option<Rc<Fn(Rc<T>)>>,
 }
 
 impl<T> std::fmt::Debug for Value<T> {

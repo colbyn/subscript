@@ -60,7 +60,7 @@ impl<T: 'static> Signal<T> {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug)]
-pub struct SignalOutput<T>(Value<T>);
+pub struct SignalOutput<T>(pub(crate) Value<T>);
 
 impl<T: 'static> SignalOutput<T> {
     pub fn get(&self) -> Rc<T> {

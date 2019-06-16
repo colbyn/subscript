@@ -162,7 +162,7 @@ impl Spec for AppSpec {
     fn update(&self, model: &mut Model, msg: Msg, sys: &mut SubSystems<Self>) {
         // OPERATION HELPERS
         fn set_display(model: &mut Model, display: Display) {
-            let is_empty = model.entries.inspect(|x| x.is_empty());
+            let is_empty = model.entries.get_by(|x| x.is_empty());
             if is_empty {
                 model.display.set(Display::All);
             } else {
