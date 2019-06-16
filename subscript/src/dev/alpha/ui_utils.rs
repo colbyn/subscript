@@ -16,41 +16,40 @@ use crate::program_sys::spec::*;
 use crate::program_sys::{self, Program};
 
 
-pub struct Checkbox<'a, Msg, F> where F: Fn(bool) -> Msg + 'static + std::marker::Sized {
-    pub checked: &'a UnitSignal<bool>,
+pub struct Checkbox<'a, Msg> {
+    pub checked: &'a Signal<bool>,
     pub label: &'a str,
-    pub on_click: F,
+    pub mixin: View<Msg>,
 }
 
-pub fn mk_checkbox<'a, Msg: 'static>(label: &str) -> View<Msg> {v1!{
-    div {
-        // display: flex;
-        // justify-content: center;
-        // align-items: center;
+impl<'b, Msg: 'static> ViewExt<Msg> for Checkbox<'b, Msg> {
+    fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
+        env.children.push(mk_checkbox(self.label, self.checked, self.mixin));
+    }
+}
+
+pub fn mk_checkbox<'a, Msg: 'static>(label: &str, checked: &Signal<bool>, mixin: View<Msg>) -> View<Msg> {v1!{
+    span {
+        width: "28px";
+        height: "26px";
         position: "relative";
-        input {
-            box_sizing: "border-box";
-            position: "absolute";
-            left: "0";
-            top: "0";
-            min_width: "1em";
-            width: "100%";
-            height: "100%";
-            z_index: "2";
-            opacity: "0";
-            margin: "0";
-            padding: "0";
-            cursor: "pointer";
-            checked = true;
-            type="checkbox";
-        };
+        display: "flex";
+        justify_content: "center";
+        align_items: "center";
+        transform: "scale(0.9)";
+        border: "1px solid #dadada";
+        border_radius: "100%";
+        padding: "2px";
+        margin: "1px";
         i {
-            border_radius: "100%";
-            border: "1px solid #000";
-            padding: "2px";
-            font_size: "0.4em";
-            class = "icon fas fa-check";
+            display: "block";
+            position: "absolute";
+            transform: "scale(0.8)";
+            if checked => {
+                class = "icon fas fa-check";
+            };
         };
+        mixin;
     };
 }}
 

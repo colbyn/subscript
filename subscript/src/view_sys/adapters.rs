@@ -4,6 +4,7 @@ use crate::reactive_sys::*;
 use crate::view_sys::dsl::*;
 use crate::view_sys::shared::*;
 
+pub use crate::view_sys::dsl::ViewEnv;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Viewable

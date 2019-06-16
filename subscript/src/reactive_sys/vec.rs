@@ -48,6 +48,12 @@ impl<T> VecSignal<T> {
         }
         self.value.borrow_mut().insert(ix, value);
     }
+    pub fn remove(&self, ix: usize) {
+        for observer in self.observers.borrow_mut().iter_mut() {
+            observer.remove_op(ix);
+        }
+        self.value.borrow_mut().remove(ix);
+    }
     pub fn update_by(&mut self, pred: impl Fn(&T)->bool, f: impl FnMut(&mut T)) {
         let pos = self.value.borrow().iter().position(|x| pred(x));
         match pos {
@@ -55,6 +61,15 @@ impl<T> VecSignal<T> {
             Some(ix) => {
                 let mut f = Box::new(f);
                 f(self.value.borrow_mut().get_mut(ix).expect("update_by internal error"));
+            }
+        }
+    }
+    pub fn remove_by(&mut self, pred: impl Fn(&T)->bool) {
+        let pos = self.value.borrow().iter().position(|x| pred(x));
+        match pos {
+            None => {}
+            Some(ix) => {
+                self.remove(ix);
             }
         }
     }

@@ -348,11 +348,11 @@ macro_rules! extend_callback_env {
     }};
     ($inner:expr; $name:ident @ $value:expr, $($rest:tt)*) => {{
         let $name = $value.clone();
-        extend_ident_arguments!($inner; $($rest)*)
+        extend_callback_env!($inner; $($rest)*)
     }};
     ($inner:expr; $name:ident, $($rest:tt)*) => {{
         let $name = $name.clone();
-        extend_ident_arguments!($inner; $($rest)*)
+        extend_callback_env!($inner; $($rest)*)
     }};
 }
 
@@ -368,11 +368,11 @@ macro_rules! clone_ident_arguments_outer {
     };
     ($name:ident @ $value:expr, $($rest:tt)*) => {
         let $name = $value.clone();
-        extend_ident_arguments!($($rest)*)
+        clone_ident_arguments_outer!($($rest)*)
     };
     ($name:ident, $($rest:tt)*) => {
         let $name = $name.clone();
-        extend_ident_arguments!($($rest)*)
+        clone_ident_arguments_outer!($($rest)*)
     };
 }
 
@@ -387,11 +387,11 @@ macro_rules! clone_ident_arguments_inner {
     };
     ($name:ident @ $value:expr, $($rest:tt)*) => {
         let $name = $name.clone();
-        extend_ident_arguments!($($rest)*)
+        clone_ident_arguments_inner!($($rest)*)
     };
     ($name:ident, $($rest:tt)*) => {
         let $name = $name.clone();
-        extend_ident_arguments!($($rest)*)
+        clone_ident_arguments_inner!($($rest)*)
     };
 }
 
