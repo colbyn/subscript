@@ -565,8 +565,28 @@ pub struct DynamicValue<T> {
     pub(crate) current: Rc<RefCell<Rc<T>>>,
 }
 
+pub(crate) struct IfChangedWithOld<'a, T> {
+    pub new: &'a T,
+    pub old: &'a T,
+}
 
 impl<T> Value<T> where T: PartialEq + 'static {
+    pub(crate) fn if_changed_with_old(&self, f: impl Fn(IfChangedWithOld<T>)) {
+        match &self {
+            Value::Dynamic(dynamic) => {
+                let upstream = dynamic.observer.get();
+                let unchanged = *dynamic.current.borrow() == upstream;
+                if !unchanged {
+                    f(IfChangedWithOld {
+                        new: &upstream,
+                        old: &dynamic.current.borrow(),
+                    });
+                    dynamic.current.replace(upstream);
+                }
+            }
+            Value::Static(_) => {}
+        }
+    }
     pub(crate) fn if_changed(&self, f: impl Fn(&T)) {
         match &self {
             Value::Dynamic(dynamic) => {

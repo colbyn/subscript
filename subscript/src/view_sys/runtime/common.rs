@@ -87,8 +87,8 @@ impl<Msg> Dom<Msg> {
             Dom::Mixin(value) => {
                 let styling_env = crate::view_sys::runtime::css::removed(&value.styling);
                 env.dom_ref.class_list.remove(&styling_env.css_id());
-                for key in value.attributes.keys() {
-                    env.dom_ref.remove_attribute(key.as_str());
+                for (key, value) in value.attributes.iter() {
+                    remove_attribute(key, value, env);
                 }
                 for event in value.events.iter() {
                     env.dom_ref.remove_event_listener(&event.event_type(), &event.backend_callback);
@@ -122,6 +122,14 @@ impl<Msg> Dom<Msg> {
 
 
 pub(crate) fn set_attribute<'a>(key: &String, value: &Either<Value<String>, Value<bool>>, element: &ElementEnv<'a>) {
+    let class_attribute = || match value {
+        Left(value) => {
+            for cls in value.get().split(' ') {
+                element.dom_ref.class_list.add(cls);
+            }
+        }
+        _ => {}
+    };
     let attribute = || match value {
         Left(value) => {
             element.dom_ref.set_attribute(key.as_str(), value.get().as_str());
@@ -157,11 +165,26 @@ pub(crate) fn set_attribute<'a>(key: &String, value: &Either<Value<String>, Valu
     match (element.tag, key.as_str()) {
         ("input", "value") => value_property(),
         ("input", "checked") => checked_property(),
+        (_, "class") => class_attribute(),
         _ => attribute(),
     }
 }
 
 pub(crate) fn update_attribute<'a>(key: &String, value: &Either<Value<String>, Value<bool>>, element: &ElementEnv<'a>) {
+    let class_attribute = || match value {
+        Left(string) => {
+            string.if_changed_with_old(|data| {
+                let IfChangedWithOld{old, new} = data;
+                for cls in old.split(' ') {
+                    element.dom_ref.class_list.remove(cls);
+                }
+                for cls in new.split(' ') {
+                    element.dom_ref.class_list.add(cls);
+                }
+            });
+        }
+        _ => {}
+    };
     let attribute = || match value {
         Left(string) => {
             string.if_changed(|new_value| {
@@ -205,6 +228,37 @@ pub(crate) fn update_attribute<'a>(key: &String, value: &Either<Value<String>, V
     match (element.tag, key.as_str()) {
         ("input", "value") => value_property(),
         ("input", "checked") => checked_property(),
+        (_, "class") => class_attribute(),
+        _ => attribute(),
+    }
+}
+
+pub(crate) fn remove_attribute<'a>(key: &String, value: &Either<Value<String>, Value<bool>>, element: &ElementEnv<'a>) {
+    let class_attribute = || match value {
+        Left(string) => {
+            match string {
+                Value::Dynamic(dynamic) => {
+                    let old = dynamic.current.borrow();
+                    for cls in old.split(' ') {
+                        element.dom_ref.class_list.remove(cls);
+                    }
+                }
+                Value::Static(value) => {
+                    for cls in value.split(' ') {
+                        element.dom_ref.class_list.remove(cls);
+                    }
+                }
+            }
+        }
+        _ => {}
+    };
+    let attribute = || {
+        element.dom_ref.remove_attribute(key.as_str());
+    };
+    match (element.tag, key.as_str()) {
+        ("input", "value") => {}
+        ("input", "checked") => {}
+        (_, "class") => class_attribute(),
         _ => attribute(),
     }
 }

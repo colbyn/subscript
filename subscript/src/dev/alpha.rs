@@ -1,3 +1,5 @@
+pub mod ui_utils;
+
 use std::marker::*;
 use std::rc::*;
 use std::collections::*;
@@ -30,6 +32,7 @@ pub enum Msg {
     Display(Display),
     NewTodo(String),
     Completed(EntryId, IsEntryCompleted),
+    MouseHovering(EntryId, bool),
     SubmitTodo
 }
 
@@ -46,6 +49,7 @@ pub struct TodoEntry {
     value: String,
     completed: Signal<bool>,
     visible: SignalOutput<bool>,
+    mouse_hovering: Signal<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -77,22 +81,48 @@ impl Default for Display {
 impl Viewable<Msg> for TodoEntry {
     fn view(&self) -> View<Msg> {v1!{
         li {
-            if &self.visible.map(|x| {
-                console!("TodoEntry - display check");
-                !x
-            }) => {
+            width: "100%";
+            event.mouse_enter[id@self.id] => move || {
+                Msg::MouseHovering(id, true)
+            };
+            event.mouse_leave[id@self.id] => move || {
+                Msg::MouseHovering(id, false)
+            };
+            if &self.visible.map(|x| !x) => {
                 display: "none";
             };
             form {
-                input {
-                    event.check[id@self.id] => move |value: bool| {
-                        Msg::Completed(id, value)
-                    };
-                    checked = &self.completed;
-                    type = "checkbox";
-                };
+                display: "flex";
+                align_items: "center";
+                padding: "6px";
+                background_color: "#ececec";
+                font_size: "1.1em";
+                justify_content: "space-between";
+                ui_utils::mk_checkbox("hello world");
+                // input {
+                //     event.check[id@self.id] => move |value: bool| {
+                //         Msg::Completed(id, value)
+                //     };
+                //     checked = &self.completed;
+                //     type = "checkbox";
+                // };
                 label {
+                    width: "100%";
                     &self.value;
+                };
+                button {
+                    outline: "none";
+                    border: "none";
+                    display: "flex";
+                    background: "transparent";
+                    if &self.mouse_hovering.map(|x| !x) => {
+                        visibility: "hidden";
+                    };
+                    span {
+                        color: "#d60000";
+                        font_size: "1.4em";
+                        "x";
+                    };
                 };
             };
         };
@@ -114,7 +144,7 @@ impl Spec for AppSpec {
         }
     }
     fn update(&self, model: &mut Model, msg: Msg, sys: &mut SubSystems<Self>) {
-        // OPERATIONS
+        // OPERATION HELPERS
         fn set_display(model: &mut Model, display: Display) {
             let is_empty = model.entries.inspect(|x| x.is_empty());
             if is_empty {
@@ -140,6 +170,7 @@ impl Spec for AppSpec {
                     }
                 });
             model.entries.push(TodoEntry {
+                mouse_hovering: Signal::new(false),
                 id: rand::random::<EntryId>(),
                 visible,
                 completed,
@@ -147,11 +178,11 @@ impl Spec for AppSpec {
             });
             model.new_todo.set(String::new());
         }
-        fn entry_completed(model: &mut Model, id: EntryId, is_completed: IsEntryCompleted) {
+        fn update_entry(model: &mut Model, id: EntryId, f: impl Fn(&mut TodoEntry)) {
             let pred = |x: &TodoEntry| x.id == id;
             let update = |x: &mut TodoEntry| {
                 assert!(x.id == id);
-                x.completed.set(is_completed);
+                f(x);
             };
             model.entries.update_by(pred, update);
         }
@@ -159,8 +190,7 @@ impl Spec for AppSpec {
         match msg {
             Msg::NoOp => {}
             Msg::Display(display) => {
-                // set_display(model, display);
-                model.display.set(display);
+                set_display(model, display);
             }
             Msg::SubmitTodo => {
                 if !model.new_todo.get().is_empty() {
@@ -171,17 +201,33 @@ impl Spec for AppSpec {
                 model.new_todo.set(x);
             }
             Msg::Completed(id, is_completed) => {
-                entry_completed(model, id, is_completed);
+                update_entry(model, id, move |entry: &mut TodoEntry| {
+                    entry.completed.set(is_completed);
+                });
+            }
+            Msg::MouseHovering(id, is_hovering) => {
+                update_entry(model, id, move |entry: &mut TodoEntry| {
+                    entry.mouse_hovering.set(is_hovering);
+                });
             }
         }
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
+        text_theme();
+        max_width: "500px";
+        margin: "0 auto";
+        display: "flex";
+        flex_direction: "column";
+        justify_content: "center";
+        align_items: "center";
         h1 {
-            color: "#999";
+            text_transform: "uppercase";
+            margin: "0";
             "Todo";
         };
         create_todo(model);
         ul {
+            width: "100%";
             list_style: "none";
             padding: "0";
             margin: "0";
@@ -191,12 +237,20 @@ impl Spec for AppSpec {
     }}
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// VIEW HELPERS
+///////////////////////////////////////////////////////////////////////////////
+
 pub fn create_todo(model: &Model) -> View<Msg> {v1!{
     form {
+        width: "100%";
         event.submit[] => move || {
             Msg::SubmitTodo
         };
         input {
+            width: "100%";
+            outline: "none";
             value = &model.new_todo;
             event.input[] => move |txt: String| {
                 Msg::NewTodo(txt)
@@ -208,19 +262,28 @@ pub fn create_todo(model: &Model) -> View<Msg> {v1!{
 
 pub fn footer(model: &Model) -> View<Msg> {v1!{
     footer {
+        width: "100%";
+        display: "flex";
+        justify_content: "space-around";
+        align_items: "center";
+        max_width: "200px";
+        padding: "10px";
         button {
+            text_theme();
             event.click[] => move || {
                 Msg::Display(Display::All)
             };
             "All";
         };
         button {
+            text_theme();
             event.click[] => move || {
                 Msg::Display(Display::Active)
             };
             "Active";
         };
         button {
+            text_theme();
             event.click[] => move || {
                 Msg::Display(Display::Completed)
             };
@@ -228,6 +291,15 @@ pub fn footer(model: &Model) -> View<Msg> {v1!{
         };
     };
 }}
+
+///////////////////////////////////////////////////////////////////////////////
+// VIEW AGNOSTIC UTILS
+///////////////////////////////////////////////////////////////////////////////
+
+pub fn text_theme<Msg: 'static>() -> View<Msg> {v1!{
+    font_family: "'Source Sans Pro', sans-serif";
+}}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // DEV

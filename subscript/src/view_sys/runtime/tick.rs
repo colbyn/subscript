@@ -89,14 +89,12 @@ impl<Msg: 'static> Dom<Msg> {
                         dom.tick(env, tick_env);
                         toggle.dom.replace(Some(dom));
                     } else {
-                        console!("Dom::Control(Control::Toggle(...)): new-build");
                         let new_dom = toggle.template.build(env);
                         toggle.dom.replace(Some(new_dom));
                     }
                 } else {
                     let current = toggle.dom.replace(None);
                     if let Some(dom) = current {
-                        console!("Dom::Control(Control::Toggle(...)): remove");
                         dom.remove(env);
                     }
                 }
