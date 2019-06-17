@@ -21,7 +21,7 @@ use crate::view_sys::runtime::css;
 impl<Msg: 'static> View<Msg> {
     pub(crate) fn build_root(self) -> Dom<Msg> {
         let build_root = |view: View<Msg>| -> Dom<Msg> {
-            let tag = String::from("main");
+            let tag = String::from("app");
             let dom_ref = browser::window().document.create_element(tag.as_str());
             css_runtime::register_defaults(&dom_ref);
             let new_env = ElementEnv {
