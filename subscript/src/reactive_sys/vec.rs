@@ -9,6 +9,7 @@ use std::collections::*;
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 use crate::reactive_sys::signal::{Signal, SignalOutput, UnitSignal};
+use crate::reactive_sys::value::*;
 use crate::reactive_sys::value;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -102,7 +103,7 @@ impl<T> VecSignal<T> {
     ///////////////////////////////////////////////////////////////////////////
     // OUTPUT-STREAM OPS
     ///////////////////////////////////////////////////////////////////////////
-    pub(crate) fn to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> SignalOutput<U> {
+    pub(crate) fn reduce_to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> SignalOutput<U> {
         let subscribers: value::SubscribersRef<U> =
             value::SubscribersRef::Own(Rc::new(RefCell::new(Vec::new())));
         let apply = move |x: &Vec<T>| -> Rc<U> {
@@ -115,16 +116,51 @@ impl<T> VecSignal<T> {
                 current_value.borrow().clone()
             }
         });
+        let result = value::Value{subscribers, getter, setter: None};
         self.change_subscribers.borrow_mut().push(Box::new({
             let current_value = current_value.clone();
-            let subscribers = subscribers.clone();
+            let result = result.clone();
             move |new_value: &Vec<T>| {
-                let subscribers = subscribers.clone();
+                let result = result.clone();
                 current_value.replace(apply(new_value));
-                subscribers.notify_subscribers(&current_value.borrow());
+                result.notify_subscribers(&current_value.borrow());
             }
         }));
-        SignalOutput(value::Value{subscribers, getter, setter: None})
+        SignalOutput(result)
+    }
+    pub(crate) fn traverse_to<U: 'static>(
+        &self,
+        f: impl Fn(&T) -> U + 'static,
+    ) -> SignalOutput<Vec<U>> {
+        let subscribers: value::SubscribersRef<Vec<U>> =
+            value::SubscribersRef::Own(Rc::new(RefCell::new(Vec::new())));
+        let apply = move |xs: &Vec<T>| -> Rc<Vec<U>> {
+            let inner =  xs
+                .iter()
+                .map(|x| f(x))
+                .collect::<Vec<_>>();
+            Rc::new(inner)
+        };
+        let current_value: Rc<RefCell<Rc<Vec<U>>>> = Rc::new(RefCell::new(
+            apply(&self.value.borrow())
+        ));
+        let getter: Rc<Fn()->Rc<Vec<U>>> = Rc::new({
+            let current_value = current_value.clone();
+            move || {
+                current_value.borrow().clone()
+            }
+        });
+        let result = value::Value{subscribers, getter, setter: None};
+        self.change_subscribers.borrow_mut().push(Box::new({
+            let current_value = current_value.clone();
+            let result = result.clone();
+            move |new_value: &Vec<T>| {
+                let result = result.clone();
+                current_value.replace(apply(new_value));
+                result.notify_subscribers(&current_value.borrow());
+            }
+        }));
+        SignalOutput(result)
     }
 }
 

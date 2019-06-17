@@ -272,14 +272,6 @@ impl Spec for AppSpec {
             background_color: "#fff";
             create_todo(model);
             ul {
-                // css.animation => {
-                //     from => s1!{
-                        
-                //     };
-                //     to => s1!{
-                        
-                //     };
-                // };
                 width: "100%";
                 list_style: "none";
                 padding: "0";
@@ -362,14 +354,31 @@ pub fn footer(model: &Model) -> View<Msg> {
                  0 9px 1px -3px rgba(0, 0, 0, 0.2), \
                  0 16px 0 -6px #f6f6f6, \
                  0 17px 2px -6px rgba(0, 0, 0, 0.2)";
-            width: "100%";
-            display: "flex";
-            justify_content: "space-around";
-            align_items: "center";
             padding: "10px";
-            set_display_button("All", Display::All);
-            set_display_button("Active", Display::Active);
-            set_display_button("Completed", Display::Completed);
+            width: "100%";
+            align_items: "center";
+            display: "grid";
+            grid_template_columns: "100px 1fr 100px";
+            div {
+                span {
+                    user_select: "none";
+                    model.entries.reduce_to(|xs| {
+                        format!("{} items left", xs.len())
+                    });
+                };
+            };
+            div {
+                display: "flex";
+                justify_content: "space-around";
+                if &model.entries.reduce_to(|xs| !xs.is_empty()) => {
+                    set_display_button("All", Display::All);
+                    set_display_button("Active", Display::Active);
+                    set_display_button("Completed", Display::Completed);
+                };
+            };
+            div {
+
+            };
         };
     }
 }

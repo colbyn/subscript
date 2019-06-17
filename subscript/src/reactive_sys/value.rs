@@ -1,3 +1,4 @@
+use std::collections::*;
 use std::cell::*;
 use std::rc::*;
 use std::sync::mpsc;
@@ -12,25 +13,6 @@ type Subscribers<T> = RefCell<Vec<Box<FnMut(&Rc<T>)>>>;
 pub(crate) enum SubscribersRef<T> {
     Own(Rc<Subscribers<T>>),
     Weak(Weak<Subscribers<T>>),
-}
-
-impl<T> SubscribersRef<T> {
-    pub(crate) fn notify_subscribers(&self, sig: &Rc<T>) {
-        match self {
-            SubscribersRef::Own(ss) => {
-                for sub in ss.borrow_mut().iter_mut() {
-                    sub(sig);
-                }
-            }
-            SubscribersRef::Weak(ss) => {
-                if let Some(ss) = ss.upgrade() {
-                    for sub in ss.borrow_mut().iter_mut() {
-                        sub(sig);
-                    }
-                }
-            }
-        }
-    }
 }
 
 impl<T> Clone for SubscribersRef<T> {
@@ -49,6 +31,10 @@ impl<T> Clone for SubscribersRef<T> {
 ///////////////////////////////////////////////////////////////////////////////
 // VALUE
 ///////////////////////////////////////////////////////////////////////////////
+
+pub(crate) fn empty_named_subscribers<T>() -> Rc<RefCell<HashMap<String, Box<FnMut(&Rc<T>)>>>> {
+    Rc::new(RefCell::new(HashMap::new()))
+}
 
 pub(crate) struct Value<T> {
     pub(crate) subscribers: SubscribersRef<T>,
@@ -104,7 +90,7 @@ impl<T: 'static> Value<T> {
         }));
         Value{subscribers, getter, setter}
     }
-    pub(crate) fn new_weak(x: Value<T>) -> Self {
+    pub(crate) fn new_weak(x: &Value<T>) -> Self {
         let getter = x.getter.clone();
         let setter = x.setter.clone();
         let subscribers = match &x.subscribers {
@@ -129,7 +115,21 @@ impl<T: 'static> Value<T> {
         else {panic!()}
     }
     pub(crate) fn notify_subscribers(&self, sig: &Rc<T>) {
-        self.subscribers.notify_subscribers(sig);
+        // self.subscribers.notify_subscribers(sig);
+        match &self.subscribers {
+            SubscribersRef::Own(ss) => {
+                for sub in ss.borrow_mut().iter_mut() {
+                    sub(sig);
+                }
+            }
+            SubscribersRef::Weak(ss) => {
+                if let Some(ss) = ss.upgrade() {
+                    for sub in ss.borrow_mut().iter_mut() {
+                        sub(sig);
+                    }
+                }
+            }
+        }
     }
     pub(crate) fn subscribe(&self, f: impl FnMut(&Rc<T>) + 'static) {
         match &self.subscribers {
@@ -156,16 +156,17 @@ impl<T: 'static> Value<T> {
                 current_value.borrow().clone()
             }
         });
+        let result = Value{subscribers, getter, setter: None};
         self.subscribe({
-            let subscribers = subscribers.clone();
+            let result = result.clone();
             let current_value = current_value.clone();
             move |value: &Rc<T>| {
                 let current_value = current_value.clone();
                 current_value.replace(apply(value));
-                subscribers.notify_subscribers(&current_value.borrow());
+                result.notify_subscribers(&current_value.borrow());
             }
         });
-        Value{subscribers, getter, setter: None}
+        result
     }
     pub(crate) fn zip<U>(&self, other: &Value<U>) -> Value<(T, U)>
     where
@@ -185,8 +186,9 @@ impl<T: 'static> Value<T> {
                 current_value.borrow().clone()
             }
         });
+        let result = Value{subscribers, getter, setter: None};
         self.subscribe({
-            let subscribers = subscribers.clone();
+            let result = result.clone();
             let current_value = current_value.clone();
             move |value: &Rc<T>| {
                 let current_value = current_value.clone();
@@ -196,12 +198,12 @@ impl<T: 'static> Value<T> {
                     inner.as_ref().1.clone()
                 };
                 current_value.replace(Rc::new((t, u)));
-                subscribers.notify_subscribers(&current_value.borrow());
+                result.notify_subscribers(&current_value.borrow());
             }
         });
         other.subscribe({
-            let current_value = current_value.clone();
-            let subscribers = subscribers.clone();
+            let result = result.clone();
+            let result = result.clone();
             move |value: &Rc<U>| {
                 let current_value = current_value.clone();
                 let t: T = {
@@ -210,11 +212,10 @@ impl<T: 'static> Value<T> {
                 };
                 let u: U = value.as_ref().clone();
                 current_value.replace(Rc::new((t, u)));
-                subscribers.notify_subscribers(&current_value.borrow());
+                result.notify_subscribers(&current_value.borrow());
             }
         });
-        Value{subscribers, getter, setter: None}
+        result
     }
 }
-
 
