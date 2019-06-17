@@ -159,7 +159,7 @@ impl Spec for AppSpec {
             ..Default::default()
         }
     }
-    fn update(&self, model: &mut Model, msg: Msg, sys: &mut SubSystems<Self>) {
+    fn update(&self, model: &mut Model, msg: Msg, sys: &mut Shell<Self>) {
         // OPERATION HELPERS
         fn set_display(model: &mut Model, display: Display) {
             let is_empty = model.entries.get_by(|x| x.is_empty());

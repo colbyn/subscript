@@ -10,6 +10,7 @@ use crate::backend::browser;
 use crate::reactive_sys::*;
 use crate::view_sys::dom::Dom;
 use crate::program_sys::spec::*;
+use crate::program_sys::shell::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -50,8 +51,9 @@ impl<S: Spec + 'static> Component<S> {
         });
         let view = component.spec.view(&init.model);
         let dom = view.build_root();
-        let sub_systems = SubSystems {
-            requests: VecDeque::new(),
+        let sub_systems = Shell {
+            instance_name: component.name.clone(),
+            commands: RefCell::new(VecDeque::new()),
             mark: PhantomData,
         };
         Process {
@@ -81,7 +83,7 @@ pub(crate) struct Process<S: Spec> {
     subs: Subscriptions<S::Msg>,
     model: S::Model,
     dom: Option<Dom<S::Msg>>,
-    sub_systems: SubSystems<S>,
+    sub_systems: Shell<S>,
 }
 
 
@@ -141,7 +143,7 @@ impl<S: Spec + 'static> Process<S> {
             };
             // TICK
             self.get_dom_mut().unsafe_tick_root(&mut tick_env);
-            self.subs.tick::<S>(&mut tick_env);
+            self.subs.tick::<S>(self.name.as_str(), &mut tick_env);
             local_messages
         };
         // UPDATE

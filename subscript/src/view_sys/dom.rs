@@ -12,6 +12,7 @@ use crate::view_sys::dsl::{View};
 use crate::view_sys::shared::*;
 use crate::program_sys::instances::*;
 use crate::program_sys::spec::*;
+use crate::program_sys::shell::SystemMessage;
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA - LIVE DOM TREE

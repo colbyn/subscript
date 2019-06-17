@@ -8,15 +8,18 @@ use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use crate::backend::browser;
 use crate::view_sys::dsl::View;
 use crate::program_sys::instances::TickEnv;
+use crate::program_sys::shell::*;
+
+pub use crate::program_sys::shell::{Shell};
+pub use crate::program_sys::effect::nav::UrlPath;
 
 
 pub trait Spec where Self: Clone {
 	type Msg;
-	// type Model: Serialize + DeserializeOwned;
     type Model;
 	
 	fn init(&self, startup: StartupInfo<Self>) -> Init<Self>;
-	fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut SubSystems<Self>);
+	fn update(&self, model: &mut Self::Model, msg: Self::Msg, sh: &mut Shell<Self>);
 	fn view(&self, model: &Self::Model) -> View<Self::Msg>;
 }
 
@@ -79,7 +82,7 @@ impl<Msg> Subscriptions<Msg> {
 
 
 impl<Msg> Subscriptions<Msg> {
-    pub(crate) fn tick<S: Spec + 'static>(&self, tick_env: &mut TickEnv<Msg>){
+    pub(crate) fn tick<S: Spec + 'static>(&self, instance_name: &str, tick_env: &mut TickEnv<Msg>){
         let self_tid = TypeId::of::<S>();
         for f in self.signal_sub.iter() {
             if let Some(msg) = f() {
@@ -87,173 +90,24 @@ impl<Msg> Subscriptions<Msg> {
             }
         }
         for message in tick_env.system_messages {
-            let mut done: Option<Msg> = None;
-            for f in self.mail_subs.iter() {
-                apply_message::<S, Msg>(&mut tick_env.local_messages, f, message.clone());
-            }
-        }
-    }
-}
-
-fn apply_message<S: Spec + 'static, Msg>(
-    output: &mut Vec<Msg>,
-    mail_sub: &Box<Fn(Rc<Any>)->Option<Msg>>,
-    message: SystemMessage,
-) {
-    let self_tid = TypeId::of::<S>();
-    let mut result: Option<Msg> = None;
-    match message {
-        SystemMessage::Private{from_tid, to_tid, value} => {
-            if (from_tid != self_tid) && (to_tid == self_tid) {
-                if let Some(msg) = mail_sub(value) {
-                    output.push(msg);
+            let sender_is_receiver = message.sender_is_receiver::<S>(instance_name);
+            let opt_valid_private_address = {
+                let mut result = true;
+                if let Some(to_tid) = message.is_private() {
+                    result = to_tid == self_tid;
                 }
-            }
-        }
-        SystemMessage::Public{from_tid, value} => {
-            if from_tid != self_tid {
-                if let Some(msg) = mail_sub(value) {
-                    output.push(msg);
+                result
+            };
+            if (!sender_is_receiver) && opt_valid_private_address {
+                for mail_sub in self.mail_subs.iter() {
+                    if let Some(msg) = mail_sub(message.value()) {
+                        tick_env.local_messages.push(msg);
+                    }
                 }
             }
         }
     }
 }
-
-
-///////////////////////////////////////////////////////////////////////////////
-// GLOABL MESSAGES
-///////////////////////////////////////////////////////////////////////////////
-thread_local! {
-    pub(crate) static GLOABL_MESSAGE_REGISTRY: RefCell<VecDeque<SystemMessage>> = {
-        RefCell::new(VecDeque::new())
-    };
-}
-
-#[derive(Debug, Clone)]
-pub enum SystemMessage {
-    Public {
-        from_tid: TypeId,
-        value: Rc<Any>,
-    },
-    Private {
-        from_tid: TypeId,
-        to_tid: TypeId,
-        value: Rc<Any>,
-    },
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// NAVIGATION
-///////////////////////////////////////////////////////////////////////////////
-
-pub trait UrlPath {
-    fn stringify(&self) -> String;
-}
-
-impl UrlPath for &str {
-    fn stringify(&self) -> String {String::from(*self)}
-}
-impl UrlPath for String {
-    fn stringify(&self) -> String {self.clone()}
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// SUB-SYSTEMS
-///////////////////////////////////////////////////////////////////////////////
-
-pub struct SubSystems<S: Spec> {
-    pub(crate) requests: VecDeque<SystemRequest>,
-    pub(crate) mark: PhantomData<S>,
-}
-
-#[derive(Debug)]
-pub(crate) enum SystemRequest {
-    Save,
-    Message(SystemMessage),
-    Navigate(String),
-}
-
-
-impl<S: Spec + 'static> SubSystems<S> {
-	pub fn save(&mut self) {
-        self.requests.push_back(SystemRequest::Save);
-    }
-    pub fn broadcast(&mut self, msg: impl Any) {
-        self.requests.push_back(SystemRequest::Message(
-            SystemMessage::Public {
-                from_tid: TypeId::of::<S>(),
-                value: Rc::new(msg),
-            }
-        ));
-    }
-	pub fn notify<T: Spec + 'static>(&mut self, msg: impl Any) {
-        self.requests.push_back(SystemRequest::Message(SystemMessage::Private {
-            from_tid: TypeId::of::<S>(),
-            to_tid: TypeId::of::<T>(),
-            value: Rc::new(msg)
-        }));
-    }
-    pub fn navigate(&mut self, path: impl UrlPath) {
-        self.requests.push_back(SystemRequest::Navigate(path.stringify()));
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// SYSTEM-REQUEST HELPERS
-///////////////////////////////////////////////////////////////////////////////
-
-pub(crate) fn process_system_requests<S: Spec + 'static>(name: &str, model: &S::Model, sys: &mut SubSystems<S>) {
-    for msg in sys.requests.drain(..) {
-        match msg {
-            SystemRequest::Save => {
-                // save_model::<S>(name, model);
-                unimplemented!()
-            }
-            SystemRequest::Message(msg) => {
-                register_message(msg);
-            }
-            SystemRequest::Navigate(nav) => {
-                navigate(nav.as_str());
-            }
-        }
-    }
-}
-
-pub(crate) fn spec_key<S: Spec + 'static>(name: &str) -> String {
-    let tid = TypeId::of::<S>();
-    format!("{:?}-{}", tid, name)
-}
-
-pub(crate) fn save_model<S: Spec + 'static>(name: &str, model: &S::Model) {
-    unimplemented!()
-    // browser::window()
-    //     .local_storage
-    //     .set::<S::Model>(&spec_key::<S>(name), model);
-}
-
-pub(crate) fn load_saved_model<S: Spec + 'static>(name: &str) -> Option<S::Model> {
-    unimplemented!()
-    // browser::window()
-    //     .local_storage
-    //     .get::<S::Model>(&spec_key::<S>(name))
-}
-
-pub(crate) fn register_message(msg: SystemMessage) {
-    GLOABL_MESSAGE_REGISTRY.with(move |reg| {
-        reg.borrow_mut().push_back(msg);
-    });
-}
-
-pub(crate) fn navigate(route: &str) {
-    browser::window()
-        .history
-        .push_state(route);
-}
-
 
 
 

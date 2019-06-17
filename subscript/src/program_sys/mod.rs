@@ -1,7 +1,8 @@
+#[macro_use]
+pub mod effect;
 pub mod spec;
 pub mod instances;
-#[macro_use]
-pub mod macros;
+pub mod shell;
 
 use std::collections::*;
 use std::rc::*;
@@ -13,6 +14,7 @@ use crate::view_sys::dsl::View;
 use crate::program_sys::spec::*;
 use crate::program_sys::instances::*;
 use crate::view_sys::shared::*;
+use crate::program_sys::shell::*;
 
 
 
@@ -120,7 +122,7 @@ impl<Model, Msg> Spec for SimpleApp<Model, Msg> {
             subs: Subscriptions::default(),
         }
     }
-    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut SubSystems<Self>) {
+    fn update(&self, model: &mut Self::Model, msg: Self::Msg, sys: &mut Shell<Self>) {
         (self.update)(model, msg);
     }
     fn view(&self, model: &Self::Model) -> View<Self::Msg> {

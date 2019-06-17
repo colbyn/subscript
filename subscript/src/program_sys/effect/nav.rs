@@ -1,0 +1,32 @@
+use std::rc::*;
+use std::collections::*;
+
+///////////////////////////////////////////////////////////////////////////////
+// GENERIC URL INTERFACE
+///////////////////////////////////////////////////////////////////////////////
+
+pub trait UrlPath {
+    fn stringify(&self) -> String;
+}
+
+impl UrlPath for &str {
+    fn stringify(&self) -> String {String::from(*self)}
+}
+impl UrlPath for String {
+    fn stringify(&self) -> String {self.clone()}
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// CORE
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct UrlChanged {
+    path: String,
+    parameters: HashMap<String, String>,
+}
+
+pub struct UrlParser<Msg>(Rc<Fn(UrlChanged)->Msg>);
+
+

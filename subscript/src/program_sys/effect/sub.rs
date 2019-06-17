@@ -44,14 +44,13 @@ enum Msg {
     NoOp
 }
 
-pub struct NewUrl(String);
+pub struct UrlChanged(String);
 
 pub fn run() {
     let subscriber: Subscriptions<Msg> = subs!{
         signal session_changed(self.session => new_session) -> Msg {}
-        mail new_url(ref value: NewUrl) -> Msg {
+        mail new_url(ref value: UrlChanged) -> Msg {
             Msg::NoOp
         }
     };
 }
-

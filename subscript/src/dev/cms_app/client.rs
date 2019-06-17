@@ -1,3 +1,5 @@
+pub mod data;
+
 use std::marker::*;
 use std::rc::*;
 use std::collections::*;
@@ -15,6 +17,7 @@ use crate::program_sys::instances::Component;
 use crate::program_sys::spec::*;
 use crate::program_sys::{self, Program};
 
+use crate::dev::cms_app::client::data::*;
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA TYPES
@@ -27,10 +30,16 @@ pub struct AppSpec {
 
 pub enum Msg {
     NoOp,
+    UrlChanged(Page),
+    UrlRequest(Page),
+    NewSession(Session),
 }
 
 #[derive(Default)]
-pub struct Model {}
+pub struct Model {
+    page: Signal<Page>,
+    session: Signal<Option<Session>>,
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -54,13 +63,23 @@ impl Spec for AppSpec {
 
     fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
         Init{
+            subs: subs!{
+                
+            },
             ..Default::default()
         }
     }
-    fn update(&self, model: &mut Model, msg: Msg, sys: &mut SubSystems<Self>) {
+    fn update(&self, model: &mut Model, msg: Msg, sys: &mut Shell<Self>) {
         
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
+        text_theme();
+        overflow: "auto";
+        width: "100%";
+        height: "100%";
+        background_color: "#efefef";
+        display: "flex";
+        flex_direction: "column";
         site_header(model);
     }}
 }
@@ -70,11 +89,19 @@ impl Spec for AppSpec {
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn site_header(model: &Model) -> View<Msg> {v1!{
-    header {
-        background_color: "#000";
+pub fn site_header(model: &Model) -> View<Msg> {
+    let header_link = || {
+
     };
-}}
+    v1!{
+        header {
+            background_color: "#000";
+            span {
+                "LOGO.IO";
+            };
+        };
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
