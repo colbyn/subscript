@@ -17,9 +17,11 @@ use crate::program_sys::effect::nav::*;
 ///////////////////////////////////////////////////////////////////////////////
 
 
-/// It’s a reincarnated-bourne-again shell for your everyday web-app needs.
-/// User-level commands are exposed or rather implemented as methods on the
-/// `Shell` type (so from your docs navigate to “methods” section).
+/// It’s a reincarnated-bourne-again shell for your everyday web-app
+/// needs.
+///
+/// User-level commands are exposed or rather implemented as methods on
+/// the `Shell` type (so from your docs navigate to “methods” section).
 pub struct Shell<S: Spec> {
     pub(crate) instance_name: String,
     pub(crate) commands: RefCell<VecDeque<Command>>,
