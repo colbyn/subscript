@@ -135,6 +135,7 @@ impl CssRegistry {
         let media = browser::Stylesheet::from_element(media);
         wrapper.set_attribute("subscript-cssom-interface", "");
         wrapper.set_attribute("style", "display: none;");
+        wrapper.set_attribute("hidden", "true");
         window.document.body.insert_adjacent_element(AdjacentPosition::AfterBegin, &wrapper);
         add_global_css_defaults(&local);
         CssRegistry::Live(LiveCssRegistry {
