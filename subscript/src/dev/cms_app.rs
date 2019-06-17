@@ -61,7 +61,7 @@ impl Spec for AppSpec {
         
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
-        
+        site_header(model);
     }}
 }
 
@@ -70,6 +70,11 @@ impl Spec for AppSpec {
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
+pub fn site_header(model: &Model) -> View<Msg> {v1!{
+    header {
+        background_color: "#000";
+    };
+}}
 
 
 ///////////////////////////////////////////////////////////////////////////////

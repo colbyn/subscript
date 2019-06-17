@@ -120,7 +120,7 @@ fn add_global_css_defaults(node: &browser::Stylesheet) {
 impl CssRegistry {
     fn init() -> Self {
         let window = browser::window();
-        let wrapper = window.document.create_element("div");
+        let wrapper = window.document.create_element("app-internals");
         let local = window.document.create_element("style");
         let state = window.document.create_element("style");
         let media = window.document.create_element("style");
