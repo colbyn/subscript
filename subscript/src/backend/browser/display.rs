@@ -352,6 +352,19 @@ impl VoidCallback {
         dom_ref.add_event_listener(event_type, js_function);
         VoidCallback {settings, callback: Some(callback), bindgen_closure: Rc::new(bindgen_closure)}
     }
+    pub fn new_with_fn_unset(settings: CallbackSettings, callback: impl Fn(JsValue) + 'static) -> Self {
+        let callback = Rc::new(callback);
+        let bindgen_closure: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
+            let callback = callback.clone();
+            let settings = settings.clone();
+            move |value: JsValue| {
+                callback_settings_handler(settings.clone(), &value);
+                callback(value);
+            }
+        }));
+        let js_function: &js_sys::Function = bindgen_closure.as_ref().unchecked_ref();
+        VoidCallback {settings, callback: Some(callback), bindgen_closure: Rc::new(bindgen_closure)}
+    }
 }
 impl std::fmt::Debug for VoidCallback {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

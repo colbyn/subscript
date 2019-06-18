@@ -41,6 +41,8 @@ pub struct Model {
     session: Signal<Option<Session>>,
 }
 
+#[derive(Clone)]
+pub struct UrlRequest(Page);
 
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS
@@ -62,12 +64,34 @@ impl Spec for AppSpec {
     type Model = Model;
 
     fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
-        Init{
-            subs: subs!{
-                
-            },
-            ..Default::default()
-        }
+        let url_parser: UrlParser<Page> = url_parser!{
+            [] => {
+                Page::Homepage
+            }
+            ["account"] => {
+                Page::Account(AccountPage::default())
+            }
+            _ => {
+                Page::NotFound
+            }
+        };
+        let model = Model {
+            page: Signal::new(url_parser.parse(&startup.current_url)),
+            session: Signal::new(None),
+        };
+        let subs = subs!{
+            msg url_changed(value: UrlChanged) -> Msg {
+                Msg::UrlChanged(
+                    url_parser
+                        .clone()
+                        .parse(&value.url())
+                )
+            }
+            msg url_request(value: UrlRequest) -> Msg {
+                Msg::UrlRequest(value.0)
+            }
+        };
+        Init{subs, model, ..Default::default()}
     }
     fn update(&self, model: &mut Model, msg: Msg, sys: &mut Shell<Self>) {
         

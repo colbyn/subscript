@@ -103,6 +103,16 @@ impl Window {
 	    ).expect("set_timeout_with_callback_and_timeout_and_arguments_0 failed");
 	    callback
 	}
+    pub fn add_event_listener(&self, event_name: &str, callback: &EventListenerApi) {
+        self.instance_as_window()
+            .add_event_listener_with_callback(event_name, callback.as_js_function())
+            .expect("Window.addEventListener failed");
+    }
+    pub fn remove_event_listener(&self, event_name: &str, callback: &EventListenerApi) {
+        self.instance_as_window()
+            .remove_event_listener_with_callback(event_name, callback.as_js_function())
+            .expect("Window.removeEventListener failed");
+    }
 }
 
 impl Document {

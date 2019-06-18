@@ -9,9 +9,11 @@ use crate::backend::browser;
 use crate::view_sys::dsl::View;
 use crate::program_sys::instances::TickEnv;
 use crate::program_sys::shell::*;
+use crate::program_sys::effect::nav::Url;
 
 pub use crate::program_sys::shell::{Shell};
-pub use crate::program_sys::effect::nav::UrlPath;
+pub use crate::program_sys::effect::nav::{UrlPath, UrlParser, UrlChanged};
+pub use crate::program_sys::effect::sub::Subscriptions;
 
 
 pub trait Spec where Self: Clone {
@@ -24,10 +26,9 @@ pub trait Spec where Self: Clone {
 }
 
 
-#[derive(Debug)]
 pub struct StartupInfo<S: Spec> {
-	pub name: String,
 	pub saved_model: Option<S::Model>,
+    pub current_url: Url,
 }
 
 pub struct Init<S: Spec> {
@@ -47,67 +48,6 @@ where
     }
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-// SUBSCRIPTIONS
-///////////////////////////////////////////////////////////////////////////////
-
-
-pub struct Subscriptions<Msg> {
-    signal_sub: Vec<Box<Fn()->Option<Msg>>>,
-    mail_subs: Vec<Box<Fn(Rc<Any>)->Option<Msg>>>,
-}
-
-impl<Msg> Default for Subscriptions<Msg> {
-    fn default() -> Self {
-        Subscriptions {
-            signal_sub: Vec::new(),
-            mail_subs: Vec::new(),
-        }
-    }
-}
-
-impl<Msg> Subscriptions<Msg> {
-    pub fn add_signal_sub(&mut self, f: impl Fn() -> Option<Msg> + 'static) {
-        self.signal_sub.push(Box::new(f));
-    }
-    pub fn add_mail_sub(&mut self, f: impl Fn(Rc<Any>) -> Option<Msg> + 'static) {
-        self.mail_subs.push(Box::new(f));
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// SUBSCRIPTIONS - TICK
-///////////////////////////////////////////////////////////////////////////////
-
-
-impl<Msg> Subscriptions<Msg> {
-    pub(crate) fn tick<S: Spec + 'static>(&self, instance_name: &str, tick_env: &mut TickEnv<Msg>){
-        let self_tid = TypeId::of::<S>();
-        for f in self.signal_sub.iter() {
-            if let Some(msg) = f() {
-                tick_env.local_messages.push(msg);
-            }
-        }
-        for message in tick_env.system_messages {
-            let sender_is_receiver = message.sender_is_receiver::<S>(instance_name);
-            let opt_valid_private_address = {
-                let mut result = true;
-                if let Some(to_tid) = message.is_private() {
-                    result = to_tid == self_tid;
-                }
-                result
-            };
-            if (!sender_is_receiver) && opt_valid_private_address {
-                for mail_sub in self.mail_subs.iter() {
-                    if let Some(msg) = mail_sub(message.value()) {
-                        tick_env.local_messages.push(msg);
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 

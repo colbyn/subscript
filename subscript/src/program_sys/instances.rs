@@ -11,6 +11,7 @@ use crate::reactive_sys::*;
 use crate::view_sys::dom::Dom;
 use crate::program_sys::spec::*;
 use crate::program_sys::shell::*;
+use crate::program_sys::effect::nav::*;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -44,9 +45,10 @@ impl<S: 'static +  Spec> SubComponentImpl for Component<S> {
 
 impl<S: Spec + 'static> Component<S> {
     pub(crate) fn build_impl(&self) -> Process<S> {
+        let window = browser::window();
         let component = self.clone();
         let init = component.spec.init(StartupInfo {
-            name: component.name.clone(),
+            current_url: Url::get_current(&window),
             saved_model: None,
         });
         let view = component.spec.view(&init.model);

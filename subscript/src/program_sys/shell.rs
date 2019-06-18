@@ -18,7 +18,7 @@ use crate::program_sys::effect::nav::*;
 
 
 /// It’s a reincarnated-bourne-again shell for your everyday web-app
-/// needs.
+/// needs. :)
 ///
 /// User-level commands are exposed or rather implemented as methods on
 /// the `Shell` type (so from your docs navigate to “methods” section).
@@ -48,7 +48,7 @@ impl<S: Spec + 'static> Shell<S> {
             }
         ));
     }
-    pub fn notify<T: Spec + 'static>(&mut self, msg: impl Any) {
+    pub fn message<T: Spec + 'static>(&mut self, msg: impl Any) {
         let from_tid = TypeId::of::<S>();
         let to_tid = TypeId::of::<T>();
         self.commands.borrow_mut().push_back(Command::Message(SystemMessage::Private {
