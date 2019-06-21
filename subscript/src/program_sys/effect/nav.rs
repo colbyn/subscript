@@ -9,15 +9,15 @@ use crate::reactive_sys::*;
 // GENERIC URL INTERFACE
 ///////////////////////////////////////////////////////////////////////////////
 
-pub trait UrlPath {
-    fn stringify(&self) -> String;
+pub trait UrlString {
+    fn url_string(&self) -> String;
 }
 
-impl UrlPath for &str {
-    fn stringify(&self) -> String {String::from(*self)}
+impl UrlString for &str {
+    fn url_string(&self) -> String {String::from(*self)}
 }
-impl UrlPath for String {
-    fn stringify(&self) -> String {self.clone()}
+impl UrlString for String {
+    fn url_string(&self) -> String {self.clone()}
 }
 
 

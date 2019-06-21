@@ -12,7 +12,7 @@ use crate::program_sys::shell::*;
 use crate::program_sys::effect::nav::Url;
 
 pub use crate::program_sys::shell::{Shell};
-pub use crate::program_sys::effect::nav::{UrlPath, UrlParser, UrlChanged};
+pub use crate::program_sys::effect::nav::{UrlString, UrlParser, UrlChanged};
 pub use crate::program_sys::effect::sub::Subscriptions;
 
 

@@ -34,7 +34,7 @@ impl Timestamp {
 ///////////////////////////////////////////////////////////////////////////////
 // NAVIGATION
 ///////////////////////////////////////////////////////////////////////////////
-use crate::program_sys::spec::UrlPath;
+use crate::program_sys::spec::UrlString;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Page {
@@ -42,6 +42,7 @@ pub enum Page {
     Content,
     Analytics,
     Account(AccountPage),
+    Login,
     NotFound,
 }
 
@@ -65,10 +66,13 @@ impl Page {
     pub fn is_content(&self) -> bool {self == &Page::Content}
     pub fn is_analytics(&self) -> bool {self == &Page::Analytics}
     pub fn is_not_found(&self) -> bool {self == &Page::NotFound}
-    pub fn is_account(&self) -> bool {
+    pub fn is_login(&self) -> bool {
+        self == &Page::Login
+    }
+    pub fn is_account(&self) -> Option<AccountPage> {
         match self {
-            Page::Account(_) => true,
-            _ => false
+            Page::Account(x) => Some(x.clone()),
+            _ => None
         }
     }
 }
@@ -96,6 +100,20 @@ impl Default for AccountPage {
 }
 impl Default for UsersPage {
     fn default() -> Self {UsersPage::Index}
+}
+
+impl UrlString for Page {
+    fn url_string(&self) -> String {
+        let str = match self {
+            Page::Homepage => "/",
+            Page::Content => "/content",
+            Page::Analytics => "/analytics",
+            Page::Account(account_page) => "/account",
+            Page::Login => "/login",
+            Page::NotFound => "not-found",
+        };
+        String::from(str)
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

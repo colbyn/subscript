@@ -12,6 +12,7 @@ use crate::reactive_sys::*;
 use crate::program_sys::spec::{Spec, StartupInfo};
 use crate::program_sys::instances::*;
 use crate::view_sys::dom::Dom;
+use crate::view_sys::dsl::View;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -563,6 +564,20 @@ pub enum Value<T> {
 pub struct DynamicValue<T> {
     pub(crate) observer: SignalOutput<T>,
     pub(crate) current: Rc<RefCell<Rc<T>>>,
+}
+
+pub struct DynamicProducer<Msg>(pub(crate) Rc<Fn()->Option<View<Msg>>>);
+
+impl<Msg> Clone for DynamicProducer<Msg> {
+    fn clone(&self) -> Self {
+        DynamicProducer(self.0.clone())
+    }
+}
+
+impl<Msg> std::fmt::Debug for DynamicProducer<Msg> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "DynamicProducer")
+    }
 }
 
 pub(crate) struct IfChangedWithOld<'a, T> {

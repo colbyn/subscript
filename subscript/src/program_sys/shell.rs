@@ -58,8 +58,8 @@ impl<S: Spec + 'static> Shell<S> {
             value: Rc::new(msg)
         }));
     }
-    pub fn navigate(&mut self, path: impl UrlPath) {
-        self.commands.borrow_mut().push_back(Command::Navigate(path.stringify()));
+    pub fn navigate(&mut self, path: impl UrlString) {
+        self.commands.borrow_mut().push_back(Command::Navigate(path.url_string()));
     }
 }
 

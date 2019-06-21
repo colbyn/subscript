@@ -68,6 +68,12 @@ impl Spec for AppSpec {
             [] => {
                 Page::Homepage
             }
+            ["content"] => {
+                Page::Content
+            }
+            ["analytics"] => {
+                Page::Analytics
+            }
             ["account"] => {
                 Page::Account(AccountPage::default())
             }
@@ -93,8 +99,17 @@ impl Spec for AppSpec {
         };
         Init{subs, model, ..Default::default()}
     }
-    fn update(&self, model: &mut Model, msg: Msg, sys: &mut Shell<Self>) {
-        
+    fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
+        match msg {
+            Msg::NoOp => {}
+            Msg::UrlChanged(page) => {}
+            Msg::UrlRequest(page) => {
+                sh.navigate(page);
+            }
+            Msg::NewSession(session) => {
+
+            }
+        }
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
         text_theme();
@@ -105,6 +120,31 @@ impl Spec for AppSpec {
         display: "flex";
         flex_direction: "column";
         site_header(model);
+        // &model.page >>= |page| {
+            
+        // };
+        // &model.page.map(|page| {
+        //     match page {
+        //         Page::Homepage => {
+        //             unimplemented!()
+        //         }
+        //         Page::Content => {
+        //             unimplemented!()
+        //         }
+        //         Page::Analytics => {
+        //             unimplemented!()
+        //         }
+        //         Page::Account(account_page) => {
+        //             unimplemented!()
+        //         }
+        //         Page::Login => {
+        //             unimplemented!()
+        //         }
+        //         Page::NotFound => {
+        //             unimplemented!()
+        //         }
+        //     }
+        // });
     }}
 }
 
@@ -126,6 +166,7 @@ pub fn site_header(model: &Model) -> View<Msg> {
         };
     }
 }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

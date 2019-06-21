@@ -120,6 +120,10 @@ impl<Msg: 'static> View<Msg> {
                 // Should this be None?
                 unimplemented!()
             }
+            Dsl::Control(Control::Dynamic{producer}) => {
+                // Should this be None?
+                unimplemented!()
+            }
             Dsl::Component(component) => None,
             Dsl::Text(text) => None,
         }
@@ -165,6 +169,9 @@ pub(crate) enum Control<Msg> {
         pred: SignalOutput<bool>,
         value: Rc<View<Msg>>,
     },
+    Dynamic {
+        producer: DynamicProducer<Msg>,
+    },
 }
 
 impl<Msg> Clone for Dsl<Msg> {
@@ -206,6 +213,9 @@ impl<Msg> Clone for Control<Msg> {
             Control::Toggle{pred,value} => Control::Toggle{
                 pred: pred.clone(),
                 value: value.clone(),
+            },
+            Control::Dynamic{producer} => Control::Dynamic{
+                producer: producer.clone(),
             },
         }
     }

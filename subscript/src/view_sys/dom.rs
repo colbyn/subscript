@@ -55,6 +55,7 @@ pub(crate) struct Mixin<Msg> {
 pub(crate) enum Control<Msg> {
     Linked(ViewVecObserver<Msg>),
     Toggle(Box<Toggle<Msg>>),
+    Dynamic(Box<Dynamic<Msg>>),
 }
 
 #[derive(Debug)]
@@ -62,6 +63,12 @@ pub(crate) struct Toggle<Msg> {
     pub pred: SignalOutput<bool>,
     pub template: Rc<View<Msg>>,
     pub dom: RefCell<Option<Dom<Msg>>>,
+}
+
+#[derive(Debug)]
+pub struct Dynamic<Msg> {
+    producer: DynamicProducer<Msg>,
+    view: Dom<Msg>,
 }
 
 

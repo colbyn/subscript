@@ -127,6 +127,9 @@ impl<Msg: 'static> View<Msg> {
                 });
                 Dom::Control(Control::Linked(sub.clone()))
             }
+            Dsl::Control(dsl::Control::Dynamic{producer}) => {
+                unimplemented!()
+            }
         }
     }
 }

@@ -120,6 +120,9 @@ impl<Msg: 'static> Dom<Msg> {
                     },
                 });
             }
+            Dom::Control(Control::Dynamic(dynamic)) => {
+                unimplemented!()
+            }
             Dom::Component(component) => {
                 component.tick(tick_env.system_messages);
             }

@@ -12,7 +12,7 @@ use crate::program_sys::shell::*;
 use crate::reactive_sys::*;
 
 pub use crate::program_sys::shell::{Shell};
-pub use crate::program_sys::effect::nav::UrlPath;
+pub use crate::program_sys::effect::nav::UrlString;
 
 
 ///////////////////////////////////////////////////////////////////////////////
