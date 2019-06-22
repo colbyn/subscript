@@ -72,11 +72,11 @@ macro_rules! v1_impl {
         v1_impl!($env; $($rest)*);
     }};
     ($env:expr; bind $x:expr => $f:expr; $($rest:tt)*) => {{
-        // $env.children.push(View::new_dynamic_control(to_expr!($x), to_expr!($f)));
+        $env.children.push(View::new_dynamic_control($x, $f));
         v1_impl!($env; $($rest)*);
     }};
     ($env:expr; bind($x:expr)[] => $f:expr; $($rest:tt)*) => {{
-        // $env.children.push(View::new_dynamic_control(to_expr!($x), to_expr!($f)));
+        $env.children.push(View::new_dynamic_control($x, $f));
         v1_impl!($env; $($rest)*);
     }};
 
