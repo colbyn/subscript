@@ -138,6 +138,10 @@ pub(crate) fn process_system_requests<S: Spec + 'static>(name: &str, model: &S::
             }
             Command::Navigate(nav) => {
                 navigate(nav.as_str());
+                crate::program_sys::CURRENT_URL.with(|cell| {
+                    let new_url = Url::get_current(&browser::window());
+                    cell.replace(Some(new_url));
+                });
             }
         }
     }

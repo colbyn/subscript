@@ -64,6 +64,34 @@ impl<Msg: 'static> View<Msg> {
             pred,
         }))
     }
+    pub fn new_dynamic_control<T: 'static + PartialEq>(input: &UnitSignal<T>, f: impl Fn(&T) -> View<Msg> + 'static) -> Self {
+        let producer = DynamicProducer(Rc::new({
+            let f = Rc::new(f);
+            let input = input.signal_output();
+            let current_value: Rc<RefCell<Rc<T>>> = Rc::new(RefCell::new(input.get()));
+            let initialized: Rc<Cell<bool>> = Rc::new(Cell::new(false));
+            move || -> Option<View<Msg>> {
+                let f = f.clone();
+                let input = input.clone();
+                let current_value = current_value.clone();
+                let unchanged = {
+                    let x: &Rc<T> = &current_value.borrow();
+                    x.as_ref() == input.get().as_ref()
+                };
+                let mut result = None;
+                if !unchanged {
+                    result = Some(f(input.get().as_ref()));
+                    current_value.replace(input.get());
+                } else if !initialized.get() {
+                    initialized.set(true);
+                    result = Some(f(input.get().as_ref()));
+                    current_value.replace(input.get());
+                }
+                result
+            }
+        }));
+        View(Dsl::Control(Control::Dynamic{producer}))
+    }
     pub fn new_component<S: Spec + 'static >(name: &str, spec: S) -> Self {
         View(Dsl::Component(SubComponent(Rc::new(Component {
             name: String::from(name),

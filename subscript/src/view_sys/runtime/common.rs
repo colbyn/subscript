@@ -117,7 +117,9 @@ impl<Msg> Dom<Msg> {
                 }
             }
             Dom::Control(Control::Dynamic(dynamic)) => {
-                unimplemented!()
+                if let Some(dom) = dynamic.view {
+                    dom.remove(env);
+                }
             }
         }
     }
@@ -299,7 +301,11 @@ impl<Msg: 'static> Dom<Msg> {
                 result
             }
             Dom::Control(Control::Dynamic(dynamic)) => {
-                unimplemented!()
+                let mut result = None;
+                if let Some(dom) = &dynamic.view {
+                    result = dom.get_first_dom_ref();
+                }
+                result
             }
             Dom::Mixin(x) => check_children(&x.children),
             Dom::Component(x) => Some(Box::new(x.dom_ref())),

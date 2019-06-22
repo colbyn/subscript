@@ -50,6 +50,10 @@ macro_rules! s1 {
     }};
 }
 
+#[macro_export]
+macro_rules! to_expr {
+    ($x:expr) => {$x}
+}
 
 #[macro_export]
 macro_rules! v1_impl {
@@ -65,6 +69,14 @@ macro_rules! v1_impl {
         }
         else {panic!()}
         $env.children.push(View::new_toggle_control($pred, mixin));
+        v1_impl!($env; $($rest)*);
+    }};
+    ($env:expr; bind $x:expr => $f:expr; $($rest:tt)*) => {{
+        // $env.children.push(View::new_dynamic_control(to_expr!($x), to_expr!($f)));
+        v1_impl!($env; $($rest)*);
+    }};
+    ($env:expr; bind($x:expr)[] => $f:expr; $($rest:tt)*) => {{
+        // $env.children.push(View::new_dynamic_control(to_expr!($x), to_expr!($f)));
         v1_impl!($env; $($rest)*);
     }};
 

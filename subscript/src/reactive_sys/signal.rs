@@ -12,14 +12,22 @@ use crate::reactive_sys::value::*;
 
 pub trait UnitSignal<T> {
     fn signal_output(&self) -> SignalOutput<T>;
+    fn box_clone(&self) -> Box<UnitSignal<T>>;
 }
 
-impl<T> UnitSignal<T> for Signal<T> {
+impl<T: 'static> UnitSignal<T> for Signal<T> {
     fn signal_output(&self) -> SignalOutput<T> {SignalOutput(self.0.clone())}
+    fn box_clone(&self) -> Box<UnitSignal<T>> {
+        Box::new(self.clone())
+    }
 }
-impl<T> UnitSignal<T> for SignalOutput<T> {
+impl<T: 'static> UnitSignal<T> for SignalOutput<T> {
     fn signal_output(&self) -> SignalOutput<T> {self.clone()}
+    fn box_clone(&self) -> Box<UnitSignal<T>> {
+        Box::new(self.clone())
+    }
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // SIGNAL

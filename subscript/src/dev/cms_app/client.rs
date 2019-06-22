@@ -102,7 +102,9 @@ impl Spec for AppSpec {
     fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
         match msg {
             Msg::NoOp => {}
-            Msg::UrlChanged(page) => {}
+            Msg::UrlChanged(page) => {
+                model.page.set(page);
+            }
             Msg::UrlRequest(page) => {
                 sh.navigate(page);
             }
@@ -119,32 +121,8 @@ impl Spec for AppSpec {
         background_color: "#efefef";
         display: "flex";
         flex_direction: "column";
-        site_header(model);
-        // &model.page >>= |page| {
-            
-        // };
-        // &model.page.map(|page| {
-        //     match page {
-        //         Page::Homepage => {
-        //             unimplemented!()
-        //         }
-        //         Page::Content => {
-        //             unimplemented!()
-        //         }
-        //         Page::Analytics => {
-        //             unimplemented!()
-        //         }
-        //         Page::Account(account_page) => {
-        //             unimplemented!()
-        //         }
-        //         Page::Login => {
-        //             unimplemented!()
-        //         }
-        //         Page::NotFound => {
-        //             unimplemented!()
-        //         }
-        //     }
-        // });
+        navigation(model);
+        page(model);
     }}
 }
 
@@ -153,20 +131,71 @@ impl Spec for AppSpec {
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn site_header(model: &Model) -> View<Msg> {
-    let header_link = || {
-
-    };
+pub fn navigation(model: &Model) -> View<Msg> {
+    let nav_link = |txt: &str, page: Page| -> View<Msg> {v1!{
+        li {
+            a {
+                event.click[page] => move || {
+                    Msg::UrlRequest(page)
+                };
+                txt;
+            };
+        };
+    }};
     v1!{
         header {
             background_color: "#000";
             span {
                 "LOGO.IO";
             };
+            ul {
+                nav_link("Homepage", Page::Homepage);
+                nav_link("Content", Page::Content);
+                nav_link("Analytics", Page::Analytics);
+                nav_link("Account", Page::Account(AccountPage::default()));
+                nav_link("Login", Page::Login);
+                nav_link("NotFound", Page::NotFound);
+            };
         };
     }
 }
 
+pub fn page(model: &Model) -> View<Msg> {v1!{
+    bind &model.page => move |page| {
+        match page {
+            Page::Homepage => v1!{
+                h1 {
+                    "Homepage";
+                };
+            },
+            Page::Content => v1!{
+                h1 {
+                    "Content";
+                };
+            },
+            Page::Analytics => v1!{
+                h1 {
+                    "Analytics";
+                };
+            },
+            Page::Account(accunt_page) => v1!{
+                h1 {
+                    "Account";
+                };
+            },
+            Page::Login => v1!{
+                h1 {
+                    "Login";
+                };
+            },
+            Page::NotFound => v1!{
+                h1 {
+                    "NotFound";
+                };
+            },
+        }
+    };
+}}
 
 
 ///////////////////////////////////////////////////////////////////////////////

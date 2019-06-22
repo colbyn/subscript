@@ -67,8 +67,8 @@ pub(crate) struct Toggle<Msg> {
 
 #[derive(Debug)]
 pub struct Dynamic<Msg> {
-    producer: DynamicProducer<Msg>,
-    view: Dom<Msg>,
+    pub(crate) producer: DynamicProducer<Msg>,
+    pub(crate) view: Option<Dom<Msg>>,
 }
 
 

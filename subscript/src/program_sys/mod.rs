@@ -90,10 +90,17 @@ impl ProgramImpl for Program {
             reg.borrow_mut().drain(..).collect::<Vec<SystemMessage>>()
         });
         if !url_unchanged {
-            messages.push(SystemMessage::Public {
-                from_name: String::from(""),
-                from_tid: TypeId::of::<Program>(),
-                value: Rc::new(url_state.clone()),
+            CURRENT_URL.with(|cell| {
+                let new_url = Url::get_current(&browser::window());
+                cell.replace(Some(new_url));
+            });
+            messages.push({
+                let value: Rc<UrlChanged> = Rc::new(UrlChanged(url_state.clone()));
+                SystemMessage::Public {
+                    from_name: String::from(""),
+                    from_tid: TypeId::of::<Program>(),
+                    value,
+                }
             });
             self.url = url_state;
         };
