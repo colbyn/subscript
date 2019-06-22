@@ -65,11 +65,11 @@ impl<Msg: 'static> View<Msg> {
         }))
     }
     pub fn new_dynamic_control<T: 'static + PartialEq>(input: &UnitSignal<T>, f: impl Fn(&T) -> View<Msg> + 'static) -> Self {
+        let f = Rc::new(f);
+        let input = input.signal_output();
+        let current_value: Rc<RefCell<Rc<T>>> = Rc::new(RefCell::new(input.get()));
+        let initialized: Rc<Cell<bool>> = Rc::new(Cell::new(false));
         let producer = DynamicProducer(Rc::new({
-            let f = Rc::new(f);
-            let input = input.signal_output();
-            let current_value: Rc<RefCell<Rc<T>>> = Rc::new(RefCell::new(input.get()));
-            let initialized: Rc<Cell<bool>> = Rc::new(Cell::new(false));
             move || -> Option<View<Msg>> {
                 let f = f.clone();
                 let input = input.clone();
@@ -79,11 +79,11 @@ impl<Msg: 'static> View<Msg> {
                     x.as_ref() == input.get().as_ref()
                 };
                 let mut result = None;
-                if !unchanged {
+                if !initialized.get() {
                     result = Some(f(input.get().as_ref()));
                     current_value.replace(input.get());
-                } else if !initialized.get() {
                     initialized.set(true);
+                } else if !unchanged {
                     result = Some(f(input.get().as_ref()));
                     current_value.replace(input.get());
                 }

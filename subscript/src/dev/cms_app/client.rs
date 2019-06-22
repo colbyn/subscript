@@ -77,6 +77,12 @@ impl Spec for AppSpec {
             ["account"] => {
                 Page::Account(AccountPage::default())
             }
+            ["login"] => {
+                Page::Login
+            }
+            ["signup"] => {
+                Page::Signup
+            }
             _ => {
                 Page::NotFound
             }
@@ -103,6 +109,7 @@ impl Spec for AppSpec {
         match msg {
             Msg::NoOp => {}
             Msg::UrlChanged(page) => {
+                console!("Msg::UrlChanged");
                 model.page.set(page);
             }
             Msg::UrlRequest(page) => {
@@ -134,7 +141,19 @@ impl Spec for AppSpec {
 pub fn navigation(model: &Model) -> View<Msg> {
     let nav_link = |txt: &str, page: Page| -> View<Msg> {v1!{
         li {
+            margin_right: "10px";
+            css.last_child => s1!{
+                margin_right: "0";
+            };
             a {
+                bind[page] &model.page => move |active| {
+                    if active == &page {v1!{
+                        color: "#fff";
+                    }}
+                    else {v1!{
+                        color: "#000";
+                    }}
+                };
                 event.click[page] => move || {
                     Msg::UrlRequest(page)
                 };
@@ -144,17 +163,33 @@ pub fn navigation(model: &Model) -> View<Msg> {
     }};
     v1!{
         header {
+            padding: "8px";
             background_color: "#000";
+            display: "flex";
+            justify_content: "space-between";
             span {
                 "LOGO.IO";
             };
             ul {
-                nav_link("Homepage", Page::Homepage);
+                list_style: "none";
+                display: "flex";
+                padding: "0";
+                margin: "0";
+
                 nav_link("Content", Page::Content);
                 nav_link("Analytics", Page::Analytics);
                 nav_link("Account", Page::Account(AccountPage::default()));
+                nav_link("Signup", Page::Signup);
                 nav_link("Login", Page::Login);
-                nav_link("NotFound", Page::NotFound);
+                // if &model.session.map(|x| x.is_some()) => {
+                //     nav_link("Content", Page::Content);
+                //     nav_link("Analytics", Page::Analytics);
+                //     nav_link("Account", Page::Account(AccountPage::default()));
+                // };
+                // if &model.session.map(|x| x.is_none()) => {
+                //     nav_link("Signup", Page::Signup);
+                //     nav_link("Login", Page::Login);
+                // };
             };
         };
     }
@@ -186,6 +221,11 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
             Page::Login => v1!{
                 h1 {
                     "Login";
+                };
+            },
+            Page::Signup => v1!{
+                h1 {
+                    "Signup";
                 };
             },
             Page::NotFound => v1!{

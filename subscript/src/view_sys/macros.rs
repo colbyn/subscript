@@ -71,11 +71,17 @@ macro_rules! v1_impl {
         $env.children.push(View::new_toggle_control($pred, mixin));
         v1_impl!($env; $($rest)*);
     }};
-    ($env:expr; bind $x:expr => $f:expr; $($rest:tt)*) => {{
-        $env.children.push(View::new_dynamic_control($x, $f));
+    ($env:expr; bind[$($vars:tt)*] $x:expr => $f:expr; $($rest:tt)*) => {{
+        $env.children.push(View::new_dynamic_control($x, {
+            clone_ident_arguments_outer!($($vars)*);
+            move |new| {
+                clone_ident_arguments_inner!($($vars)*);
+                ($f)(new)
+            }
+        }));
         v1_impl!($env; $($rest)*);
     }};
-    ($env:expr; bind($x:expr)[] => $f:expr; $($rest:tt)*) => {{
+    ($env:expr; bind $x:expr => $f:expr; $($rest:tt)*) => {{
         $env.children.push(View::new_dynamic_control($x, $f));
         v1_impl!($env; $($rest)*);
     }};

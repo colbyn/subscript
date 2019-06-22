@@ -43,6 +43,7 @@ pub enum Page {
     Analytics,
     Account(AccountPage),
     Login,
+    Signup,
     NotFound,
 }
 
@@ -68,6 +69,9 @@ impl Page {
     pub fn is_not_found(&self) -> bool {self == &Page::NotFound}
     pub fn is_login(&self) -> bool {
         self == &Page::Login
+    }
+    pub fn is_signup(&self) -> bool {
+        self == &Page::Signup
     }
     pub fn is_account(&self) -> Option<AccountPage> {
         match self {
@@ -110,6 +114,7 @@ impl UrlString for Page {
             Page::Analytics => "/analytics",
             Page::Account(account_page) => "/account",
             Page::Login => "/login",
+            Page::Signup => "/signup",
             Page::NotFound => "not-found",
         };
         String::from(str)

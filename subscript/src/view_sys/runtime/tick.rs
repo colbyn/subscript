@@ -121,17 +121,13 @@ impl<Msg: 'static> Dom<Msg> {
                 });
             }
             Dom::Control(Control::Dynamic(dynamic)) => {
-                let mut old = None;
                 if let Some(new_dom) = (dynamic.producer.0)() {
-                    std::mem::swap(&mut old, &mut dynamic.view);
-                    dynamic.view = Some(new_dom.build(env));
-                } else {
-                    if let Some(ref mut dom) = &mut dynamic.view {
-                        dom.tick(&env, tick_env);
+                    if let Some(old) = std::mem::replace(&mut dynamic.view, None) {
+                        old.remove(env);
                     }
-                }
-                if let Some(old) = old {
-                    old.remove(env);
+                    dynamic.view = Some(new_dom.build(env));
+                } else if let Some(ref mut dom) = &mut dynamic.view {
+                    dom.tick(&env, tick_env);
                 }
             }
             Dom::Component(component) => {
