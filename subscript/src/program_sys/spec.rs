@@ -33,7 +33,7 @@ pub struct StartupInfo<S: Spec> {
 
 pub struct Init<S: Spec> {
 	pub model: S::Model,
-	pub subs: Subscriptions<S::Msg>
+	pub subs: Subscriptions<S::Msg>,
 }
 
 impl<S: Spec> Default for Init<S>

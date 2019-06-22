@@ -138,7 +138,8 @@ impl Program {
             name: String::from("Root Component"),
             spec,
         };
-        let process = SubProcess(Box::new(root_component.build_impl()));
+        let process = root_component.build_impl();
+        let process = SubProcess(Box::new(process));
         let program: Program = Program{
             url: Url::get_current(&window),
             process,

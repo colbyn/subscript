@@ -92,9 +92,6 @@ impl Spec for AppSpec {
         if session.get_copy().is_none() {
             page.set(Page::Signup);
         }
-        // if page.get_copy() != url_parser.parse(&startup.current_url) {
-        //     startup.shell.navigate(page.get_copy());
-        // }
         let model = Model {page,session};
         let subs = subs!{
             msg url_changed(value: UrlChanged) -> Msg {
