@@ -47,22 +47,25 @@ impl<S: Spec + 'static> Component<S> {
     pub(crate) fn build_impl(&self) -> Process<S> {
         let window = browser::window();
         let component = self.clone();
-        let init = component.spec.init(StartupInfo {
-            current_url: Url::get_current(&window),
-            saved_model: None,
-        });
-        let view = component.spec.view(&init.model);
-        let dom = view.build_root();
-        let sub_systems = Shell {
+        let mut sub_systems = Shell {
             instance_name: component.name.clone(),
             commands: RefCell::new(VecDeque::new()),
             mark: PhantomData,
         };
+        let startup_info = StartupInfo {
+            current_url: Url::get_current(&window),
+            saved_model: None,
+        };
+        let init = component.spec.init(startup_info, &mut sub_systems);
+        let model = init.model;
+        let view = component.spec.view(&model);
+        let dom = view.build_root();
+        process_system_requests(&component.name, &model, &mut sub_systems);
         Process {
             name: component.name,
             spec: component.spec,
             subs: init.subs,
-            model: init.model,
+            model,
             sub_systems,
             dom: Some(dom),
         }

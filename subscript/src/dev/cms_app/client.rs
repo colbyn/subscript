@@ -63,7 +63,7 @@ impl Spec for AppSpec {
     type Msg = Msg;
     type Model = Model;
 
-    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
+    fn init(&self, startup: StartupInfo<Self>, sh: &mut Shell<Self>) -> Init<Self> {
         let url_parser: UrlParser<Page> = url_parser!{
             [] => {
                 Page::Homepage
@@ -87,10 +87,12 @@ impl Spec for AppSpec {
                 Page::NotFound
             }
         };
-        let model = Model {
-            page: Signal::new(url_parser.parse(&startup.current_url)),
-            session: Signal::new(None),
-        };
+        let session: Signal<Option<Session>> = Signal::new(None);
+        let mut page = Signal::new(url_parser.parse(&startup.current_url));
+        if session.get_copy().is_none() {
+            page.set(Page::Signup);
+        }
+        let model = Model {page,session};
         let subs = subs!{
             msg url_changed(value: UrlChanged) -> Msg {
                 Msg::UrlChanged(
@@ -175,21 +177,15 @@ pub fn navigation(model: &Model) -> View<Msg> {
                 display: "flex";
                 padding: "0";
                 margin: "0";
-
-                nav_link("Content", Page::Content);
-                nav_link("Analytics", Page::Analytics);
-                nav_link("Account", Page::Account(AccountPage::default()));
-                nav_link("Signup", Page::Signup);
-                nav_link("Login", Page::Login);
-                // if &model.session.map(|x| x.is_some()) => {
-                //     nav_link("Content", Page::Content);
-                //     nav_link("Analytics", Page::Analytics);
-                //     nav_link("Account", Page::Account(AccountPage::default()));
-                // };
-                // if &model.session.map(|x| x.is_none()) => {
-                //     nav_link("Signup", Page::Signup);
-                //     nav_link("Login", Page::Login);
-                // };
+                if &model.session.map(|x| x.is_some()) => {
+                    nav_link("Content", Page::Content);
+                    nav_link("Analytics", Page::Analytics);
+                    nav_link("Account", Page::Account(AccountPage::default()));
+                };
+                if &model.session.map(|x| x.is_none()) => {
+                    nav_link("Signup", Page::Signup);
+                    nav_link("Login", Page::Login);
+                };
             };
         };
     }

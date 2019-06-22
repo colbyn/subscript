@@ -154,7 +154,7 @@ impl Spec for AppSpec {
     type Msg = Msg;
     type Model = Model;
 
-    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
+    fn init(&self, startup: StartupInfo<Self>, sh: &mut Shell<Self>) -> Init<Self> {
         Init{
             ..Default::default()
         }
