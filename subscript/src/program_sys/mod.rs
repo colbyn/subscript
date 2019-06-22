@@ -168,7 +168,7 @@ impl<Model, Msg> Spec for SimpleApp<Model, Msg> {
     type Msg = Msg;
     type Model = Model;
     
-    fn init(&self, startup: StartupInfo<Self>, sys: &mut Shell<Self>) -> Init<Self> {
+    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
         let inner = (self.init)(None);
         Init {
             model: inner,

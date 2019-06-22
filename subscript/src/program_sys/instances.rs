@@ -56,7 +56,7 @@ impl<S: Spec + 'static> Component<S> {
             current_url: Url::get_current(&window),
             saved_model: None,
         };
-        let init = component.spec.init(startup_info, &mut sub_systems);
+        let init = component.spec.init(startup_info);
         let model = init.model;
         let view = component.spec.view(&model);
         let dom = view.build_root();

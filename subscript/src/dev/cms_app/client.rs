@@ -63,7 +63,7 @@ impl Spec for AppSpec {
     type Msg = Msg;
     type Model = Model;
 
-    fn init(&self, startup: StartupInfo<Self>, sh: &mut Shell<Self>) -> Init<Self> {
+    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
         let url_parser: UrlParser<Page> = url_parser!{
             [] => {
                 Page::Homepage
@@ -92,6 +92,9 @@ impl Spec for AppSpec {
         if session.get_copy().is_none() {
             page.set(Page::Signup);
         }
+        // if page.get_copy() != url_parser.parse(&startup.current_url) {
+        //     startup.shell.navigate(page.get_copy());
+        // }
         let model = Model {page,session};
         let subs = subs!{
             msg url_changed(value: UrlChanged) -> Msg {

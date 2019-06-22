@@ -20,7 +20,7 @@ pub trait Spec where Self: Clone {
 	type Msg;
     type Model;
 	
-	fn init(&self, startup: StartupInfo<Self>, sh: &mut Shell<Self>) -> Init<Self>;
+	fn init(&self, startup: StartupInfo<Self>) -> Init<Self>;
 	fn update(&self, model: &mut Self::Model, msg: Self::Msg, sh: &mut Shell<Self>);
 	fn view(&self, model: &Self::Model) -> View<Self::Msg>;
 }
