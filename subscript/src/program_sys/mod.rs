@@ -11,6 +11,7 @@ use std::cell::*;
 use wasm_bindgen::prelude::*;
 
 use crate::backend::browser;
+use crate::backend::browser::{NodeApi, ElementApi, CallbackSettings, QueueCallback, VoidCallback};
 use crate::view_sys::dsl::View;
 use crate::program_sys::spec::*;
 use crate::program_sys::instances::*;
@@ -138,7 +139,8 @@ impl Program {
             name: String::from("Root Component"),
             spec,
         };
-        let process = root_component.build_impl();
+        let process = root_component.build_impl(true);
+        browser::window().document.body.append_child(&process.dom_ref());
         let process = SubProcess(Box::new(process));
         let program: Program = Program{
             url: Url::get_current(&window),

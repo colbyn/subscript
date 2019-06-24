@@ -42,9 +42,14 @@ pub enum Page {
     Content,
     Analytics,
     Account(AccountPage),
+    Login(LoginPage),
+    NotFound,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum LoginPage {
     Login,
     Signup,
-    NotFound,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -68,10 +73,10 @@ impl Page {
     pub fn is_analytics(&self) -> bool {self == &Page::Analytics}
     pub fn is_not_found(&self) -> bool {self == &Page::NotFound}
     pub fn is_login(&self) -> bool {
-        self == &Page::Login
-    }
-    pub fn is_signup(&self) -> bool {
-        self == &Page::Signup
+        match self {
+            Page::Login(_) => true,
+            _ => false
+        }
     }
     pub fn is_account(&self) -> Option<AccountPage> {
         match self {
@@ -96,6 +101,14 @@ impl UsersPage {
     pub fn is_index(&self) -> bool {self == &UsersPage::Index}
     pub fn is_add_user(&self) -> bool {self == &UsersPage::AddUser}
 }
+impl LoginPage {
+    pub fn login(&self) -> bool {
+        self == &LoginPage::Login
+    }
+    pub fn signup(&self) -> bool {
+        self == &LoginPage::Signup
+    }
+}
 impl Default for Page {
     fn default() -> Self {Page::Homepage}
 }
@@ -105,6 +118,9 @@ impl Default for AccountPage {
 impl Default for UsersPage {
     fn default() -> Self {UsersPage::Index}
 }
+impl Default for LoginPage {
+    fn default() -> Self {LoginPage::Signup}
+}
 
 impl UrlString for Page {
     fn url_string(&self) -> String {
@@ -113,8 +129,8 @@ impl UrlString for Page {
             Page::Content => "/content",
             Page::Analytics => "/analytics",
             Page::Account(account_page) => "/account",
-            Page::Login => "/login",
-            Page::Signup => "/signup",
+            Page::Login(LoginPage::Login) => "/login",
+            Page::Login(LoginPage::Signup) => "/signup",
             Page::NotFound => "not-found",
         };
         String::from(str)

@@ -1,4 +1,5 @@
 pub mod data;
+pub mod login;
 
 use std::marker::*;
 use std::rc::*;
@@ -18,6 +19,8 @@ use crate::program_sys::spec::*;
 use crate::program_sys::{self, Program};
 
 use crate::dev::cms_app::client::data::*;
+use crate::dev::cms_app::client::login::LoginSpec;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA TYPES
@@ -78,10 +81,10 @@ impl Spec for AppSpec {
                 Page::Account(AccountPage::default())
             }
             ["login"] => {
-                Page::Login
+                Page::Login(LoginPage::Login)
             }
             ["signup"] => {
-                Page::Signup
+                Page::Login(LoginPage::Signup)
             }
             _ => {
                 Page::NotFound
@@ -89,8 +92,8 @@ impl Spec for AppSpec {
         };
         let session: Signal<Option<Session>> = Signal::new(None);
         let mut page = Signal::new(url_parser.parse(&startup.current_url));
-        if session.get_copy().is_none() {
-            page.set(Page::Signup);
+        if session.get_copy().is_none() && !page.get().is_login() {
+            page.set(Page::Login(LoginPage::default()));
         }
         let model = Model {page,session};
         let subs = subs!{
@@ -126,6 +129,9 @@ impl Spec for AppSpec {
         overflow: "auto";
         width: "100%";
         height: "100%";
+        if &model.page.map(move |x| x.is_login()) => {
+            background_color: "hsl(0, 0%, 86%) !important";
+        };
         background_color: "#efefef";
         display: "flex";
         flex_direction: "column";
@@ -150,7 +156,7 @@ pub fn navigation(model: &Model) -> View<Msg> {
                     border_bottom: "3px solid #0089ff";
                 }}
                 else {v1!{
-                    border_bottom: "3px solid #000";
+                    border_bottom: "3px solid transparent";
                 }}
             };
             a {
@@ -178,7 +184,7 @@ pub fn navigation(model: &Model) -> View<Msg> {
     }};
     v1!{
         header {
-            background_color: "#000";
+            background_color: "hsl(0, 0%, 24%)";
             display: "flex";
             justify_content: "space-between";
             align_items: "center";
@@ -199,8 +205,8 @@ pub fn navigation(model: &Model) -> View<Msg> {
                     nav_link("Account", Page::Account(AccountPage::default()));
                 };
                 if &model.session.map(|x| x.is_none()) => {
-                    nav_link("Signup", Page::Signup);
-                    nav_link("Login", Page::Login);
+                    nav_link("Signup", Page::Login(LoginPage::Signup));
+                    nav_link("Login", Page::Login(LoginPage::Login));
                 };
             };
         };
@@ -230,14 +236,12 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
                     "Account";
                 };
             },
-            Page::Login => v1!{
-                h1 {
-                    "Login";
-                };
-            },
-            Page::Signup => v1!{
-                h1 {
-                    "Signup";
+            Page::Login(login_page) => v1!{
+                {
+                    // let session = model.session.clone();
+                    View::new_component("login", LoginSpec {
+                        page: login_page.clone(),
+                    })
                 };
             },
             Page::NotFound => v1!{

@@ -249,13 +249,6 @@ impl<Msg> Clone for Control<Msg> {
     }
 }
 
-impl std::fmt::Debug for SubComponent {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "SubComponent")
-    }
-}
-
-
 pub struct ViewEnv<'a, Msg> {
     pub(crate) styling: &'a mut Styling,
     pub(crate) attributes: &'a mut HashMap<String, Either<Value<String>, Value<bool>>>,

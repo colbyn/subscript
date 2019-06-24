@@ -19,9 +19,13 @@ use crate::view_sys::runtime::css;
 
 
 impl<Msg: 'static> View<Msg> {
-    pub(crate) fn build_root(self) -> Dom<Msg> {
+    pub(crate) fn build_component(self, is_root: bool) -> Dom<Msg> {
         let build_root = |view: View<Msg>| -> Dom<Msg> {
-            let tag = String::from("app");
+            let tag = if is_root {
+                String::from("app")
+            } else {
+                String::from("component")
+            };
             let dom_ref = browser::window().document.create_element(tag.as_str());
             css_runtime::register_defaults(&dom_ref);
             let new_env = ElementEnv {
@@ -35,7 +39,6 @@ impl<Msg: 'static> View<Msg> {
                 events: &Default::default(),
                 children: &vec![view],
             });
-            browser::window().document.body.append_child(&dom_ref);
             Dom::Element(Element {styling,dom_ref,auto_listeners: Vec::new(),tag,attributes,events,children})
         };
         build_root(self)
@@ -51,24 +54,6 @@ impl<Msg: 'static> View<Msg> {
                 Dom::Text(Text{value: text.0.clone(), dom_ref})
             }
             Dsl::Element(x) => {
-                // {
-                //     let inner: &Option<Box<browser::NodeApi>> = &env.rightward.borrow();
-                //     match inner {
-                //         None => {
-                //             console!("---");
-                //             console!("> {parent} - {tag}", parent=env.tag, tag=&x.tag);
-                //             console!("---");
-                //         }
-                //         Some(value) => {
-                //             let value: JsValue = value.dom_ref();
-                //             console!("---");
-                //             console!("> {parent} - {tag}", parent=env.tag, tag=&x.tag);
-                //             web_sys::console::log_1(&value);
-                //             console!("---");
-                //         }
-                //     }
-                // }
-                // web_sys::console::log_1(env.rightward);
                 let tag = x.tag.clone();
                 let dom_ref = browser::window().document.create_element(tag.as_str());
                 css_runtime::register_defaults(&dom_ref);
@@ -89,11 +74,13 @@ impl<Msg: 'static> View<Msg> {
                 Dom::Element(Element {styling,dom_ref,auto_listeners,tag,attributes,events,children})
             }
             Dsl::Component(x) => {
-                let dom_ref = window.document
-                    .create_element("div");
-                insert_child(&dom_ref, env);
-                env.rightward.replace(Some(Box::new(dom_ref.clone())));
-                Dom::Component(LiveComponent(x.build()))
+                let process = LiveComponent(x.build());
+                {
+                    let dom_ref = process.dom_ref();
+                    insert_child(&dom_ref, env);
+                    env.rightward.replace(Some(Box::new(dom_ref.clone())));
+                }
+                Dom::Component(process)
             }
             Dsl::Mixin(x) => {
                 let DomSegment{styling,attributes,events, children} = build_dom_segment(env, ViewSegment {

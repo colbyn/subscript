@@ -36,15 +36,19 @@ impl SubComponent {
         self.0.as_ref().build()
     }
 }
-
+impl std::fmt::Debug for SubComponent {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "SubComponent")
+    }
+}
 impl<S: 'static +  Spec> SubComponentImpl for Component<S> {
     fn build(&self) -> SubProcess {
-        SubProcess(Box::new(self.build_impl()))
+        SubProcess(Box::new(self.build_impl(false)))
     }
 }
 
 impl<S: Spec + 'static> Component<S> {
-    pub(crate) fn build_impl(&self) -> Process<S> {
+    pub(crate) fn build_impl(&self, is_root: bool) -> Process<S> {
         let window = browser::window();
         let component = self.clone();
         let mut sub_systems = Shell {
@@ -59,7 +63,7 @@ impl<S: Spec + 'static> Component<S> {
         let init = component.spec.init(startup_info);
         let model = init.model;
         let view = component.spec.view(&model);
-        let dom = view.build_root();
+        let dom = view.build_component(is_root);
         process_system_requests(&component.name, &model, &mut sub_systems);
         Process {
             name: component.name,

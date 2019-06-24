@@ -3,8 +3,11 @@ use std::rc::*;
 use crate::reactive_sys::*;
 use crate::view_sys::dsl::*;
 use crate::view_sys::shared::*;
+use crate::program_sys::instances::Component;
+use crate::program_sys::spec::Spec;
 
 pub use crate::view_sys::dsl::ViewEnv;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Viewable
@@ -87,5 +90,9 @@ impl<Msg: 'static, T: 'static> ViewExt<Msg> for &VecSignal<T> where T: Viewable<
         env.children.push(View::new_linked_control(self, |item| item.view()));
     }
 }
-
+impl<Msg: 'static, S: Spec + 'static> ViewExt<Msg> for Component<S> {
+    fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
+        env.children.push(View::new_component(self.name.as_str(), self.spec));
+    }
+}
 
