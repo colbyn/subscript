@@ -111,7 +111,6 @@ impl Spec for AppSpec {
         match msg {
             Msg::NoOp => {}
             Msg::UrlChanged(page) => {
-                console!("Msg::UrlChanged");
                 model.page.set(page);
             }
             Msg::UrlRequest(page) => {
@@ -143,17 +142,31 @@ impl Spec for AppSpec {
 pub fn navigation(model: &Model) -> View<Msg> {
     let nav_link = |txt: &str, page: Page| -> View<Msg> {v1!{
         li {
-            margin_right: "10px";
-            css.last_child => s1!{
-                margin_right: "0";
+            display: "block";
+            margin_right: "16px";
+            padding_top: "3px";
+            bind[page] &model.page => move |active| {
+                if active == &page {v1!{
+                    border_bottom: "3px solid #0089ff";
+                }}
+                else {v1!{
+                    border_bottom: "3px solid #000";
+                }}
             };
             a {
+                user_select: "none";
+                display: "block";
+                color: "#fff";
+                font_weight: "500";
+                padding: "8px";
                 bind[page] &model.page => move |active| {
                     if active == &page {v1!{
-                        color: "#fff";
+
                     }}
                     else {v1!{
-                        color: "#000";
+                        css.hover => s1!{
+                            color: "#777";
+                        };
                     }}
                 };
                 event.click[page] => move || {
@@ -165,11 +178,14 @@ pub fn navigation(model: &Model) -> View<Msg> {
     }};
     v1!{
         header {
-            padding: "8px";
             background_color: "#000";
             display: "flex";
             justify_content: "space-between";
+            align_items: "center";
             span {
+                user_select: "none";
+                margin_left: "16px";
+                color: "#fff";
                 "LOGO.IO";
             };
             ul {
