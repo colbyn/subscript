@@ -1,5 +1,6 @@
 pub mod data;
 pub mod login;
+pub mod ui_utils;
 
 use std::marker::*;
 use std::rc::*;
@@ -147,7 +148,7 @@ impl Spec for AppSpec {
 
 pub fn navigation(model: &Model) -> View<Msg> {
     let nav_link = |txt: &str, page: Page| -> View<Msg> {v1!{
-        li {
+        li !{
             display: "block";
             margin_right: "16px";
             padding_top: "3px";
@@ -159,7 +160,7 @@ pub fn navigation(model: &Model) -> View<Msg> {
                     border_bottom: "3px solid transparent";
                 }}
             };
-            a {
+            a !{
                 user_select: "none";
                 display: "block";
                 color: "#fff";
@@ -183,18 +184,18 @@ pub fn navigation(model: &Model) -> View<Msg> {
         };
     }};
     v1!{
-        header {
+        header !{
             background_color: "hsl(0, 0%, 24%)";
             display: "flex";
             justify_content: "space-between";
             align_items: "center";
-            span {
+            span !{
                 user_select: "none";
                 margin_left: "16px";
                 color: "#fff";
                 "LOGO.IO";
             };
-            ul {
+            ul !{
                 list_style: "none";
                 display: "flex";
                 padding: "0";
@@ -217,22 +218,22 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
     bind &model.page => move |page| {
         match page {
             Page::Homepage => v1!{
-                h1 {
+                h1 !{
                     "Homepage";
                 };
             },
             Page::Content => v1!{
-                h1 {
+                h1 !{
                     "Content";
                 };
             },
             Page::Analytics => v1!{
-                h1 {
+                h1 !{
                     "Analytics";
                 };
             },
             Page::Account(accunt_page) => v1!{
-                h1 {
+                h1 !{
                     "Account";
                 };
             },
@@ -245,7 +246,7 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
                 };
             },
             Page::NotFound => v1!{
-                h1 {
+                h1 !{
                     "NotFound";
                 };
             },

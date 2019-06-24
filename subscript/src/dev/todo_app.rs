@@ -82,7 +82,7 @@ impl Default for Display {
 
 impl Viewable<Msg> for TodoEntry {
     fn view(&self) -> View<Msg> {v1!{
-        li {
+        li !{
             width: "100%";
             border_bottom: "1px solid #f1f1f1";
             css.last_child => s1!{
@@ -97,7 +97,7 @@ impl Viewable<Msg> for TodoEntry {
             if &self.visible.map(|x| !x) => {
                 display: "none";
             };
-            form {
+            form !{
                 display: "flex";
                 align_items: "center";
                 padding: "6px";
@@ -112,7 +112,7 @@ impl Viewable<Msg> for TodoEntry {
                         };
                     },
                 };
-                label {
+                label !{
                     width: "100%";
                     margin_left: "8px";
                     user_select: "none";
@@ -122,7 +122,7 @@ impl Viewable<Msg> for TodoEntry {
                     };
                     &self.value;
                 };
-                button {
+                button !{
                     outline: "none";
                     border: "none";
                     display: "flex";
@@ -133,7 +133,7 @@ impl Viewable<Msg> for TodoEntry {
                     event.click[id@self.id] => move || {
                         Msg::RemoveTodo(id)
                     };
-                    span {
+                    span !{
                         user_select: "none";
                         color: "#d60000";
                         font_size: "1.4em";
@@ -250,7 +250,7 @@ impl Spec for AppSpec {
         background_color: "#efefef";
         display: "flex";
         flex_direction: "column";
-        h1 {
+        h1 !{
             text_transform: "uppercase";
             font_size: "3em";
             font_weight: "300";
@@ -258,7 +258,7 @@ impl Spec for AppSpec {
             text_align: "center";
             "Todo";
         };
-        div {
+        div !{
             box_shadow:
                 "0 2px 4px 0 rgba(0, 0, 0, 0.2),\
                  0 25px 50px 0 rgba(0, 0, 0, 0.1)";
@@ -271,7 +271,7 @@ impl Spec for AppSpec {
             align_items: "center";
             background_color: "#fff";
             create_todo(model);
-            ul {
+            ul !{
                 width: "100%";
                 list_style: "none";
                 padding: "0";
@@ -289,7 +289,7 @@ impl Spec for AppSpec {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn create_todo(model: &Model) -> View<Msg> {v1!{
-    form {
+    form !{
         width: "100%";
         border_bottom: "1px solid #e6e6e6";
         box_shadow: "inset 0 -2px 1px rgba(0,0,0,0.03)";
@@ -297,7 +297,7 @@ pub fn create_todo(model: &Model) -> View<Msg> {v1!{
         event.submit[] => move || {
             Msg::SubmitTodo
         };
-        input {
+        input !{
             outline: "none";
             border: "none";
             background: "transparent";
@@ -320,7 +320,7 @@ pub fn create_todo(model: &Model) -> View<Msg> {v1!{
 
 pub fn footer(model: &Model) -> View<Msg> {
     let set_display_button = |name: &str, display: Display| v1!{
-        button {
+        button !{
             text_theme();
             outline: "none";
             user_select: "none";
@@ -347,7 +347,7 @@ pub fn footer(model: &Model) -> View<Msg> {
         };
     };
     v1!{
-        footer {
+        footer !{
             border_top: "1px solid #e6e6e6";
             box_shadow:
                 "0 1px 1px rgba(0, 0, 0, 0.2), 0 8px 0 -3px #f6f6f6, \
@@ -359,15 +359,15 @@ pub fn footer(model: &Model) -> View<Msg> {
             align_items: "center";
             display: "grid";
             grid_template_columns: "100px 1fr 100px";
-            div {
-                span {
+            div !{
+                span !{
                     user_select: "none";
                     model.entries.reduce_to(|xs| {
                         format!("{} items left", xs.len())
                     });
                 };
             };
-            div {
+            div !{
                 display: "flex";
                 justify_content: "space-around";
                 if &model.entries.reduce_to(|xs| !xs.is_empty()) => {
@@ -376,7 +376,7 @@ pub fn footer(model: &Model) -> View<Msg> {
                     set_display_button("Completed", Display::Completed);
                 };
             };
-            div {
+            div !{
 
             };
         };

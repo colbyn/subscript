@@ -62,7 +62,7 @@ impl Spec for LoginSpec {
 
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
-        h1 {
+        h1 !{
             "LoginSpec";
         };
     }}

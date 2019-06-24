@@ -308,7 +308,7 @@ macro_rules! v1_impl {
     ///////////////////////////////////////////////////////////////////////////
     // HTML TAGS
     ///////////////////////////////////////////////////////////////////////////
-    ($env:expr; $tag:ident {$($x:tt)*}; $($rest:tt)*) => {{
+    ($env:expr; $tag:ident !{$($x:tt)*}; $($rest:tt)*) => {{
         let mut new_element = View::new_element(stringify!($tag));
         if let Some(mut inner_env) = new_element.get_env() {
             v1_impl!(&mut inner_env; $($x)*);
@@ -433,9 +433,9 @@ pub mod dev {
     }
 
     pub fn dev(model: &Model) -> View<Msg> {v1!{
-        h1 {
+        div !{
             if &model.display => {
-                h1 {
+                h1 !{
                     "Hello World";
                 };
             };
