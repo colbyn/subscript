@@ -238,11 +238,11 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
                 };
             },
             Page::Login(login_page) => v1!{
-                {
-                    // let session = model.session.clone();
-                    View::new_component("login", LoginSpec {
+                Component {
+                    name: String::from("login"),
+                    spec: LoginSpec {
                         page: login_page.clone(),
-                    })
+                    }
                 };
             },
             Page::NotFound => v1!{

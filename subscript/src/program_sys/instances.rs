@@ -30,6 +30,13 @@ pub struct Component<S: Spec> {
     pub spec: S
 }
 
+impl<S: Spec> Component<S> {
+    pub fn new(name: &str, spec: S) -> Self {
+        let name = String::from(name);
+        Component {name, spec}
+    }
+}
+
 
 impl SubComponent {
     pub(crate) fn build(&self) -> SubProcess {
