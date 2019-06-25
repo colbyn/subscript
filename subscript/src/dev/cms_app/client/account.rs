@@ -24,27 +24,20 @@ use crate::dev::cms_app::client::ui_utils::{self, text_theme};
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone)]
-pub struct LoginSpec {}
+pub struct AccountSpec {
+    pub session: Session,
+    pub page: AccountPage,
+}
 
 pub enum Msg {
     NoOp,
-    Input {
-        to: FormField,
-        value: String,
-    }
 }
 
 #[derive(Default)]
 pub struct Model {
-    name: String,
-    password: String,
+
 }
 
-#[derive(Clone)]
-pub enum FormField {
-    Name,
-    Password,
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS
@@ -61,7 +54,7 @@ pub enum FormField {
 // SPEC
 ///////////////////////////////////////////////////////////////////////////////
 
-impl Spec for LoginSpec {
+impl Spec for AccountSpec {
     type Msg = Msg;
     type Model = Model;
 
@@ -71,58 +64,17 @@ impl Spec for LoginSpec {
     fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
         match msg {
             Msg::NoOp => {}
-            Msg::Input{to, value} => {
-                match to {
-                    FormField::Name => {
-                        model.name = value;
-                    }
-                    FormField::Password => {
-                        model.password = value;
-                    }
-                }
-            }
         }
     }
-    fn view(&self, model: &Model) -> View<Msg> {
-        let name_id: String = format!("id-{}", rand::random::<u16>());
-        let password_id: String = format!("id-{}", rand::random::<u16>());
-        v1!{
-            h1 !{
-                "LoginSpec";
-            };
-            form !{
-                // NAME
-                div !{
-                    label !{
-                        text_theme();
-                        for = name_id.clone();
-                        "Name";
-                    };
-                    input !{
-                        text_theme();
-                        id = name_id;
-                    };
-                };
-                // PASSWORD
-                div !{
-                    label !{
-                        text_theme();
-                        for = password_id.clone();
-                        "Password";
-                    };
-                    input !{
-                        text_theme();
-                        id = password_id;
-                    };
-                };
-            };
-        }
-    }
+    fn view(&self, model: &Model) -> View<Msg> {v1!{
+        h1 !{
+            "AccountSpec";
+        };
+    }}
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
-
 

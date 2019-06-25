@@ -249,10 +249,16 @@ impl<Msg> Clone for Control<Msg> {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// MISCELLANEOUS
+///////////////////////////////////////////////////////////////////////////////
+
 pub struct ViewEnv<'a, Msg> {
     pub(crate) styling: &'a mut Styling,
     pub(crate) attributes: &'a mut HashMap<String, Either<Value<String>, Value<bool>>>,
     pub(crate) events: &'a mut Vec<EventHandler<Msg>>,
     pub(crate) children: &'a mut Vec<View<Msg>>,
 }
+
+
 

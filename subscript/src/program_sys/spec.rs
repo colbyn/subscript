@@ -20,15 +20,9 @@ pub trait Spec where Self: Clone {
 	type Msg;
     type Model;
 	
-	fn init(&self, startup: StartupInfo<Self>) -> Init<Self>;
+	fn init(&self, sh: &Shell<Self>) -> Init<Self>;
 	fn update(&self, model: &mut Self::Model, msg: Self::Msg, sh: &mut Shell<Self>);
 	fn view(&self, model: &Self::Model) -> View<Self::Msg>;
-}
-
-
-pub struct StartupInfo<S: Spec> {
-	pub saved_model: Option<S::Model>,
-    pub current_url: Url,
 }
 
 pub struct Init<S: Spec> {

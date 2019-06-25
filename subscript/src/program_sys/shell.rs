@@ -61,6 +61,36 @@ impl<S: Spec + 'static> Shell<S> {
     pub fn navigate(&mut self, path: impl UrlString) {
         self.commands.borrow_mut().push_back(Command::Navigate(path.url_string()));
     }
+    pub fn current_url(&self) -> Url {
+        Url::get_current(&browser::window())
+    }
+    pub fn cache(&self) -> Cache {
+        Cache(())
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// CACHE
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct Cache(pub(crate) ());
+
+impl Cache {
+    pub fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
+        browser::window()
+            .local_storage
+            .get::<T>(key)
+    }
+    pub fn insert<T: Serialize>(&self, key: &str, value: &T) {
+        browser::window()
+            .local_storage
+            .set::<T>(key, value);
+    }
+    pub fn remove(&self, key: &str) {
+        browser::window()
+            .local_storage
+            .remove(key);
+    }
 }
 
 

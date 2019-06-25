@@ -12,6 +12,12 @@ use wasm_bindgen::JsValue;
 use uuid::Uuid;
 use chrono::prelude::*;
 
+///////////////////////////////////////////////////////////////////////////////
+// CACHE
+///////////////////////////////////////////////////////////////////////////////
+
+pub static CACHE_LOGIN_NAME_KEY: &'static str = "cms.login.name";
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // TIME
@@ -34,6 +40,15 @@ impl Timestamp {
 ///////////////////////////////////////////////////////////////////////////////
 // NAVIGATION
 ///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct UrlRequest(pub Page);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// PAGE
+///////////////////////////////////////////////////////////////////////////////
+
 use crate::program_sys::spec::UrlString;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -152,6 +167,15 @@ pub struct Session {
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct NewSession(pub Session);
 
+impl Session {
+    pub fn new(account: &Account) -> Self {
+        let account = account.clone();
+        let user_id = account.account_master.user_id.clone();
+        let user_name = account.account_master.user_name.clone();
+        let encoded_token = String::from("");
+        Session{account, user_id, user_name, encoded_token}
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ACCOUNT
@@ -176,3 +200,18 @@ pub struct User {
 pub type Users = std::collections::HashMap<UserName, User>;
 pub type UserName = String;
 pub type AccountName = String;
+
+impl Account {
+    pub fn new(account_name: &str) -> Self {
+        let account_id = Uuid::new_v4();
+        let account_ts = Timestamp::new();
+        let account_name = String::from(account_name);
+        let account_master = User {
+            user_id: Uuid::new_v4(),
+            user_ts: account_ts.clone(),
+            user_name: account_name.clone(),
+        };
+        let account_users = HashMap::new();
+        Account{account_id, account_ts, account_name, account_master, account_users}
+    }
+}

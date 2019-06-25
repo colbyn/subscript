@@ -21,11 +21,12 @@ use crate::view_sys::runtime::css;
 impl<Msg: 'static> View<Msg> {
     pub(crate) fn build_component(self, is_root: bool) -> Dom<Msg> {
         let build_root = |view: View<Msg>| -> Dom<Msg> {
-            let tag = if is_root {
-                String::from("app")
-            } else {
-                String::from("component")
-            };
+            let tag = String::from("app");
+            // let tag = if is_root {
+            //     String::from("app")
+            // } else {
+            //     String::from("component")
+            // };
             let dom_ref = browser::window().document.create_element(tag.as_str());
             css_runtime::register_defaults(&dom_ref);
             let new_env = ElementEnv {

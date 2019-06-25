@@ -63,11 +63,9 @@ impl<S: Spec + 'static> Component<S> {
             commands: RefCell::new(VecDeque::new()),
             mark: PhantomData,
         };
-        let startup_info = StartupInfo {
-            current_url: Url::get_current(&window),
-            saved_model: None,
-        };
-        let init = component.spec.init(startup_info);
+        let init = component.spec.init(&sub_systems);
+        assert!(sub_systems.commands.try_borrow().is_ok());
+        assert!(sub_systems.commands.borrow().is_empty());
         let model = init.model;
         let view = component.spec.view(&model);
         let dom = view.build_component(is_root);

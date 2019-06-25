@@ -1,5 +1,7 @@
 pub mod data;
 pub mod login;
+pub mod signup;
+pub mod account;
 pub mod ui_utils;
 
 use std::marker::*;
@@ -21,6 +23,9 @@ use crate::program_sys::{self, Program};
 
 use crate::dev::cms_app::client::data::*;
 use crate::dev::cms_app::client::login::LoginSpec;
+use crate::dev::cms_app::client::signup::SignupSpec;
+use crate::dev::cms_app::client::account::AccountSpec;
+use crate::dev::cms_app::client::ui_utils::{text_theme};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -37,6 +42,7 @@ pub enum Msg {
     UrlChanged(Page),
     UrlRequest(Page),
     NewSession(Session),
+    Logout,
 }
 
 #[derive(Default)]
@@ -45,12 +51,11 @@ pub struct Model {
     session: Signal<Option<Session>>,
 }
 
-#[derive(Clone)]
-pub struct UrlRequest(Page);
-
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS
 ///////////////////////////////////////////////////////////////////////////////
+
+pub static CACHE_SESSION_KEY: &'static str = "cmd.session";
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -67,7 +72,7 @@ impl Spec for AppSpec {
     type Msg = Msg;
     type Model = Model;
 
-    fn init(&self, startup: StartupInfo<Self>) -> Init<Self> {
+    fn init(&self, sh: &Shell<Self>) -> Init<Self> {
         let url_parser: UrlParser<Page> = url_parser!{
             [] => {
                 Page::Homepage
@@ -91,8 +96,11 @@ impl Spec for AppSpec {
                 Page::NotFound
             }
         };
-        let session: Signal<Option<Session>> = Signal::new(None);
-        let mut page = Signal::new(url_parser.parse(&startup.current_url));
+        let session: Option<Session> = sh
+            .cache()
+            .get(CACHE_SESSION_KEY);
+        let session: Signal<Option<Session>> = Signal::new(session);
+        let mut page = Signal::new(url_parser.parse(&sh.current_url()));
         if session.get_copy().is_none() && !page.get().is_login() {
             page.set(Page::Login(LoginPage::default()));
         }
@@ -108,10 +116,19 @@ impl Spec for AppSpec {
             msg url_request(value: UrlRequest) -> Msg {
                 Msg::UrlRequest(value.0)
             }
+            msg new_session(value: NewSession) -> Msg {
+                Msg::NewSession(value.0)
+            }
         };
         Init{subs, model, ..Default::default()}
     }
     fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
+        // HELPERS
+        fn set_url(model: &mut Model, sh: &mut Shell<AppSpec>, page: Page) {
+            sh.navigate(page.clone());
+            model.page.set(page);
+        }
+        // GO!
         match msg {
             Msg::NoOp => {}
             Msg::UrlChanged(page) => {
@@ -121,7 +138,16 @@ impl Spec for AppSpec {
                 sh.navigate(page);
             }
             Msg::NewSession(session) => {
-
+                sh  .cache()
+                    .insert(CACHE_SESSION_KEY, &session);
+                model.session.set(Some(session));
+                set_url(model, sh, Page::Homepage)
+            }
+            Msg::Logout => {
+                model.session.set(None);
+                sh  .cache()
+                    .remove(CACHE_SESSION_KEY);
+                set_url(model, sh, Page::Login(LoginPage::default()))
             }
         }
     }
@@ -183,6 +209,31 @@ pub fn navigation(model: &Model) -> View<Msg> {
             };
         };
     }};
+    let logout_link = || v1!{
+        li !{
+            display: "block";
+            padding_top: "3px";
+            padding_left: "12px";
+            padding_right: "12px";
+            border_bottom: "3px solid transparent";
+            background_color: "#272727";
+            
+            event.click[page] => move || {
+                Msg::Logout
+            };
+            a !{
+                user_select: "none";
+                display: "block";
+                color: "#fff";
+                font_weight: "500";
+                padding: "8px";
+                css.hover => s1!{
+                    color: "#777";
+                };
+                "Logout";
+            };
+        };
+    };
     v1!{
         header !{
             background_color: "hsl(0, 0%, 24%)";
@@ -204,6 +255,7 @@ pub fn navigation(model: &Model) -> View<Msg> {
                     nav_link("Content", Page::Content);
                     nav_link("Analytics", Page::Analytics);
                     nav_link("Account", Page::Account(AccountPage::default()));
+                    logout_link();
                 };
                 if &model.session.map(|x| x.is_none()) => {
                     nav_link("Signup", Page::Login(LoginPage::Signup));
@@ -215,39 +267,47 @@ pub fn navigation(model: &Model) -> View<Msg> {
 }
 
 pub fn page(model: &Model) -> View<Msg> {v1!{
-    bind &model.page => move |page| {
-        match page {
-            Page::Homepage => v1!{
+    bind &model.page.zip(&model.session) => move |(page, session)| {
+        match (session, page) {
+            (Some(session), Page::Homepage) => v1!{
                 h1 !{
                     "Homepage";
                 };
             },
-            Page::Content => v1!{
+            (Some(session), Page::Content) => v1!{
                 h1 !{
                     "Content";
                 };
             },
-            Page::Analytics => v1!{
+            (Some(session), Page::Analytics) => v1!{
                 h1 !{
                     "Analytics";
                 };
             },
-            Page::Account(accunt_page) => v1!{
-                h1 !{
-                    "Account";
-                };
-            },
-            Page::Login(login_page) => v1!{
+            (Some(session), Page::Account(accunt_page)) => v1!{
                 Component {
-                    name: String::from("login"),
-                    spec: LoginSpec {
-                        page: login_page.clone(),
+                    name: String::from("account"),
+                    spec: AccountSpec {
+                        page: accunt_page.clone(),
+                        session: session.clone(),
                     }
                 };
             },
-            Page::NotFound => v1!{
+            (_, Page::NotFound) => v1!{
                 h1 !{
                     "NotFound";
+                };
+            },
+            (_, Page::Login(LoginPage::Signup)) => v1!{
+                Component {
+                    name: String::from("signup"),
+                    spec: SignupSpec {}
+                };
+            },
+            (_, _) => v1!{
+                Component {
+                    name: String::from("login"),
+                    spec: LoginSpec {}
                 };
             },
         }
@@ -255,15 +315,12 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
 }}
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW AGNOSTIC UTILS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn text_theme<Msg: 'static>() -> View<Msg> {v1!{
-    font_family: "'Source Sans Pro', sans-serif";
-    color: "#777";
-    font_weight: "200";
-}}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

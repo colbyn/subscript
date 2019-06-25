@@ -6,7 +6,7 @@ use crate::view_sys::shared::*;
 use crate::program_sys::instances::Component;
 use crate::program_sys::spec::Spec;
 
-pub use crate::view_sys::dsl::ViewEnv;
+pub use crate::view_sys::dsl::{ViewEnv};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,11 @@ impl<Msg: 'static> ViewExt<Msg> for View<Msg> {
         env.children.push(self);
     }
 }
-
+impl<Msg: 'static> ViewExt<Msg> for Vec<View<Msg>> {
+    fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
+        env.children.extend(self);
+    }
+}
 impl<Msg: 'static> ViewExt<Msg> for Signal<String> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         let node = View::new_text_signal(&self);

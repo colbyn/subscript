@@ -6,7 +6,6 @@ use std::any::*;
 use std::cell::*;
 use std::rc::*;
 use std::collections::*;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
 
 use crate::reactive_sys::signal::{Signal, SignalOutput, UnitSignal};
 use crate::reactive_sys::value::*;

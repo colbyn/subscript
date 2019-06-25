@@ -9,7 +9,7 @@ use wasm_bindgen::JsValue;
 
 use crate::backend::browser;
 use crate::reactive_sys::*;
-use crate::program_sys::spec::{Spec, StartupInfo};
+use crate::program_sys::spec::{Spec};
 use crate::program_sys::instances::*;
 use crate::view_sys::dom::Dom;
 use crate::view_sys::dsl::View;
