@@ -86,6 +86,21 @@ impl Spec for AppSpec {
             ["account"] => {
                 Page::Account(AccountPage::default())
             }
+            ["account", "billing"] => {
+                Page::Account(AccountPage::Billing)
+            }
+            ["account", "email"] => {
+                Page::Account(AccountPage::Email)
+            }
+            ["account", "password"] => {
+                Page::Account(AccountPage::Password)
+            }
+            ["account", "users"] => {
+                Page::Account(AccountPage::Users(UsersPage::Index))
+            }
+            ["account", "users", "add-user"] => {
+                Page::Account(AccountPage::Users(UsersPage::AddUser))
+            }
             ["login"] => {
                 Page::Login(LoginPage::Login)
             }

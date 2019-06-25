@@ -73,7 +73,6 @@ pub enum AccountPage {
     Email,
     Users(UsersPage),
     Billing,
-    AccountMaster,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -104,7 +103,6 @@ impl AccountPage {
     pub fn is_password(&self) -> bool {self == &AccountPage::Password}
     pub fn is_email(&self) -> bool {self == &AccountPage::Email}
     pub fn is_billing(&self) -> bool {self == &AccountPage::Billing}
-    pub fn is_account_master(&self) -> bool {self == &AccountPage::AccountMaster}
     pub fn is_users(&self) -> bool {
         match self {
             AccountPage::Users(_) => true,
@@ -140,13 +138,28 @@ impl Default for LoginPage {
 impl UrlString for Page {
     fn url_string(&self) -> String {
         let str = match self {
-            Page::Homepage => "/",
-            Page::Content => "/content",
-            Page::Analytics => "/analytics",
-            Page::Account(account_page) => "/account",
-            Page::Login(LoginPage::Login) => "/login",
-            Page::Login(LoginPage::Signup) => "/signup",
-            Page::NotFound => "not-found",
+            Page::Homepage =>
+                "/",
+            Page::Content =>
+                "/content",
+            Page::Analytics =>
+                "/analytics",
+            Page::Account(AccountPage::Password) =>
+                "/account/password",
+            Page::Account(AccountPage::Email) =>
+                "/account/email",
+            Page::Account(AccountPage::Users(UsersPage::Index)) =>
+                "/account/users",
+            Page::Account(AccountPage::Users(UsersPage::AddUser)) =>
+                "/account/users/add-user",
+            Page::Account(AccountPage::Billing) =>
+                "/account/billing",
+            Page::Login(LoginPage::Login) =>
+                "/login",
+            Page::Login(LoginPage::Signup) =>
+                 "/signup",
+            Page::NotFound =>
+                "not-found",
         };
         String::from(str)
     }

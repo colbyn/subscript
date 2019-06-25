@@ -1,8 +1,3 @@
-pub mod billing;
-pub mod email;
-pub mod password;
-pub mod users;
-
 use std::marker::*;
 use std::rc::*;
 use std::collections::*;
@@ -22,10 +17,6 @@ use crate::program_sys::{self, Program};
 
 use crate::dev::cms_app::client::data::*;
 use crate::dev::cms_app::client::ui_utils::{self, text_theme};
-use crate::dev::cms_app::client::account::billing::BillingSpec;
-use crate::dev::cms_app::client::account::email::EmailSpec;
-use crate::dev::cms_app::client::account::password::PasswordSpec;
-use crate::dev::cms_app::client::account::users::UsersSpec;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -33,9 +24,8 @@ use crate::dev::cms_app::client::account::users::UsersSpec;
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone)]
-pub struct AccountSpec {
+pub struct PasswordSpec {
     pub session: Session,
-    pub page: AccountPage,
 }
 
 pub enum Msg {
@@ -63,7 +53,7 @@ pub struct Model {
 // SPEC
 ///////////////////////////////////////////////////////////////////////////////
 
-impl Spec for AccountSpec {
+impl Spec for PasswordSpec {
     type Msg = Msg;
     type Model = Model;
 
@@ -75,31 +65,11 @@ impl Spec for AccountSpec {
             Msg::NoOp => {}
         }
     }
-    fn view(&self, model: &Model) -> View<Msg> {
-        match &self.page {
-            AccountPage::Password => v1!{
-                Component::singleton(PasswordSpec{
-                    session: self.session.clone(),
-                });
-            },
-            AccountPage::Email => v1!{
-                Component::singleton(EmailSpec{
-                    session: self.session.clone(),
-                });
-            },
-            AccountPage::Users(users_page) => v1!{
-                Component::singleton(UsersSpec{
-                    session: self.session.clone(),
-                    page: users_page.clone(),
-                });
-            },
-            AccountPage::Billing => v1!{
-                Component::singleton(BillingSpec{
-                    session: self.session.clone(),
-                });
-            },
-        }
-    }
+    fn view(&self, model: &Model) -> View<Msg> {v1!{
+        h1 !{
+            "PasswordSpec";
+        };
+    }}
 }
 
 

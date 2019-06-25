@@ -35,6 +35,10 @@ impl<S: Spec> Component<S> {
         let name = String::from(name);
         Component {name, spec}
     }
+    pub fn singleton(spec: S) -> Self where S: 'static {
+        let name = format!("{:#?}", TypeId::of::<S>());
+        Component {name, spec}
+    }
 }
 
 
