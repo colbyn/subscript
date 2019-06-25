@@ -48,7 +48,7 @@ impl<S: Spec + 'static> Shell<S> {
             }
         ));
     }
-    pub fn message<T: Spec + 'static>(&mut self, msg: impl Any) {
+    pub fn message<T: Spec + 'static, V: Any>(&mut self, msg: V) {
         let from_tid = TypeId::of::<S>();
         let to_tid = TypeId::of::<T>();
         self.commands.borrow_mut().push_back(Command::Message(SystemMessage::Private {

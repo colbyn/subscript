@@ -92,7 +92,10 @@ impl Page {
             _ => false
         }
     }
-    pub fn is_account(&self) -> Option<AccountPage> {
+    pub fn is_account(&self) -> bool {
+        self.get_account().is_some()
+    }
+    pub fn get_account(&self) -> Option<AccountPage> {
         match self {
             Page::Account(x) => Some(x.clone()),
             _ => None

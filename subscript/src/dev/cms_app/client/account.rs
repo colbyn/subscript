@@ -20,7 +20,7 @@ use crate::program_sys::instances::Component;
 use crate::program_sys::spec::*;
 use crate::program_sys::{self, Program};
 
-// use crate::dev::cms_app::client::AppSpec;
+use crate::dev::cms_app::client::AppSpec;
 use crate::dev::cms_app::client::data::*;
 use crate::dev::cms_app::client::ui_utils::{self, text_theme};
 use crate::dev::cms_app::client::account::billing::BillingSpec;
@@ -76,7 +76,7 @@ impl Spec for AccountSpec {
         match msg {
             Msg::NoOp => {}
             Msg::UrlRequest(page) => {
-                // sh.message::<AppSpec>(UrlRequest(page));
+                sh.message::<AppSpec, _>(UrlRequest(page));
             }
         }
     }
@@ -98,17 +98,30 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
     let link = |page: AccountPage, text: &str| v1!{
         li !{
             display: "block";
-            // {
-            //     if account.page == page {v1!{
-            //         border_bottom: "3px solid #0089ff";
-            //     }}
-            //     else {v1!{}}
-            // };
+            border_bottom: "1px solid";
+            border_color: "inherit";
+            css.last_child => s1!{
+                border_bottom: "none !important";
+            };
+            {
+                if account.page == page {v1!{
+                    border_left: "3px solid #0089ff !important";
+                }}
+                else {v1!{
+                    padding_left: "3px";
+                    css.hover => s1!{
+                        background_color: "#e7edf1";
+                    };
+                }}
+            };
             a !{
+                color: "#0089ff";
                 user_select: "none";
                 display: "block";
                 font_weight: "500";
-                padding: "8px";
+                font_size: "0.9em";
+                padding: "7px";
+                padding_left: "8px";
                 event.click[page] => move || {
                     Msg::UrlRequest(Page::Account(page))
                 };
@@ -118,23 +131,55 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
     };
     v1!{
         aside !{
+            border_color: "#949494";
             section !{
+                overflow: "hidden";
+                border: "1px solid";
+                border_color: "inherit";
+                margin: "8px";
+                border_radius: "3px";
                 h3 !{
                     text_theme();
+                    margin: "0";
+                    padding: "8px";
+                    border_bottom: "1px solid";
+                    border_color: "inherit";
+                    background_color: "#e7eaec";
+                    font_weight: "400";
+                    font_size: "1em";
                     "Personal Settings";
                 };
                 ul !{
+                    list_style: "none";
+                    padding: "0";
                     margin: "0";
                     link(AccountPage::Password, "Password");
+                    link(AccountPage::Email, "Email");
                 };
             };
             section !{
+                overflow: "hidden";
+                border: "1px solid";
+                border_color: "inherit";
+                margin: "8px";
+                border_radius: "3px";
                 h3 !{
                     text_theme();
+                    margin: "0";
+                    padding: "8px";
+                    border_bottom: "1px solid";
+                    border_color: "inherit";
+                    background_color: "#e7eaec";
+                    font_weight: "400";
+                    font_size: "1em";
                     "Organization Settings";
                 };
                 ul !{
+                    list_style: "none";
+                    padding: "0";
                     margin: "0";
+                    link(AccountPage::Users(UsersPage::default()), "Users");
+                    link(AccountPage::Billing, "Billing");
                 };
             };
         };

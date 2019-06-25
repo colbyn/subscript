@@ -188,18 +188,14 @@ impl Spec for AppSpec {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn navigation(model: &Model) -> View<Msg> {
-    let nav_link = |txt: &str, page: Page| -> View<Msg> {v1!{
+    let nav_link = |active: SignalOutput<bool>, txt: &str, page: Page| -> View<Msg> {v1!{
         li !{
             display: "block";
             margin_right: "16px";
             padding_top: "3px";
-            bind[page] &model.page => move |active| {
-                if active == &page {v1!{
-                    border_bottom: "3px solid #0089ff";
-                }}
-                else {v1!{
-                    border_bottom: "3px solid transparent";
-                }}
+            border_bottom: "3px solid transparent";
+            if &active => {
+                border_bottom: "3px solid #0089ff !important";
             };
             a !{
                 user_select: "none";
@@ -207,15 +203,10 @@ pub fn navigation(model: &Model) -> View<Msg> {
                 color: "#fff";
                 font_weight: "500";
                 padding: "8px";
-                bind[page] &model.page => move |active| {
-                    if active == &page {v1!{
-
-                    }}
-                    else {v1!{
-                        css.hover => s1!{
-                            color: "#777";
-                        };
-                    }}
+                if &active.map(|x| !x) => {
+                    css.hover => s1!{
+                        color: "#777";
+                    };
                 };
                 event.click[page] => move || {
                     Msg::UrlRequest(page)
@@ -267,14 +258,34 @@ pub fn navigation(model: &Model) -> View<Msg> {
                 padding: "0";
                 margin: "0";
                 if &model.session.map(|x| x.is_some()) => {
-                    nav_link("Content", Page::Content);
-                    nav_link("Analytics", Page::Analytics);
-                    nav_link("Account", Page::Account(AccountPage::default()));
+                    nav_link(
+                        model.page.map(|x| x.is_content()),
+                        "Content",
+                        Page::Content,
+                    );
+                    nav_link(
+                        model.page.map(|x| x.is_analytics()),
+                        "Analytics",
+                        Page::Analytics,
+                    );
+                    nav_link(
+                        model.page.map(|x| x.is_account()),
+                        "Account",
+                        Page::Account(AccountPage::default()),
+                    );
                     logout_link();
                 };
                 if &model.session.map(|x| x.is_none()) => {
-                    nav_link("Signup", Page::Login(LoginPage::Signup));
-                    nav_link("Login", Page::Login(LoginPage::Login));
+                    nav_link(
+                        model.page.map(|x| x.is_login()),
+                        "Signup",
+                        Page::Login(LoginPage::Signup),
+                    );
+                    nav_link(
+                        model.page.map(|x| x.is_login()),
+                        "Login",
+                        Page::Login(LoginPage::Login),
+                    );
                 };
             };
         };
