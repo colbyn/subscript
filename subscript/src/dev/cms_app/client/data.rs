@@ -70,7 +70,6 @@ pub enum LoginPage {
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum AccountPage {
     Password,
-    Email,
     Users(UsersPage),
     Billing,
 }
@@ -104,7 +103,6 @@ impl Page {
 }
 impl AccountPage {
     pub fn is_password(&self) -> bool {self == &AccountPage::Password}
-    pub fn is_email(&self) -> bool {self == &AccountPage::Email}
     pub fn is_billing(&self) -> bool {self == &AccountPage::Billing}
     pub fn is_users(&self) -> bool {
         match self {
@@ -149,8 +147,6 @@ impl UrlString for Page {
                 "/analytics",
             Page::Account(AccountPage::Password) =>
                 "/account/password",
-            Page::Account(AccountPage::Email) =>
-                "/account/email",
             Page::Account(AccountPage::Users(UsersPage::Index)) =>
                 "/account/users",
             Page::Account(AccountPage::Users(UsersPage::AddUser)) =>

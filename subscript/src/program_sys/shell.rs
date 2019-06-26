@@ -4,6 +4,9 @@ use std::any::*;
 use std::cell::*;
 use std::collections::*;
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsValue, JsCast};
+use js_sys::Function;
 
 use crate::backend::browser;
 use crate::view_sys::dsl::View;
@@ -26,6 +29,7 @@ pub struct Shell<S: Spec> {
     pub(crate) instance_name: String,
     pub(crate) commands: RefCell<VecDeque<Command>>,
     pub(crate) mark: PhantomData<S>,
+    // pub(crate) timeouts: Vec<>,
 }
 
 pub(crate) enum Command {
@@ -92,6 +96,17 @@ impl Cache {
             .remove(key);
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// TIMEOUT
+///////////////////////////////////////////////////////////////////////////////
+
+// struct Timeouts<Msg>(Vec<Timeout<Msg>>);
+// struct Timeout<Msg>{
+//     triggered: RefCell<bool>,
+//     name: Option<String>,
+//     on_timeout: Box<Fn()->Msg>,
+// }
 
 
 ///////////////////////////////////////////////////////////////////////////////

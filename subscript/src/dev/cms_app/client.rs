@@ -89,9 +89,6 @@ impl Spec for AppSpec {
             ["account", "billing"] => {
                 Page::Account(AccountPage::Billing)
             }
-            ["account", "email"] => {
-                Page::Account(AccountPage::Email)
-            }
             ["account", "password"] => {
                 Page::Account(AccountPage::Password)
             }
@@ -277,12 +274,12 @@ pub fn navigation(model: &Model) -> View<Msg> {
                 };
                 if &model.session.map(|x| x.is_none()) => {
                     nav_link(
-                        model.page.map(|x| x.is_login()),
+                        model.page.map(|x| x == &Page::Login(LoginPage::Signup)),
                         "Signup",
                         Page::Login(LoginPage::Signup),
                     );
                     nav_link(
-                        model.page.map(|x| x.is_login()),
+                        model.page.map(|x| x == &Page::Login(LoginPage::Login)),
                         "Login",
                         Page::Login(LoginPage::Login),
                     );

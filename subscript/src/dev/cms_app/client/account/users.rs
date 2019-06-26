@@ -67,8 +67,103 @@ impl Spec for UsersSpec {
         }
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
-        h1 !{
-            "UsersSpec";
+        border: "1px solid #c3c3c3";
+        background_color: "#fff";
+        border_radius: "3px";
+        width: "100%";
+        height: "fit-content";
+
+        header !{
+            padding: "8px";
+            border_top_left_radius: "3px";
+            border_top_right_radius: "3px";
+            border_bottom: "1px solid #c3c3c3";
+            background_color: "#f6f6f7";
+            display: "flex";
+            justify_content: "space-between";
+            align_items: "center";
+            button !{
+                text_theme();
+                outline: "none";
+                display: "flex";
+                align_items: "center";
+                border: "1px solid";
+                padding: "0";
+                margin: "0";
+                border_radius: "2px";
+                overflow: "hidden";
+                border_color: "#b3b3b3";
+                user_select: "none";
+                transition: "0.5s";
+                css.hover => s1!{
+                    color: "#0089ff";
+                    border_color: "#0089ff";
+                };
+                i !{
+                    padding: "4px 8px";
+                    border_right: "1px solid";
+                    border_color: "inherit";
+                    class = "fas fa-lock";
+                };
+                span !{
+                    padding: "0 8px";
+                    font_weight: "400";
+                    font_size: "1.1em";
+                    "Edit Users";
+                };
+            };
+            h1 !{
+                margin: "0";
+                font_size: "1.4em";
+                font_weight: "500";
+                text_align: "center";
+                "Auxiliary Users";
+            };
+            button !{
+                text_theme();
+                outline: "none";
+                display: "flex";
+                align_items: "center";
+                border: "1px solid";
+                padding: "0";
+                margin: "0";
+                border_radius: "2px";
+                overflow: "hidden";
+                border_color: "#b3b3b3";
+                user_select: "none";
+                transition: "0.5s";
+                css.hover => s1!{
+                    color: "#0089ff";
+                    border_color: "#0089ff";
+                };
+                i !{
+                    padding: "4px 8px";
+                    border_right: "1px solid";
+                    border_color: "inherit";
+                    class = "fas fa-plus";
+                };
+                span !{
+                    padding: "0 8px";
+                    font_weight: "400";
+                    font_size: "1.1em";
+                    "Add User";
+                };
+            };
+        };
+        if &Signal::new(self.session.account.account_users.is_empty()) => {
+            h2 !{
+                text_theme();
+                text_align: "center";
+                padding: "20px";
+                font_size: "3em";
+                margin: "0";
+                font_weight: "600";
+                color: "#ccc";
+                "Empty";
+            };
+        };
+        if &Signal::new(!self.session.account.account_users.is_empty()) => {
+
         };
     }}
 }

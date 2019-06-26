@@ -1,5 +1,4 @@
 pub mod billing;
-pub mod email;
 pub mod password;
 pub mod users;
 
@@ -24,7 +23,6 @@ use crate::dev::cms_app::client::AppSpec;
 use crate::dev::cms_app::client::data::*;
 use crate::dev::cms_app::client::ui_utils::{self, text_theme};
 use crate::dev::cms_app::client::account::billing::BillingSpec;
-use crate::dev::cms_app::client::account::email::EmailSpec;
 use crate::dev::cms_app::client::account::password::PasswordSpec;
 use crate::dev::cms_app::client::account::users::UsersSpec;
 
@@ -81,6 +79,10 @@ impl Spec for AccountSpec {
         }
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
+        max_width: "900px";
+        width: "100%";
+        margin: "0 auto";
+        padding_top: "24px";
         display: "grid";
         grid_template_columns: "max-content 1fr";
         grid_column_gap: "20px";
@@ -99,7 +101,7 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
         li !{
             display: "block";
             border_bottom: "1px solid";
-            border_color: "inherit";
+            border_color: "#c3c3c3";
             css.last_child => s1!{
                 border_bottom: "none !important";
             };
@@ -118,7 +120,7 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
                 color: "#0089ff";
                 user_select: "none";
                 display: "block";
-                font_weight: "500";
+                font_weight: "300";
                 font_size: "0.9em";
                 padding: "7px";
                 padding_left: "8px";
@@ -131,20 +133,23 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
     };
     v1!{
         aside !{
-            border_color: "#949494";
+            border_color: "#c3c3c3";
+            min_width: "200px";
             section !{
+                background_color: "#fff";
                 overflow: "hidden";
                 border: "1px solid";
                 border_color: "inherit";
                 margin: "8px";
                 border_radius: "3px";
+                margin_top: "0"; // FIRST-CHILD
                 h3 !{
                     text_theme();
                     margin: "0";
                     padding: "8px";
                     border_bottom: "1px solid";
                     border_color: "inherit";
-                    background_color: "#e7eaec";
+                    background_color: "#f6f6f7";
                     font_weight: "400";
                     font_size: "1em";
                     "Personal Settings";
@@ -154,10 +159,10 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
                     padding: "0";
                     margin: "0";
                     link(AccountPage::Password, "Password");
-                    link(AccountPage::Email, "Email");
                 };
             };
             section !{
+                background_color: "#fff";
                 overflow: "hidden";
                 border: "1px solid";
                 border_color: "inherit";
@@ -169,7 +174,7 @@ fn navigation(account: &AccountSpec, model: &Model) -> View<Msg> {
                     padding: "8px";
                     border_bottom: "1px solid";
                     border_color: "inherit";
-                    background_color: "#e7eaec";
+                    background_color: "#f6f6f7";
                     font_weight: "400";
                     font_size: "1em";
                     "Organization Settings";
@@ -190,11 +195,6 @@ fn page(account: &AccountSpec, model: &Model) -> View<Msg> {
     match &account.page {
         AccountPage::Password => v1!{
             Component::singleton(PasswordSpec{
-                session: account.session.clone(),
-            });
-        },
-        AccountPage::Email => v1!{
-            Component::singleton(EmailSpec{
                 session: account.session.clone(),
             });
         },
