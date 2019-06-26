@@ -176,9 +176,6 @@ pub struct Session {
     pub encoded_token: String,
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct NewSession(pub Session);
-
 impl Session {
     pub fn new(account: &Account) -> Self {
         let account = account.clone();
@@ -188,6 +185,14 @@ impl Session {
         Session{account, user_id, user_name, encoded_token}
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// SESSION OPERATIONS
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct NewSession(pub Session);
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // ACCOUNT

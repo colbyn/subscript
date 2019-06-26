@@ -7,7 +7,7 @@ use std::cell::*;
 use std::rc::*;
 use std::collections::*;
 
-use crate::reactive_sys::signal::{Signal, SignalOutput, UnitSignal};
+use crate::reactive_sys::signal::{Signal, Formula, UnitSignal};
 use crate::reactive_sys::value::*;
 use crate::reactive_sys::value;
 
@@ -20,7 +20,7 @@ pub trait VecObserver<T> {
     fn remove_op(&mut self, ix: usize);
 }
 
-// impl<T> VecObserver<T> for SignalOutput<T> {
+// impl<T> VecObserver<T> for Formula<T> {
 //     fn push_op(&mut self, new: &T) {
 //         unimplemented!()
 //     }
@@ -37,9 +37,9 @@ pub trait VecObserver<T> {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub struct VecSignal<T> {
-    value: Rc<RefCell<Vec<T>>>,
-    ops_subscribers: Rc<RefCell<Vec<Box<VecObserver<T>>>>>,
-    change_subscribers: Rc<RefCell<Vec<Box<FnMut(&Vec<T>)>>>>,
+    pub(crate) value: Rc<RefCell<Vec<T>>>,
+    pub(crate) ops_subscribers: Rc<RefCell<Vec<Box<VecObserver<T>>>>>,
+    pub(crate) change_subscribers: Rc<RefCell<Vec<Box<FnMut(&Vec<T>)>>>>,
 }
 
 impl<T> VecSignal<T> {
@@ -102,7 +102,7 @@ impl<T> VecSignal<T> {
     ///////////////////////////////////////////////////////////////////////////
     // OUTPUT-STREAM OPS
     ///////////////////////////////////////////////////////////////////////////
-    pub(crate) fn reduce_to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> SignalOutput<U> {
+    pub(crate) fn reduce_to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> Formula<U> {
         let subscribers: value::SubscribersRef<U> =
             value::SubscribersRef::Own(Rc::new(RefCell::new(Vec::new())));
         let apply = move |x: &Vec<T>| -> Rc<U> {
@@ -125,12 +125,12 @@ impl<T> VecSignal<T> {
                 result.notify_subscribers(&current_value.borrow());
             }
         }));
-        SignalOutput(result)
+        Formula(result)
     }
     pub(crate) fn traverse_to<U: 'static>(
         &self,
         f: impl Fn(&T) -> U + 'static,
-    ) -> SignalOutput<Vec<U>> {
+    ) -> Formula<Vec<U>> {
         let subscribers: value::SubscribersRef<Vec<U>> =
             value::SubscribersRef::Own(Rc::new(RefCell::new(Vec::new())));
         let apply = move |xs: &Vec<T>| -> Rc<Vec<U>> {
@@ -159,7 +159,7 @@ impl<T> VecSignal<T> {
                 result.notify_subscribers(&current_value.borrow());
             }
         }));
-        SignalOutput(result)
+        Formula(result)
     }
 }
 
@@ -188,5 +188,31 @@ impl<T> Clone for VecSignal<T> {
 impl<T> VecSignal<T> {
     pub(crate) fn add_observer(&self, new: impl VecObserver<T> + 'static) {
         self.ops_subscribers.borrow_mut().push(Box::new(new));
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// READ-ONLY VEC-SIGNAL
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct VecFormula<T>(pub(crate) VecSignal<T>);
+
+impl<T> VecFormula<T> {
+    pub(crate) fn reduce_to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> Formula<U> {
+        self.0.reduce_to(f)
+    }
+    pub(crate) fn traverse_to<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<Vec<U>> {
+        self.0.traverse_to(f)
+    }
+}
+
+impl<T: Default> Default for VecFormula<T> {
+    fn default() -> Self {
+        VecFormula(VecSignal::default())
+    }
+}
+impl<T> Clone for VecFormula<T> {
+    fn clone(&self) -> Self {
+        VecFormula(self.0.clone())
     }
 }

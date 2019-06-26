@@ -30,7 +30,7 @@ impl<Msg: 'static> View<Msg> {
     }
     pub fn new_text_signal(cell: &UnitSignal<String>) -> Self
     {
-        let observer: SignalOutput<String> = cell.signal_output();
+        let observer: Formula<String> = cell.signal_output();
         View(Dsl::Text(Text(Value::Dynamic(DynamicValue {
             current: Rc::new(RefCell::new(observer.get())),
             observer,
@@ -194,7 +194,7 @@ pub(crate) struct Mixin<Msg> {
 pub(crate) enum Control<Msg> {
     Linked(ViewVecObserver<Msg>),
     Toggle {
-        pred: SignalOutput<bool>,
+        pred: Formula<bool>,
         value: Rc<View<Msg>>,
     },
     Dynamic {

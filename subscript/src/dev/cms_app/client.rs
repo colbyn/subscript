@@ -153,7 +153,9 @@ impl Spec for AppSpec {
                 sh  .cache()
                     .insert(CACHE_SESSION_KEY, &session);
                 model.session.set(Some(session));
-                set_url(model, sh, Page::Homepage)
+                if model.page.get().is_login() {
+                    set_url(model, sh, Page::Homepage)
+                }
             }
             Msg::Logout => {
                 model.session.set(None);
@@ -185,7 +187,7 @@ impl Spec for AppSpec {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn navigation(model: &Model) -> View<Msg> {
-    let nav_link = |active: SignalOutput<bool>, txt: &str, page: Page| -> View<Msg> {v1!{
+    let nav_link = |active: Formula<bool>, txt: &str, page: Page| -> View<Msg> {v1!{
         li !{
             display: "block";
             margin_right: "16px";

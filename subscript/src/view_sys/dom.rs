@@ -60,7 +60,7 @@ pub(crate) enum Control<Msg> {
 
 #[derive(Debug)]
 pub(crate) struct Toggle<Msg> {
-    pub pred: SignalOutput<bool>,
+    pub pred: Formula<bool>,
     pub template: Rc<View<Msg>>,
     pub dom: RefCell<Option<Dom<Msg>>>,
 }

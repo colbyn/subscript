@@ -60,8 +60,8 @@ pub enum FormField {
 #[derive(Clone)]
 pub struct Check {
     pub error_msg: String,
-    pub active: SignalOutput<bool>,
-    pub valid: SignalOutput<bool>,
+    pub active: Formula<bool>,
+    pub valid: Formula<bool>,
 }
 
 pub fn password_checks(password: &Signal<String>) -> Vec<Check> {

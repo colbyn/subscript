@@ -505,6 +505,11 @@ impl AttributeValue for String {
         Left(Value::Static(Rc::new(self.clone())))
     }
 }
+impl AttributeValue for &String {
+    fn normalize(&self) -> Either<Value<String>, Value<bool>> {
+        Left(Value::Static(Rc::new(self.to_string())))
+    }
+}
 impl AttributeValue for bool {
     fn normalize(&self) -> Either<Value<String>, Value<bool>> {
         Right(Value::Static(Rc::new(self.clone())))
@@ -562,7 +567,7 @@ pub enum Value<T> {
 
 #[derive(Debug)]
 pub struct DynamicValue<T> {
-    pub(crate) observer: SignalOutput<T>,
+    pub(crate) observer: Formula<T>,
     pub(crate) current: Rc<RefCell<Rc<T>>>,
 }
 

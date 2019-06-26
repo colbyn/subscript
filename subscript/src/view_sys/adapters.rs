@@ -71,7 +71,7 @@ impl<Msg: 'static> ViewExt<Msg> for Signal<String> {
         env.children.push(node);
     }
 }
-impl<Msg: 'static> ViewExt<Msg> for SignalOutput<String> {
+impl<Msg: 'static> ViewExt<Msg> for Formula<String> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         let node = View::new_text_signal(&self);
         env.children.push(node);
@@ -83,7 +83,7 @@ impl<Msg: 'static> ViewExt<Msg> for &Signal<String> {
         env.children.push(node);
     }
 }
-impl<Msg: 'static> ViewExt<Msg> for &SignalOutput<String> {
+impl<Msg: 'static> ViewExt<Msg> for &Formula<String> {
     fn extend<'a>(self, env: ViewEnv<'a, Msg>) {
         let node = View::new_text_signal(self);
         env.children.push(node);

@@ -50,7 +50,7 @@ pub struct TodoEntry {
     id: EntryId,
     value: String,
     completed: Signal<bool>,
-    visible: SignalOutput<bool>,
+    visible: Formula<bool>,
     mouse_hovering: Signal<bool>,
 }
 
@@ -172,7 +172,7 @@ impl Spec for AppSpec {
         fn new_todo(model: &mut Model) {
             let value = model.new_todo.get_copy();
             let completed: Signal<bool> = Signal::new(false);
-            let visible: SignalOutput<bool> = model.display
+            let visible: Formula<bool> = model.display
                 .zip(&completed)
                 .map(move |(display, completed)| -> bool {
                     match display {
