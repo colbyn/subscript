@@ -11,6 +11,8 @@ use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::JsValue;
 use uuid::Uuid;
 use chrono::prelude::*;
+use subscript::prelude::{UrlString};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // CACHE
@@ -49,13 +51,13 @@ pub struct UrlRequest(pub Page);
 // PAGE
 ///////////////////////////////////////////////////////////////////////////////
 
-use crate::program_sys::spec::UrlString;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Page {
     Homepage,
     Content,
-    Analytics,
+    Input,
+    Insight(InsightPage),
     Account(AccountPage),
     Login(LoginPage),
     NotFound,
@@ -80,11 +82,27 @@ pub enum UsersPage {
     AddUser
 }
 
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum InsightPage {
+    Overview,
+    Health,
+    Traffic,
+    Bandwidth,
+    Cache,
+    Storage,
+}
+
 impl Page {
     pub fn is_homepage(&self) -> bool {self == &Page::Homepage}
     pub fn is_content(&self) -> bool {self == &Page::Content}
-    pub fn is_analytics(&self) -> bool {self == &Page::Analytics}
+    pub fn is_input(&self) -> bool {self == &Page::Input}
     pub fn is_not_found(&self) -> bool {self == &Page::NotFound}
+    pub fn is_insight(&self) -> bool {
+        match self {
+            Page::Insight(_) => true,
+            _ => false
+        }
+    }
     pub fn is_login(&self) -> bool {
         match self {
             Page::Login(_) => true,
@@ -135,6 +153,9 @@ impl Default for UsersPage {
 impl Default for LoginPage {
     fn default() -> Self {LoginPage::Signup}
 }
+impl Default for InsightPage {
+    fn default() -> Self {InsightPage::Overview}
+}
 
 impl UrlString for Page {
     fn url_string(&self) -> String {
@@ -143,8 +164,20 @@ impl UrlString for Page {
                 "/",
             Page::Content =>
                 "/content",
-            Page::Analytics =>
-                "/analytics",
+            Page::Input =>
+                "/input",
+            Page::Insight(InsightPage::Overview) =>
+                "/insight",
+            Page::Insight(InsightPage::Health) =>
+                "/insight/health",
+            Page::Insight(InsightPage::Traffic) =>
+                "/insight/traffic",
+            Page::Insight(InsightPage::Bandwidth) =>
+                "/insight/bandwidth",
+            Page::Insight(InsightPage::Cache) =>
+                "/insight/cache",
+            Page::Insight(InsightPage::Storage) =>
+                "/insight/storage",
             Page::Account(AccountPage::Password) =>
                 "/account/password",
             Page::Account(AccountPage::Users(UsersPage::Index)) =>

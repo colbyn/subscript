@@ -4,20 +4,10 @@ use std::collections::*;
 use std::any::*;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use subscript::prelude::*;
 
-use crate::backend::browser;
-use crate::backend::browser::{NodeApi, ElementApi};
-use crate::reactive_sys::*;
-use crate::view_sys::runtime::common::ElementEnv;
-use crate::view_sys::shared::*;
-use crate::view_sys::{dom, dsl, runtime, dom::{Dom, Element}, dsl::{View, Dsl}};
-use crate::view_sys::adapters::*;
-use crate::program_sys::instances::Component;
-use crate::program_sys::spec::*;
-use crate::program_sys::{self, Program};
-
-use crate::dev::cms_app::client::data::*;
-use crate::dev::cms_app::client::ui_utils::{self, text_theme};
+use crate::client::data::*;
+use crate::client::ui_utils::{self, text_theme};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,7 +24,9 @@ pub enum Msg {
     NoOp,
     ToggleEditMode,
     ToggleAddUserMode,
-    NewUserName(String),
+    NameInput(String),
+    PasswordInput(String),
+    PasswordConfirmInput(String),
     SubmitNewUser,
     DeleteUser(Uuid, UserName),
 }
@@ -43,9 +35,13 @@ pub enum Msg {
 pub struct Model {
     in_edit_mode: Signal<bool>,
     in_add_user_mode: Signal<bool>,
-    new_user_name: Signal<String>,
-    new_user_name_checks: Vec<Check>,
-    new_user_loading: Signal<bool>,
+    name: Signal<String>,
+    name_checks: Vec<Check>,
+    password: Signal<String>,
+    password_checks: Vec<Check>,
+    password_confirm: Signal<String>,
+    password_confirm_checks: Vec<Check>,
+    loading: Signal<bool>,
 }
 
 
@@ -94,6 +90,44 @@ pub fn name_checks(name: &Signal<String>) -> Vec<Check> {
     xs
 }
 
+pub fn password_checks(password: &Signal<String>) -> Vec<Check> {
+    let password = password.clone();
+    let active = password.map(|value| !value.is_empty());
+    vec![
+        Check {
+            error_msg: String::from("Must be ASCII"),
+            active: active.clone(),
+            valid: password.map(|value| value.is_ascii()),
+        },
+        Check {
+            error_msg: String::from("Must not contain spaces"),
+            active: active.clone(),
+            valid: password.map(|value| {
+                !value.contains(" ")
+            })
+        },
+        Check {
+            error_msg: String::from("Invalid length"),
+            active: active.clone(),
+            valid: password.map(|value| value.len() >= 4 && value.len() <= 100),
+        },
+    ]
+}
+pub fn password_confirm_checks(new_password: &Signal<String>, password_confirm: &Signal<String>) -> Vec<Check> {
+    let new_password = new_password.clone();
+    let password_confirm = password_confirm.clone();
+    let active = new_password.clone().zip(&password_confirm).map(|(pass, confrm)| {
+        !pass.is_empty() && !confrm.is_empty()
+    });
+    let valid = new_password.clone().zip(&password_confirm).map(|(pass, confrm)| {
+        pass == confrm
+    });
+    vec![
+        Check {error_msg: String::from("Passwords do not match"), active, valid},
+    ]
+}
+
+
 pub fn all_valid(checks: &Vec<Check>) -> bool {
     checks
         .iter()
@@ -115,11 +149,19 @@ impl Spec for UsersSpec {
     type Model = Model;
 
     fn init(&self, startup: &Shell<Self>) -> Init<Self> {
-        let new_user_name = Signal::new(String::new());
-        let new_user_name_checks = name_checks(&new_user_name);
+        let name = Signal::new(String::new());
+        let password = Signal::new(String::new());
+        let password_confirm = Signal::new(String::new());
+        let name_checks = name_checks(&name);
+        let password_checks = password_checks(&password);
+        let password_confirm_checks = password_confirm_checks(&password, &password_confirm);
         let model = Model {
-            new_user_name,
-            new_user_name_checks,
+            name,
+            password,
+            password_confirm,
+            name_checks,
+            password_checks,
+            password_confirm_checks,
             ..Default::default()
         };
         Init {model, ..Default::default()}
@@ -127,11 +169,15 @@ impl Spec for UsersSpec {
     fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
         // HELPERS
         let mut submit_new_user = |model: &mut Model, sh: &mut Shell<UsersSpec>| {
-            let no_errors = all_valid(&model.new_user_name_checks);
+            let no_errors = {
+                all_valid(&model.name_checks) &&
+                all_valid(&model.password_checks) &&
+                all_valid(&model.password_confirm_checks)
+            };
             if no_errors {
-                model.new_user_loading.set(true);
+                model.loading.set(true);
                 let mut account = self.session.account.clone();
-                let user_name = model.new_user_name.get_copy();
+                let user_name = model.name.get_copy();
                 let new_user = User {
                     id: Uuid::new_v4(),
                     ts: Timestamp::new(),
@@ -140,8 +186,10 @@ impl Spec for UsersSpec {
                 account.users.insert(user_name, new_user);
                 let session = Session::new(&account);
                 model.in_add_user_mode.set(false);
-                model.new_user_name.set(String::new());
-                model.new_user_loading.set(false);
+                model.name.set(String::new());
+                model.password.set(String::new());
+                model.password_confirm.set(String::new());
+                model.loading.set(false);
                 sh.broadcast(NewSession(session));
             }
         };
@@ -163,8 +211,14 @@ impl Spec for UsersSpec {
             Msg::ToggleAddUserMode => {
                 model.in_add_user_mode.set(!model.in_add_user_mode.get_copy());
             }
-            Msg::NewUserName(x) => {
-                model.new_user_name.set(x);
+            Msg::NameInput(x) => {
+                model.name.set(x);
+            }
+            Msg::PasswordInput(x) => {
+                model.password.set(x);
+            }
+            Msg::PasswordConfirmInput(x) => {
+                model.password_confirm.set(x);
             }
             Msg::SubmitNewUser => {
                 submit_new_user(model, sh);
@@ -314,7 +368,9 @@ impl Spec for UsersSpec {
 ///////////////////////////////////////////////////////////////////////////////
 
 fn add_user_form(model: &Model) -> View<Msg> {
-    let id = format!("id-{}", rand::random::<u16>());
+    let name_id = format!("id-{}", rand::random::<u16>());
+    let password_id = format!("id-{}", rand::random::<u16>());
+    let password_confirm_id = format!("id-{}", rand::random::<u16>());
     v1!{
         form !{
             display: "flex";
@@ -322,27 +378,71 @@ fn add_user_form(model: &Model) -> View<Msg> {
             border_bottom: "1px solid #c3c3c3";
             padding: "8px";
             div !{
-                display: "grid";
-                grid_template_columns: "max-content 1fr";
-                grid_column_gap: "14px";
-                align_items: "center";
+                display: "flex";
+                flex_direction: "column";
+                width: "100%";
+                margin_bottom: "8px";
                 label !{
                     text_theme();
                     font_size: "1em";
-                    for = &id;
-                    "User Name";
+                    for = &name_id;
+                    "Name";
                 };
                 input !{
                     text_theme();
                     font_size: "1em";
                     outline: "none";
-                    id = id;
+                    id = name_id;
                     type = "text";
-                    value = &model.new_user_name;
-                    event.input[] => move |x| Msg::NewUserName(x);
+                    value = &model.name;
+                    event.input[] => move |x| Msg::NameInput(x);
                 };
             };
-            render_checks(&model.new_user_name_checks);
+            render_checks(&model.name_checks);
+            div !{
+                display: "flex";
+                flex_direction: "column";
+                width: "100%";
+                margin_bottom: "8px";
+                label !{
+                    text_theme();
+                    font_size: "1em";
+                    for = &password_id;
+                    "Password";
+                };
+                input !{
+                    text_theme();
+                    font_size: "1em";
+                    outline: "none";
+                    id = password_id;
+                    type = "password";
+                    value = &model.password;
+                    event.input[] => move |x| Msg::PasswordInput(x);
+                };
+            };
+            render_checks(&model.password_checks);
+            div !{
+                display: "flex";
+                flex_direction: "column";
+                width: "100%";
+                margin_bottom: "8px";
+                label !{
+                    text_theme();
+                    font_size: "1em";
+                    for = &password_confirm_id;
+                    "Confirm Password";
+                };
+                input !{
+                    text_theme();
+                    font_size: "1em";
+                    outline: "none";
+                    id = password_confirm_id;
+                    type = "password";
+                    value = &model.password_confirm;
+                    event.input[] => move |x| Msg::PasswordConfirmInput(x);
+                };
+            };
+            render_checks(&model.password_confirm_checks);
             input !{
                 text_theme();
                 outline: "none";
@@ -353,12 +453,12 @@ fn add_user_form(model: &Model) -> View<Msg> {
                 margin_top: "8px";
                 padding: "4px";
                 font_size: "1em";
-                if &model.new_user_loading.map(|x| !x) => {
+                if &model.loading.map(|x| !x) => {
                     css.hover => s1!{
                         box_shadow: "0 0 4px 1px #e0e0e0";
                     };
                 };
-                if &model.new_user_loading => {
+                if &model.loading => {
                     background:
                         "repeating-linear-gradient(
                             -45deg, \

@@ -1,9 +1,9 @@
+/docs
 /target
 /dist
-node_modules
-**/*.rs.bk
+/node_modules
 .commands.out.sh
 rls.toml
 /pkg
 .DS_Store
-WIP-README.md
+Cargo.lock

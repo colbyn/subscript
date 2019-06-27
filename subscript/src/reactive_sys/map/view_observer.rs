@@ -30,7 +30,7 @@ pub(crate) struct ViewVecObserver<Msg>(Rc<ViewVecObserverApi<Msg>>);
 // }
 
 
-trait ViewVecObserverApi<Msg> {
+pub(crate) trait ViewVecObserverApi<Msg> {
     // TRAVERSAL UTILS
     fn for_each_dom_node(&self, f: &mut FnMut(&Dom<Msg>));
     // CORE
@@ -39,7 +39,7 @@ trait ViewVecObserverApi<Msg> {
     fn terminate(self, args: TerminateArgs<Msg>);
 }
 
-pub struct TerminateArgs<'a, Msg> {
+pub(crate) struct TerminateArgs<'a, Msg> {
     pub(crate) current: &'a mut FnMut(&mut ViewItem<Msg>),
     pub(crate) removed: &'a mut FnMut(Dom<Msg>),
 }

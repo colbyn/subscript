@@ -10,6 +10,7 @@ use crate::view_sys::dsl::View;
 use crate::program_sys::instances::TickEnv;
 use crate::program_sys::shell::*;
 use crate::reactive_sys::*;
+use crate::program_sys::spec::Spec;
 
 pub use crate::program_sys::shell::{Shell};
 pub use crate::program_sys::effect::nav::UrlString;
@@ -129,14 +130,15 @@ macro_rules! i_subs_entry {
 #[macro_export]
 macro_rules! subs {
     () => {{
-        use crate::program_sys::spec::*;
+        use ::subscript::program_sys::spec::*;
         let subs = Subscriptions::default();
         subs
     }};
     ($($kind:ident $fn_name:ident $args:tt -> $msg:ty {$($body:tt)*})*) => {{
         use std::any::{Any, TypeId};
         use std::rc::Rc;
-        use crate::program_sys::spec::*;
+        use ::subscript::program_sys::spec::*;
+
         let mut subs = Subscriptions::default();
         $({
             i_subs_entry!(subs; $kind $fn_name $args -> $msg {{$($body)*}});
@@ -150,29 +152,29 @@ macro_rules! subs {
 // DEV
 ///////////////////////////////////////////////////////////////////////////////
 
-use crate::program_sys::spec::*;
+// use crate::program_sys::spec::*;
 
-enum Msg {
-    NoOp,
-    UrlRequest(String),
-    UrlChanged(UrlRequest),
-}
+// enum Msg {
+//     NoOp,
+//     UrlRequest(String),
+//     UrlChanged(UrlRequest),
+// }
 
-#[derive(Clone, PartialEq)]
-pub struct UrlRequest(String);
-type UrlSignal = Signal<UrlRequest>;
+// #[derive(Clone, PartialEq)]
+// pub struct UrlRequest(String);
+// type UrlSignal = Signal<UrlRequest>;
 
-pub struct App {
-    url: UrlSignal
-}
+// pub struct App {
+//     url: UrlSignal
+// }
 
-pub fn run(this: &App) {
-    let subs: Subscriptions<Msg> = subs!{
-        sig url_changed(this.url => new_url) -> Msg {
-            Msg::UrlChanged(new_url)
-        }
-        msg url_request(value: UrlRequest) -> Msg {
-            Msg::UrlRequest(value.0)
-        }
-    };
-}
+// pub fn run(this: &App) {
+//     let subs: Subscriptions<Msg> = subs!{
+//         sig url_changed(this.url => new_url) -> Msg {
+//             Msg::UrlChanged(new_url)
+//         }
+//         msg url_request(value: UrlRequest) -> Msg {
+//             Msg::UrlRequest(value.0)
+//         }
+//     };
+// }

@@ -26,7 +26,7 @@ pub trait MapOpObserver<K, V> {
 // MAP-SIGNAL
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct MapSignal<K, V> {
+pub(crate) struct MapSignal<K, V> {
     pub(crate) value: Rc<RefCell<HashMap<K, V>>>,
     pub(crate) op_subscribers: Rc<RefCell<Vec<Box<MapOpObserver<K, V>>>>>,
     pub(crate) change_subscribers: Rc<RefCell<Vec<Box<FnMut(&HashMap<K, V>)>>>>,

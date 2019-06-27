@@ -2,6 +2,8 @@ pub mod data;
 pub mod login;
 pub mod signup;
 pub mod account;
+pub mod insight;
+pub mod input;
 pub mod ui_utils;
 
 use std::marker::*;
@@ -9,23 +11,15 @@ use std::rc::*;
 use std::collections::*;
 use std::any::*;
 use serde::{Serialize, Deserialize};
+use subscript::prelude::*;
 
-use crate::backend::browser;
-use crate::backend::browser::{NodeApi, ElementApi};
-use crate::reactive_sys::*;
-use crate::view_sys::runtime::common::ElementEnv;
-use crate::view_sys::shared::*;
-use crate::view_sys::{dom, dsl, runtime, dom::{Dom, Element}, dsl::{View, Dsl}};
-use crate::view_sys::adapters::*;
-use crate::program_sys::instances::Component;
-use crate::program_sys::spec::*;
-use crate::program_sys::{self, Program};
-
-use crate::dev::cms_app::client::data::*;
-use crate::dev::cms_app::client::login::LoginSpec;
-use crate::dev::cms_app::client::signup::SignupSpec;
-use crate::dev::cms_app::client::account::AccountSpec;
-use crate::dev::cms_app::client::ui_utils::{text_theme};
+use data::*;
+use login::LoginSpec;
+use signup::SignupSpec;
+use account::AccountSpec;
+use insight::InsightSpec;
+use input::InputSpec;
+use ui_utils::{text_theme};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -80,8 +74,26 @@ impl Spec for AppSpec {
             ["content"] => {
                 Page::Content
             }
-            ["analytics"] => {
-                Page::Analytics
+            ["input"] => {
+                Page::Input
+            }
+            ["insight"] => {
+                Page::Insight(InsightPage::Overview)
+            }
+            ["insight", "health"] => {
+                Page::Insight(InsightPage::Health)
+            }
+            ["insight", "traffic"] => {
+                Page::Insight(InsightPage::Traffic)
+            }
+            ["insight", "bandwidth"] => {
+                Page::Insight(InsightPage::Bandwidth)
+            }
+            ["insight", "cache"] => {
+                Page::Insight(InsightPage::Cache)
+            }
+            ["insight", "storage"] => {
+                Page::Insight(InsightPage::Storage)
             }
             ["account"] => {
                 Page::Account(AccountPage::default())
@@ -263,9 +275,14 @@ pub fn navigation(model: &Model) -> View<Msg> {
                         Page::Content,
                     );
                     nav_link(
-                        model.page.map(|x| x.is_analytics()),
-                        "Analytics",
-                        Page::Analytics,
+                        model.page.map(|x| x.is_input()),
+                        "Inputs",
+                        Page::Input,
+                    );
+                    nav_link(
+                        model.page.map(|x| x.is_insight()),
+                        "Insights",
+                        Page::Insight(InsightPage::default()),
                     );
                     nav_link(
                         model.page.map(|x| x.is_account()),
@@ -304,10 +321,16 @@ pub fn page(model: &Model) -> View<Msg> {v1!{
                     "Content";
                 };
             },
-            (Some(session), Page::Analytics) => v1!{
-                h1 !{
-                    "Analytics";
-                };
+            (Some(session), Page::Input) => v1!{
+                Component::singleton(InputSpec {
+                    session: session.clone(),
+                });
+            },
+            (Some(session), Page::Insight(insight_page)) => v1!{
+                Component::singleton(InsightSpec {
+                    page: insight_page.clone(),
+                    session: session.clone(),
+                });
             },
             (Some(session), Page::Account(accunt_page)) => v1!{
                 Component {
@@ -359,5 +382,5 @@ pub fn setup() {
 }
 
 pub fn tick() {
-    program_sys::on_request_animation_frame();
+    // program_sys::on_request_animation_frame();
 }

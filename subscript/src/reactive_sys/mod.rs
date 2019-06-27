@@ -3,6 +3,7 @@ pub mod vec;
 pub mod map;
 pub mod value;
 
-pub(crate) use signal::{Reactive,Signal,Formula};
-pub(crate) use vec::{VecSignal, VecOpObserver, VecFormula};
+pub use signal::{Reactive,Signal,Formula};
+pub use vec::{VecSignal,VecFormula};
+pub(crate) use vec::{VecOpObserver};
 pub(crate) use vec::view_observer::ViewVecObserver;

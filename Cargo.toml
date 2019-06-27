@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "subscript",
+    "examples/cms-app",
+    "examples/todo-app",
+]

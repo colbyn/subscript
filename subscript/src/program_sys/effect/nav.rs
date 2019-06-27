@@ -359,7 +359,8 @@ macro_rules! check_for_totality  {
 macro_rules! url_parser {
     ($($x:tt)*) => {{
         use std::str::FromStr;
-        use crate::program_sys::effect::nav::*;
+        use ::subscript::program_sys::effect::nav::*;
+
         UrlParser(Rc::new(move |url_changed: Url| {
             check_for_totality!($($x)*);
             url_parser_impl!(&url_changed; $($x)*)
@@ -371,33 +372,33 @@ macro_rules! url_parser {
 ///////////////////////////////////////////////////////////////////////////////
 // DEV
 ///////////////////////////////////////////////////////////////////////////////
-pub mod dev {
-    use uuid::Uuid;
-    use super::*;
+// pub mod dev {
+//     use uuid::Uuid;
+//     use super::*;
 
-    pub enum Page {
-        Home,
-        Item(Uuid),
-        Account,
-        NotFound,
-    }
+//     pub enum Page {
+//         Home,
+//         Item(Uuid),
+//         Account,
+//         NotFound,
+//     }
 
 
-    pub fn dev() {
-        let parser: UrlParser<Page> = url_parser!{
-            [] => {
-                Page::Home
-            }
-            ["item", uid: Uuid] => {
-                Page::Item(uid)
-            }
-            ["account"] => {
-                Page::Account
-            }
-            _ => {
-                Page::NotFound
-            }
-        };
-    }
-}
+//     pub fn dev() {
+//         let parser: UrlParser<Page> = url_parser!{
+//             [] => {
+//                 Page::Home
+//             }
+//             ["item", uid: Uuid] => {
+//                 Page::Item(uid)
+//             }
+//             ["account"] => {
+//                 Page::Account
+//             }
+//             _ => {
+//                 Page::NotFound
+//             }
+//         };
+//     }
+// }
 

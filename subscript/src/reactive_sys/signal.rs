@@ -43,10 +43,10 @@ impl<T: 'static> Signal<T> {
     pub fn set(&mut self, x: T) {
         self.0.set(x);
     }
-    pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<U> {
+    pub fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<U> {
         Formula(self.0.map(f))
     }
-    pub(crate) fn zip<U: 'static>(&self, other: &Reactive<U>) -> Formula<(T, U)>
+    pub fn zip<U: 'static>(&self, other: &Reactive<U>) -> Formula<(T, U)>
     where
         T: Clone,
         U: Clone,
@@ -71,10 +71,10 @@ impl<T: 'static> Formula<T> {
     pub fn get_copy(&self) -> T where T: Clone {
         self.0.get().as_ref().clone()
     }
-    pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<U> {
+    pub fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<U> {
         Formula(self.0.map(f))
     }
-    pub(crate) fn zip<U: 'static>(&self, other: &Reactive<U>) -> Formula<(T, U)>
+    pub fn zip<U: 'static>(&self, other: &Reactive<U>) -> Formula<(T, U)>
     where
         T: Clone,
         U: Clone,

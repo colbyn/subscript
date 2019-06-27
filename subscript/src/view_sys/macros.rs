@@ -43,9 +43,11 @@ macro_rules! animation_intervals {
 #[macro_export]
 macro_rules! s1 {
     ($($x:tt)*) => {{
-        use crate::view_sys::dsl::*;
-        use crate::view_sys::shared::*;
-        use crate::view_sys::macros::*;
+        use ::subscript::view_sys::dsl::*;
+        use ::subscript::view_sys::shared::*;
+        use ::subscript::view_sys::macros::*;
+        use ::subscript::view_sys::adapters::*;
+
         s1_impl!($($x)*)
     }};
 }
@@ -329,11 +331,12 @@ macro_rules! v1_impl {
 #[macro_export]
 macro_rules! v1 {
     ($($x:tt)*) => {{
-        use crate::view_sys::dsl::*;
-        use crate::view_sys::shared::*;
-        use crate::view_sys::macros::*;
-        use crate::view_sys::adapters::*;
+        use ::subscript::view_sys::dsl::*;
+        use ::subscript::view_sys::shared::*;
+        use ::subscript::view_sys::macros::*;
+        use ::subscript::view_sys::adapters::*;
         use ::either::{Either, Either::*};
+
         let mut mixin = View::new_mixin();
         if let Some(mut env) = mixin.get_env() {
             v1_impl!(&mut env; $($x)*);
@@ -418,44 +421,44 @@ macro_rules! clone_ident_arguments_inner {
 // DEV
 ///////////////////////////////////////////////////////////////////////////////
 
-pub mod dev {
-    use crate::view_sys::dsl::View;
-    use crate::reactive_sys::*;
+// pub mod dev {
+// use crate::view_sys::dsl::View;
+//     use crate::reactive_sys::*;
 
-    pub enum Msg {
-        NoOP,
-        Value(String),
-    }
+//     pub enum Msg {
+//         NoOP,
+//         Value(String),
+//     }
 
-    pub struct Model {
-        value: Signal<String>,
-        display: Signal<bool>
-    }
+//     pub struct Model {
+//         value: Signal<String>,
+//         display: Signal<bool>
+//     }
 
-    pub fn dev(model: &Model) -> View<Msg> {v1!{
-        div !{
-            if &model.display => {
-                h1 !{
-                    "Hello World";
-                };
-            };
+//     pub fn dev(model: &Model) -> View<Msg> {v1!{
+//         div !{
+//             if &model.display => {
+//                 h1 !{
+//                     "Hello World";
+//                 };
+//             };
 
-            css.media[max_width: "900px"] => s1!{
-                background_color: "red";
-            };
-            css.hover => s1!{
-                color: "blue";
-            };
-            css.animation => {
-                from => s1!{
-                    color: "#fff";
-                };
-                to => s1!{
-                    color: "#000";
-                };
-            };
-        };
-    }}
-}
+//             css.media[max_width: "900px"] => s1!{
+//                 background_color: "red";
+//             };
+//             css.hover => s1!{
+//                 color: "blue";
+//             };
+//             css.animation => {
+//                 from => s1!{
+//                     color: "#fff";
+//                 };
+//                 to => s1!{
+//                     color: "#000";
+//                 };
+//             };
+//         };
+//     }}
+// }
 
 

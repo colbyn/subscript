@@ -3,20 +3,10 @@ use std::rc::*;
 use std::collections::*;
 use std::any::*;
 use serde::{Serialize, Deserialize};
+use subscript::prelude::*;
 
-use crate::backend::browser;
-use crate::backend::browser::{NodeApi, ElementApi};
-use crate::reactive_sys::*;
-use crate::view_sys::runtime::common::ElementEnv;
-use crate::view_sys::shared::*;
-use crate::view_sys::{dom, dsl, runtime, dom::{Dom, Element}, dsl::{View, Dsl}};
-use crate::view_sys::adapters::*;
-use crate::program_sys::instances::Component;
-use crate::program_sys::spec::*;
-use crate::program_sys::{self, Program};
-
-use crate::dev::cms_app::client::data::*;
-use crate::dev::cms_app::client::ui_utils::{self, text_theme};
+use crate::client::data::*;
+use crate::client::ui_utils::{self, text_theme};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -24,9 +14,7 @@ use crate::dev::cms_app::client::ui_utils::{self, text_theme};
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Clone)]
-pub struct PasswordSpec {
-    pub session: Session,
-}
+pub struct SignupSpec {}
 
 pub enum Msg {
     NoOp,
@@ -40,14 +28,17 @@ pub enum Msg {
 #[derive(Default)]
 pub struct Model {
     loading: Signal<bool>,
+    name: Signal<String>,
     password: Signal<String>,
     password_confirm: Signal<String>,
+    name_checks: Vec<Check>,
     password_checks: Vec<Check>,
     password_confirm_checks: Vec<Check>,
 }
 
 #[derive(Clone, PartialEq)]
 pub enum FormField {
+    Name,
     Password,
     PasswordConfirm,
 }
@@ -64,6 +55,39 @@ pub struct Check {
     pub valid: Formula<bool>,
 }
 
+pub fn name_checks(name: &Signal<String>) -> Vec<Check> {
+    let name = name.clone();
+    let active = name.map(|value| !value.is_empty());
+    let mut xs = Vec::new();
+    xs.push(Check {
+        error_msg: String::from("Must be ASCII"),
+        active: active.clone(),
+        valid: name.map(|value| value.is_ascii()),
+    });
+    xs.push(Check {
+        error_msg: String::from("Invalid length"),
+        active: active.clone(),
+        valid: name.map(|value| {
+            value.len() >= 3 && 
+            value.len() <= 20
+        })
+    });
+    xs.push(Check {
+        error_msg: String::from("Must not contain spaces"),
+        active: active.clone(),
+        valid: name.map(|value| {
+            !value.contains(" ")
+        })
+    });
+    xs.push(Check {
+        error_msg: String::from("Must be all lowercase"),
+        active: active.clone(),
+        valid: name.map(|value| {
+            !value.contains(char::is_uppercase)
+        })
+    });
+    xs
+}
 pub fn password_checks(password: &Signal<String>) -> Vec<Check> {
     let password = password.clone();
     let active = password.map(|value| !value.is_empty());
@@ -117,7 +141,7 @@ pub fn all_valid(checks: &Vec<Check>) -> bool {
 // SPEC
 ///////////////////////////////////////////////////////////////////////////////
 
-impl Spec for PasswordSpec {
+impl Spec for SignupSpec {
     type Msg = Msg;
     type Model = Model;
 
@@ -125,13 +149,17 @@ impl Spec for PasswordSpec {
         let name: Option<String> = sh
             .cache()
             .get(CACHE_LOGIN_NAME_KEY);
+        let name = Signal::new(name.unwrap_or(String::new()));
         let password = Signal::new(String::new());
         let password_confirm = Signal::new(String::new());
+        let name_checks = name_checks(&name);
         let password_checks = password_checks(&password);
         let password_confirm_checks = password_confirm_checks(&password, &password_confirm);
         let model = Model {
+            name,
             password,
             password_confirm,
+            name_checks,
             password_checks,
             password_confirm_checks,
             ..Default::default()
@@ -140,8 +168,11 @@ impl Spec for PasswordSpec {
     }
     fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
         // HELPERS
-        fn on_input(model: &mut Model, sh: &mut Shell<PasswordSpec>, to: FormField, value: String) {
+        fn on_input(model: &mut Model, sh: &mut Shell<SignupSpec>, to: FormField, value: String) {
             match to {
+                FormField::Name => {
+                    model.name.set(value);
+                }
                 FormField::Password => {
                     model.password.set(value);
                 }
@@ -150,16 +181,20 @@ impl Spec for PasswordSpec {
                 }
             }
         }
-        fn on_submit(spec: &PasswordSpec, model: &mut Model, sh: &mut Shell<PasswordSpec>) {
+        fn on_submit(model: &mut Model, sh: &mut Shell<SignupSpec>) {
             let no_errors = {
+                all_valid(&model.name_checks) &&
                 all_valid(&model.password_checks) &&
                 all_valid(&model.password_confirm_checks)
             };
             if no_errors {
                 model.loading.set(true);
-                let account = spec.session.account.clone();
+                sh  .cache()
+                    .insert(CACHE_LOGIN_NAME_KEY, model.name.get().as_ref());
+                let account = Account::new(model.name.get().as_str());
                 let session = Session::new(&account);
                 model.loading.set(false);
+                model.name.set(String::new());
                 model.password.set(String::new());
                 model.password_confirm.set(String::new());
                 sh.broadcast(NewSession(session));
@@ -172,7 +207,7 @@ impl Spec for PasswordSpec {
                 on_input(model, sh, to, value);
             }
             Msg::Submit => {
-                on_submit(self, model, sh);
+                on_submit(model, sh);
             }
         }
     }
@@ -180,30 +215,39 @@ impl Spec for PasswordSpec {
         width: "100%";
         height: "100%";
         display: "flex";
-        // justify_content: "center";
-        justify_content: "flex-start";
+        justify_content: "center";
         align_items: "center";
 
         div !{
-            border: "1px solid #c3c3c3";
             background_color: "#fff";
             border_radius: "3px";
-            width: "100%";
+            margin_top: "-20vh";
+
+            css.media[min_width: "900px"] => s1!{
+                width: "50%";
+            };
+            css.media[max_width: "900px"] => s1!{
+                width: "80%";
+            };
 
             h1 !{
                 margin: "0";
                 padding: "8px";
                 text_align: "center";
+                background_color: "#0089ff";
+                color: "#fff";
                 border_top_left_radius: "3px";
                 border_top_right_radius: "3px";
-                font_size: "1.4em";
-                font_weight: "500";
-                border_bottom: "1px solid #c3c3c3";
-                background_color: "#f6f6f7";
-                "Change Password";
+                "Create Account";
             };
             form !{
                 padding: "8px";
+                form_field(
+                    FormField::Name,
+                    "Name",
+                    &model.name,
+                    &model.name_checks,
+                );
                 form_field(
                     FormField::Password,
                     "Password",
@@ -345,6 +389,5 @@ pub fn render_check(check: &Check) -> View<Msg> {
         };
     }
 }
-
 
 

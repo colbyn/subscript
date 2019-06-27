@@ -3,20 +3,10 @@ use std::rc::*;
 use std::collections::*;
 use std::any::*;
 use serde::{Serialize, Deserialize};
+use subscript::prelude::*;
 
-use crate::backend::browser;
-use crate::backend::browser::{NodeApi, ElementApi};
-use crate::reactive_sys::*;
-use crate::view_sys::runtime::common::ElementEnv;
-use crate::view_sys::shared::*;
-use crate::view_sys::{dom, dsl, runtime, dom::{Dom, Element}, dsl::{View, Dsl}};
-use crate::view_sys::adapters::*;
-use crate::program_sys::instances::Component;
-use crate::program_sys::spec::*;
-use crate::program_sys::{self, Program};
-
-use crate::dev::cms_app::client::data::*;
-use crate::dev::cms_app::client::ui_utils::{self, text_theme};
+use crate::client::data::*;
+use crate::client::ui_utils::{self, text_theme};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -92,6 +82,7 @@ fn overview(model: &Model) -> View<Msg> {
         a !{
             color: "#0089ff";
             font_size: "0.9em";
+            cursor: "pointer";
             css.hover => s1!{
                 text_decoration: "underline";
             };
@@ -392,6 +383,7 @@ fn payment(model: &Model) -> View<Msg> {
         a !{
             color: "#0089ff";
             font_size: "0.9em";
+            cursor: "pointer";
             css.hover => s1!{
                 text_decoration: "underline";
             };

@@ -91,7 +91,7 @@ impl<T> VecSignal<T> {
     ///////////////////////////////////////////////////////////////////////////
     // OUTPUT-STREAM OPS
     ///////////////////////////////////////////////////////////////////////////
-    pub(crate) fn reduce_to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> Formula<U> {
+    pub fn reduce_to<U: 'static>(&self, f: impl Fn(&Vec<T>) -> U + 'static) -> Formula<U> {
         let subscribers: value::SubscribersRef<U> =
             value::SubscribersRef::Own(Rc::new(RefCell::new(Vec::new())));
         let apply = move |x: &Vec<T>| -> Rc<U> {
@@ -116,7 +116,7 @@ impl<T> VecSignal<T> {
         }));
         Formula(result)
     }
-    pub(crate) fn traverse_to<U: 'static>(
+    pub fn traverse_to<U: 'static>(
         &self,
         f: impl Fn(&T) -> U + 'static,
     ) -> Formula<Vec<U>> {

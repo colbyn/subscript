@@ -285,7 +285,8 @@ impl<Msg: 'static> EventHandler<Msg> {
     }
 }
 
-pub(crate) struct EventHandler<Msg>(pub Rc<EventHandlerImpl<Msg>>);
+pub struct EventHandler<Msg>(pub(crate) Rc<EventHandlerImpl<Msg>>);
+
 pub(crate) trait EventHandlerImpl<Msg> {
     fn apply(&self, event: JsValue) -> Msg;
     fn event_type(&self) -> String;
