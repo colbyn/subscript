@@ -172,17 +172,17 @@ impl UrlString for Page {
 pub struct Session {
     pub account: Account,
     pub user_id: Uuid,
-    pub user_name: String,
+    pub name: String,
     pub encoded_token: String,
 }
 
 impl Session {
     pub fn new(account: &Account) -> Self {
         let account = account.clone();
-        let user_id = account.account_master.user_id.clone();
-        let user_name = account.account_master.user_name.clone();
+        let user_id = account.master.id.clone();
+        let name = account.master.name.clone();
         let encoded_token = String::from("");
-        Session{account, user_id, user_name, encoded_token}
+        Session{account, user_id, name, encoded_token}
     }
 }
 
@@ -200,18 +200,18 @@ pub struct NewSession(pub Session);
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Account {
-    pub account_id: Uuid,
-    pub account_ts: Timestamp,
-    pub account_name: String,
-    pub account_master: User,
-    pub account_users: Users,
+    pub id: Uuid,
+    pub ts: Timestamp,
+    pub name: String,
+    pub master: User,
+    pub users: Users,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct User {
-    pub user_id: Uuid,
-    pub user_ts: Timestamp,
-    pub user_name: UserName,
+    pub id: Uuid,
+    pub ts: Timestamp,
+    pub name: UserName,
 }
 
 pub type Users = std::collections::HashMap<UserName, User>;
@@ -220,15 +220,15 @@ pub type AccountName = String;
 
 impl Account {
     pub fn new(account_name: &str) -> Self {
-        let account_id = Uuid::new_v4();
-        let account_ts = Timestamp::new();
-        let account_name = String::from(account_name);
-        let account_master = User {
-            user_id: Uuid::new_v4(),
-            user_ts: account_ts.clone(),
-            user_name: account_name.clone(),
+        let id = Uuid::new_v4();
+        let ts = Timestamp::new();
+        let name = String::from(account_name);
+        let master = User {
+            id: Uuid::new_v4(),
+            ts: ts.clone(),
+            name: name.clone(),
         };
-        let account_users = HashMap::new();
-        Account{account_id, account_ts, account_name, account_master, account_users}
+        let users = HashMap::new();
+        Account{id, ts, name, master, users}
     }
 }
