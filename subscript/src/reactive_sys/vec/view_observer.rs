@@ -8,7 +8,7 @@ use either::{Either, Either::*};
 
 use crate::backend::browser;
 use crate::view_sys::{dsl::View, dom::Dom};
-use crate::reactive_sys::vec::{VecSignal, VecObserver};
+use crate::reactive_sys::vec::{VecSignal, VecOpObserver};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ enum ViewVecSignal<T, Msg> {
     },
 }
 
-impl<T, Msg> VecObserver<T> for ViewVecSignal<T, Msg> {
+impl<T, Msg> VecOpObserver<T> for ViewVecSignal<T, Msg> {
     fn push_op(&mut self, new: &T) {
         self.ensure_from_vec_op();
         self.for_each_segment(ForEachSegment {

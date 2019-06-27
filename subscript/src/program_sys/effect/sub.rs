@@ -35,7 +35,7 @@ impl<Msg> Default for Subscriptions<Msg> {
 }
 
 impl<Msg: 'static> Subscriptions<Msg> {
-    pub fn add_signal_sub<S: UnitSignal<T>, T: 'static + PartialEq + Clone>(
+    pub fn add_signal_sub<S: Reactive<T>, T: 'static + PartialEq + Clone>(
         &mut self,
         signal: &S,
         on_change: impl Fn(T) -> Msg + 'static,

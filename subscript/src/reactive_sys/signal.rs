@@ -11,22 +11,15 @@ use crate::reactive_sys::vec::VecFormula;
 // GENERIC INTERFACE
 ///////////////////////////////////////////////////////////////////////////////
 
-pub trait UnitSignal<T> {
+pub trait Reactive<T> {
     fn signal_output(&self) -> Formula<T>;
-    fn box_clone(&self) -> Box<UnitSignal<T>>;
 }
 
-impl<T: 'static> UnitSignal<T> for Signal<T> {
+impl<T: 'static> Reactive<T> for Signal<T> {
     fn signal_output(&self) -> Formula<T> {Formula(self.0.clone())}
-    fn box_clone(&self) -> Box<UnitSignal<T>> {
-        Box::new(self.clone())
-    }
 }
-impl<T: 'static> UnitSignal<T> for Formula<T> {
+impl<T: 'static> Reactive<T> for Formula<T> {
     fn signal_output(&self) -> Formula<T> {self.clone()}
-    fn box_clone(&self) -> Box<UnitSignal<T>> {
-        Box::new(self.clone())
-    }
 }
 
 
@@ -53,7 +46,7 @@ impl<T: 'static> Signal<T> {
     pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<U> {
         Formula(self.0.map(f))
     }
-    pub(crate) fn zip<U: 'static>(&self, other: &UnitSignal<U>) -> Formula<(T, U)>
+    pub(crate) fn zip<U: 'static>(&self, other: &Reactive<U>) -> Formula<(T, U)>
     where
         T: Clone,
         U: Clone,
@@ -81,7 +74,7 @@ impl<T: 'static> Formula<T> {
     pub(crate) fn map<U: 'static>(&self, f: impl Fn(&T) -> U + 'static) -> Formula<U> {
         Formula(self.0.map(f))
     }
-    pub(crate) fn zip<U: 'static>(&self, other: &UnitSignal<U>) -> Formula<(T, U)>
+    pub(crate) fn zip<U: 'static>(&self, other: &Reactive<U>) -> Formula<(T, U)>
     where
         T: Clone,
         U: Clone,
@@ -90,16 +83,25 @@ impl<T: 'static> Formula<T> {
     }
 }
 
-impl<T: 'static + Clone> Formula<Vec<T>> {
-    pub fn to_vec_formula(&self) -> VecFormula<T> {
-        use crate::reactive_sys::vec::*;
-        let value: Rc<RefCell<Vec<T>>> = Rc::new(RefCell::new(self.get_copy()));
-        let ops_subscribers: Rc<RefCell<Vec<Box<VecObserver<T>>>>> = Default::default();
-        let change_subscribers: Rc<RefCell<Vec<Box<FnMut(&Vec<T>)>>>> = Default::default();
-        let mut vec_signal = VecSignal{value,ops_subscribers,change_subscribers};
-        VecFormula(vec_signal)
-    }
-}
+// impl<T: 'static + Clone> Formula<Vec<T>> {
+//     pub fn to_vec_formula(&self) -> VecFormula<T> {
+//         use crate::reactive_sys::vec::*;
+//         let value: Rc<RefCell<Vec<T>>> = Rc::new(RefCell::new(self.get_copy()));
+//         let ops_subscribers: Rc<RefCell<Vec<Box<VecObserver<T>>>>> = Default::default();
+//         let change_subscribers: Rc<RefCell<Vec<Box<FnMut(&Vec<T>)>>>> = Default::default();
+//         let mut result = VecSignal{value,ops_subscribers,change_subscribers};
+//         self.0.subscribe({
+//             // let result = result.clone();
+//             // let current_value = current_value.clone();
+//             move |value: &Rc<Vec<T>>| {
+//                 // let current_value = current_value.clone();
+//                 // current_value.replace(apply(value));
+//                 // result.notify_subscribers(&current_value.borrow());
+//             }
+//         });
+//         VecFormula(result)
+//     }
+// }
 
 
 ///////////////////////////////////////////////////////////////////////////////

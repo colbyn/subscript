@@ -7,30 +7,19 @@ use std::cell::*;
 use std::rc::*;
 use std::collections::*;
 
-use crate::reactive_sys::signal::{Signal, Formula, UnitSignal};
+use crate::reactive_sys::signal::{Signal, Formula, Reactive};
 use crate::reactive_sys::value::*;
 use crate::reactive_sys::value;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SIGNAL-OBSERVERS
 ///////////////////////////////////////////////////////////////////////////////
-pub trait VecObserver<T> {
+pub trait VecOpObserver<T> {
     fn push_op(&mut self, new: &T);
     fn insert_op(&mut self, ix: usize, new: &T);
     fn remove_op(&mut self, ix: usize);
 }
 
-// impl<T> VecObserver<T> for Formula<T> {
-//     fn push_op(&mut self, new: &T) {
-//         unimplemented!()
-//     }
-//     fn insert_op(&mut self, ix: usize, new: &T) {
-//         unimplemented!()
-//     }
-//     fn remove_op(&mut self, ix: usize) {
-//         unimplemented!()
-//     }
-// }
 
 ///////////////////////////////////////////////////////////////////////////////
 // SIGNAL
@@ -38,7 +27,7 @@ pub trait VecObserver<T> {
 
 pub struct VecSignal<T> {
     pub(crate) value: Rc<RefCell<Vec<T>>>,
-    pub(crate) ops_subscribers: Rc<RefCell<Vec<Box<VecObserver<T>>>>>,
+    pub(crate) ops_subscribers: Rc<RefCell<Vec<Box<VecOpObserver<T>>>>>,
     pub(crate) change_subscribers: Rc<RefCell<Vec<Box<FnMut(&Vec<T>)>>>>,
 }
 
@@ -161,6 +150,9 @@ impl<T> VecSignal<T> {
         }));
         Formula(result)
     }
+    pub(crate) fn add_observer(&self, new: impl VecOpObserver<T> + 'static) {
+        self.ops_subscribers.borrow_mut().push(Box::new(new));
+    }
 }
 
 impl<T: Default> Default for VecSignal<T> {
@@ -181,15 +173,7 @@ impl<T> Clone for VecSignal<T> {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// SIGNAL - INTERNAL API
-///////////////////////////////////////////////////////////////////////////////
 
-impl<T> VecSignal<T> {
-    pub(crate) fn add_observer(&self, new: impl VecObserver<T> + 'static) {
-        self.ops_subscribers.borrow_mut().push(Box::new(new));
-    }
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // READ-ONLY VEC-SIGNAL

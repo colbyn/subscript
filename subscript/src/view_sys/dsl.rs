@@ -28,7 +28,7 @@ impl<Msg: 'static> View<Msg> {
     pub fn new_text(value: &str) -> Self {
         View(Dsl::Text(Text(Value::Static(Rc::new(String::from(value))))))
     }
-    pub fn new_text_signal(cell: &UnitSignal<String>) -> Self
+    pub fn new_text_signal(cell: &Reactive<String>) -> Self
     {
         let observer: Formula<String> = cell.signal_output();
         View(Dsl::Text(Text(Value::Dynamic(DynamicValue {
@@ -57,14 +57,14 @@ impl<Msg: 'static> View<Msg> {
         let observer = ViewVecObserver::new(&vec, init);
         View(Dsl::Control(Control::Linked(observer)))
     }
-    pub fn new_toggle_control(pred: &UnitSignal<bool>, value: View<Msg>) -> Self {
+    pub fn new_toggle_control(pred: &Reactive<bool>, value: View<Msg>) -> Self {
         let pred = pred.signal_output();
         View(Dsl::Control(Control::Toggle {
             value: Rc::new(value),
             pred,
         }))
     }
-    pub fn new_dynamic_control<T: 'static + PartialEq>(input: &UnitSignal<T>, f: impl Fn(&T) -> View<Msg> + 'static) -> Self {
+    pub fn new_dynamic_control<T: 'static + PartialEq>(input: &Reactive<T>, f: impl Fn(&T) -> View<Msg> + 'static) -> Self {
         let f = Rc::new(f);
         let input = input.signal_output();
         let current_value: Rc<RefCell<Rc<T>>> = Rc::new(RefCell::new(input.get()));
@@ -101,7 +101,7 @@ impl<Msg: 'static> View<Msg> {
     pub fn text(&mut self, value: &str) {
         self.push_child(View::new_text(value));
     }
-    pub fn text_cell(&mut self, value: &UnitSignal<String>) {
+    pub fn text_cell(&mut self, value: &Reactive<String>) {
         self.push_child(View::new_text_signal(value));
     }
     pub fn tag(&mut self, tag: &str, inner: impl FnMut(&mut View<Msg>)) {
