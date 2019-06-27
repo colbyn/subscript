@@ -170,9 +170,9 @@ impl Spec for AppSpec {
         overflow: "auto";
         width: "100%";
         height: "100%";
-        if &model.page.map(move |x| x.is_login()) => {
-            background_color: "hsl(0, 0%, 86%) !important";
-        };
+        // if &model.page.map(move |x| x.is_login()) => {
+        //     background_color: "hsl(0, 0%, 86%) !important";
+        // };
         background_color: "#efefef";
         display: "flex";
         flex_direction: "column";

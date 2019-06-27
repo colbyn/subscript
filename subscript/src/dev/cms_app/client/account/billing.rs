@@ -66,9 +66,18 @@ impl Spec for BillingSpec {
         }
     }
     fn view(&self, model: &Model) -> View<Msg> {v1!{
-        h1 !{
-            "BillingSpec";
-        };
+        width: "100%";
+        height: "100%";
+        justify_content: "flex-start";
+        align_items: "flex-start";
+        display: "grid";
+        grid_template_columns: "1fr";
+        grid_auto_rows: "max-content";
+        grid_row_gap: "10px";
+
+        overview(model);
+        subscriptions(model);
+        payment(model);
     }}
 }
 
@@ -76,4 +85,148 @@ impl Spec for BillingSpec {
 ///////////////////////////////////////////////////////////////////////////////
 // VIEW HELPERS
 ///////////////////////////////////////////////////////////////////////////////
+
+fn overview(model: &Model) -> View<Msg> {v1!{
+    div !{
+        border: "1px solid #c3c3c3";
+        background_color: "#fff";
+        border_radius: "3px";
+        width: "100%";
+        height: "fit-content";
+        header !{
+            border_top_left_radius: "3px";
+            border_top_right_radius: "3px";
+            border_bottom: "1px solid #c3c3c3";
+            background_color: "#f6f6f7";
+            display: "flex";
+            justify_content: "space-between";
+            align_items: "center";
+            height: "30px";
+            overflow: "hidden";
+
+            button !{
+                height: "100%";
+                display: "flex";
+                align_items: "center";
+                justify_content: "center";
+                border: "none";
+                border_right: "1px solid #c3c3c3";
+                background_color: "transparent";
+                outline: "none";
+
+                i !{
+                    padding: "8px";
+                    class = "fas fa-expand-arrows-alt";
+                };
+            };
+            h1 !{
+                margin: "0";
+                font_size: "1.2em";
+                font_weight: "500";
+                text_align: "center";
+                "Billing Overview";
+            };
+            div !{};
+        };
+        div !{
+            min_height: "2px";
+        };
+    };
+}}
+
+fn subscriptions(model: &Model) -> View<Msg> {v1!{
+    div !{
+        border: "1px solid #c3c3c3";
+        background_color: "#fff";
+        border_radius: "3px";
+        width: "100%";
+        height: "fit-content";
+        header !{
+            border_top_left_radius: "3px";
+            border_top_right_radius: "3px";
+            border_bottom: "1px solid #c3c3c3";
+            background_color: "#f6f6f7";
+            display: "flex";
+            justify_content: "space-between";
+            align_items: "center";
+            height: "30px";
+            overflow: "hidden";
+
+            button !{
+                height: "100%";
+                display: "flex";
+                align_items: "center";
+                justify_content: "center";
+                border: "none";
+                border_right: "1px solid #c3c3c3";
+                background_color: "transparent";
+                outline: "none";
+
+                i !{
+                    padding: "8px";
+                    class = "fas fa-compress-arrows-alt";
+                };
+            };
+            h1 !{
+                margin: "0";
+                font_size: "1.2em";
+                font_weight: "500";
+                text_align: "center";
+                "Your Subscriptions";
+            };
+            div !{};
+        };
+        div !{
+            min_height: "100px";
+        };
+    };
+}}
+
+fn payment(model: &Model) -> View<Msg> {v1!{
+    div !{
+        border: "1px solid #c3c3c3";
+        background_color: "#fff";
+        border_radius: "3px";
+        width: "100%";
+        height: "fit-content";
+        header !{
+            border_top_left_radius: "3px";
+            border_top_right_radius: "3px";
+            border_bottom: "1px solid #c3c3c3";
+            background_color: "#f6f6f7";
+            display: "flex";
+            justify_content: "space-between";
+            align_items: "center";
+            height: "30px";
+            overflow: "hidden";
+
+            button !{
+                height: "100%";
+                display: "flex";
+                align_items: "center";
+                justify_content: "center";
+                border: "none";
+                border_right: "1px solid #c3c3c3";
+                background_color: "transparent";
+                outline: "none";
+
+                i !{
+                    padding: "8px";
+                    class = "fas fa-compress-arrows-alt";
+                };
+            };
+            h1 !{
+                margin: "0";
+                font_size: "1.2em";
+                font_weight: "500";
+                text_align: "center";
+                "Payment Information";
+            };
+            div !{};
+        };
+        div !{
+            min_height: "100px";
+        };
+    };
+}}
 
