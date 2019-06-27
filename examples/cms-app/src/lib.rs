@@ -12,15 +12,13 @@ mod server;
 pub fn main() -> Result<(), wasm_bindgen::JsValue> {
     console_error_panic_hook::set_once();
     console!("started");
-    // dev::cms_app::client::setup();
-    // dev::todo_app::setup();
+    client::setup();
     Ok(())
 }
 
 #[wasm_bindgen]
 pub fn tick() {
-    // dev::cms_app::client::tick();
-    // dev::todo_app::tick();
+    client::tick();
 }
 
 

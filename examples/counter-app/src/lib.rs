@@ -5,7 +5,6 @@ use wasm_bindgen::prelude::*;
 #[macro_use] extern crate subscript;
 
 mod app;
-pub mod ui_utils;
 
 
 #[wasm_bindgen]
