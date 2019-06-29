@@ -313,7 +313,7 @@ fn subscriptions(model: &Model) -> View<Msg> {
             //             hsl(0, 0%, 88%) 20px /* determines size */ \
             //         )";
             //       background_size: "28px 28px";
-            //       animation: "default-move 1s linear infinite";
+            //       animation: "1s linear infinite";
             // };
             css.animation => {
                 from => s1!{

@@ -382,5 +382,5 @@ pub fn setup() {
 }
 
 pub fn tick() {
-    // program_sys::on_request_animation_frame();
+    subscript::prelude::on_request_animation_frame();
 }
