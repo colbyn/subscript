@@ -8,9 +8,6 @@ use subscript::prelude::*;
 use crate::client::AppSpec;
 use crate::client::data::*;
 use crate::client::ui_utils::{self, text_theme};
-use crate::client::account::billing::BillingSpec;
-use crate::client::account::password::PasswordSpec;
-use crate::client::account::users::UsersSpec;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -29,6 +26,8 @@ pub enum Msg {
     ToggleAddInputMode,
     SubmitNewInput,
     InputType(InputType),
+    Name(String),
+    HttpAddress(String),
 }
 
 #[derive(Default)]
@@ -37,9 +36,11 @@ pub struct Model {
     in_add_input_mode: Signal<bool>,
     loading: Signal<bool>,
     input_type: Signal<InputType>,
+    name: Signal<String>,
+    http_address: Signal<String>,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum InputType {
     Http,
     AwsS3,
@@ -73,9 +74,34 @@ impl Spec for InputSpec {
     type Model = Model;
 
     fn init(&self, startup: &Shell<Self>) -> Init<Self> {
-        Default::default()
+        let name = if self.session.account.inputs.is_empty() {
+            Signal::new(String::from(self.session.account.name.as_str()))
+        } else {
+            Default::default()
+        };
+        let model = Model {name, ..Default::default()};
+        Init {
+            model,  
+            ..Default::default()
+        }
     }
     fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
+        // HELPERS
+        let mut submit_new_input = |model: &mut Model, sh: &mut Shell<InputSpec>| {
+            model.loading.set(true);
+            match model.input_type.get_copy() {
+                InputType::Http => {
+
+                }
+                InputType::AwsS3 => {
+
+                }
+                InputType::GoogleStorage => {
+
+                }
+            }
+        };
+        // GO!
         match msg {
             Msg::NoOp => {}
             Msg::UrlRequest(page) => {
@@ -88,10 +114,16 @@ impl Spec for InputSpec {
                 model.in_add_input_mode.set(!model.in_add_input_mode.get_copy());
             }
             Msg::SubmitNewInput => {
-                model.loading.set(true);
+                submit_new_input(model, sh);
             }
             Msg::InputType(input_type) => {
                 model.input_type.set(input_type);
+            }
+            Msg::Name(name) => {
+                model.name.set(name);
+            }
+            Msg::HttpAddress(x) => {
+                model.http_address.set(x);
             }
         }
     }
@@ -215,7 +247,7 @@ impl Spec for InputSpec {
             // BODY
             div !{
                 add_input_form(self, model);
-                inputs_list(model);
+                inputs_list(self, model);
             };
         };
     }}
@@ -296,13 +328,37 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
             id = &http_server_id;
             placeholder = "https://example.com/optional-mount-path";
             type = "text";
+            event.input[] => move |str| Msg::HttpAddress(str);
         };
     };
+    pub fn alt_text_theme<Msg: 'static>() -> View<Msg> {v1!{
+        font_family: "'Source Sans Pro', sans-serif";
+        color: "#ccc";
+        font_weight: "800";
+    }}
     let aws_s3_input = v1!{
-        "aws_s3_input config";
+        h2 !{
+            text_theme();
+            // font_size: "2em";
+            // margin: "0";
+            // font_weight: "600";
+            font_family: "'Source Sans Pro', sans-serif";
+            color: "#000";
+            font_weight: "800";
+            "Not yet supported";
+        };
     };
     let google_storage_input = v1!{
-        "google_storage_input config";
+        h2 !{
+            text_theme();
+            // font_size: "2em";
+            // margin: "0";
+            // font_weight: "600";
+            font_family: "'Source Sans Pro', sans-serif";
+            color: "#000";
+            font_weight: "800";
+            "Not yet supported";
+        };
     };
     v1!{
         if &model.in_add_input_mode => {
@@ -328,77 +384,118 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
                         text_theme();
                         font_size: "1em";
                         outline: "none";
-                        cursor: "not-allowed";
-                        color: "#858e96 !important";
-                        font_weight: "500 !important";
-                        user_select: "none";
                         type = "text";
                         id = &name_id;
-                        readonly = true;
-                        value = &spec.session.account.name;
+                        if &Signal::new(spec.session.account.inputs.is_empty()) => {
+                            cursor: "not-allowed";
+                            color: "#858e96 !important";
+                            font_weight: "500 !important";
+                            user_select: "none";
+                            readonly = true;
+                        };
+                        value = &model.name;
                     };
-                    ul !{
-                        padding: "0";
-                        padding_left: "28px";
-                        margin: "0";
-                        li !{
+                    if &Signal::new(spec.session.account.inputs.is_empty()) => {
+                        ul !{
                             padding: "0";
+                            padding_left: "28px";
                             margin: "0";
-                            color: "#858e96";
-                            font_size: "0.9em";
-                            font_weight: "500";
-                            "The first input is always the account name. \
-                            For subsequent inputs this field will be customizable.";
-                            sup !{
-                                "(";
-                                a !{
-                                    href = "#";
-                                    "details";
+                            li !{
+                                padding: "0";
+                                margin: "0";
+                                color: "#858e96";
+                                font_size: "0.9em";
+                                font_weight: "500";
+                                "The first input is always the account name. \
+                                For subsequent inputs this field will be customizable.";
+                                sup !{
+                                    "(";
+                                    a !{
+                                        href = "#";
+                                        "details";
+                                    };
+                                    ")";
                                 };
-                                ")";
                             };
                         };
                     };
-                    dl !{
-                        margin: "0";
-                        margin_top: "8px";
-                        margin_bottom: "8px";
-                        color: "#888";
+                    if &model.name.map({
+                        let account_name = spec.session.account.name.clone();
+                        move |x| x == &account_name.clone()
+                    }) => {
+                        dl !{
+                            margin: "0";
+                            margin_top: "8px";
+                            margin_bottom: "8px";
+                            color: "#888";
 
-                        dt !{
-                            "Url Preview";
+                            dt !{
+                                "Url Preview";
+                            };
+                            dd !{
+                                border_left: "3px solid #f5f5f5";
+                                padding_left: "8px";
+                                margin_left: "0";
+
+                                dt !{
+                                    display: "flex";
+                                    justify_content: "flex-start";
+                                    align_items: "center";
+                                    margin_bottom: "2px";
+                                    "Account Alias";
+                                };
+                                dd !{
+                                    padding: "4px";
+                                    background_color: "#f5f5f5";
+                                    margin_left: "0";
+                                    border_radius: "3px";
+                                    margin_bottom: "4px";
+                                    "account.logo.media/url-path";
+                                };
+                                dt !{
+                                    margin_bottom: "2px";
+                                    "Canonical";
+                                };
+                                dd !{
+                                    padding: "4px";
+                                    background_color: "#f5f5f5";
+                                    margin_left: "0";
+                                    border_radius: "3px";
+                                    margin_bottom: "4px";
+                                    "logo.media/account/input/url-path";
+                                };
+                            };
                         };
-                        dd !{
-                            border_left: "3px solid #f5f5f5";
-                            padding_left: "8px";
-                            margin_left: "0";
+                    };
+                    if &model.name.map({
+                        let account_name = spec.session.account.name.clone();
+                        move |x| x != &account_name.clone()
+                    }) => {
+                        dl !{
+                            margin: "0";
+                            margin_top: "8px";
+                            margin_bottom: "8px";
+                            color: "#888";
 
                             dt !{
-                                display: "flex";
-                                justify_content: "flex-start";
-                                align_items: "center";
-                                margin_bottom: "2px";
-                                "Account Alias";
+                                "Url Preview";
                             };
                             dd !{
-                                padding: "4px";
-                                background_color: "#f5f5f5";
+                                border_left: "3px solid #f5f5f5";
+                                padding_left: "8px";
                                 margin_left: "0";
-                                border_radius: "3px";
-                                margin_bottom: "4px";
-                                "account.logo.media/url-path";
-                            };
-                            dt !{
-                                margin_bottom: "2px";
-                                "Canonical";
-                            };
-                            dd !{
-                                padding: "4px";
-                                background_color: "#f5f5f5";
-                                margin_left: "0";
-                                border_radius: "3px";
-                                margin_bottom: "4px";
-                                "logo.media/test/test/url-path";
+                                dt !{
+                                    margin_bottom: "2px";
+                                    "Canonical";
+                                };
+                                dd !{
+                                    padding: "4px";
+                                    background_color: "#f5f5f5";
+                                    margin_left: "0";
+                                    border_radius: "3px";
+                                    margin_bottom: "4px";
+                                    model.name.map(|x| format!("logo.media/test/{}/url-path", x));
+                                };
                             };
                         };
                     };
@@ -518,7 +615,7 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
     }
 }
 
-fn inputs_list(model: &Model) -> View<Msg> {
+fn inputs_list(spec: &InputSpec, model: &Model) -> View<Msg> {
     // let input_entry = |name: &str| v1!{
     //     li !{
     //         span !{
@@ -526,14 +623,7 @@ fn inputs_list(model: &Model) -> View<Msg> {
     //         };
     //     };
     // };
-    v1!{
-        // ul !{
-        //     height: "100px";
-        //     list_style: "none";
-        //     padding: "0";
-        //     margin: "0";
-        //     // input_entry("master");
-        // };
+    if spec.session.account.inputs.is_empty() {v1!{
         h2 !{
             text_theme();
             text_align: "center";
@@ -544,6 +634,15 @@ fn inputs_list(model: &Model) -> View<Msg> {
             color: "#ccc";
             "Empty";
         };
-    }
+    }}
+    else {v1!{
+        // ul !{
+        //     height: "100px";
+        //     list_style: "none";
+        //     padding: "0";
+        //     margin: "0";
+        //     // input_entry("master");
+        // };
+    }}
 }
 

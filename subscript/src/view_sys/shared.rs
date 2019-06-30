@@ -587,6 +587,12 @@ impl<T, U> EventHandlerImpl<U> for MappedEventHandler<T, U> {
 // MISCELLANEOUS
 ///////////////////////////////////////////////////////////////////////////////
 
+#[derive(Debug, PartialEq, Clone, Copy, Eq, Hash)]
+pub enum SelfPlacement {
+    Direct,
+    Child,
+}
+
 #[derive(Debug)]
 pub enum Value<T> {
     Static(Rc<T>),

@@ -3,4 +3,5 @@ members = [
     "subscript",
     "examples/cms-app",
     "examples/todo-app",
+    "examples/counter-app",
 ]

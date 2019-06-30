@@ -14,57 +14,65 @@ use crate::view_sys::shared::*;
 // EXTERNAL API
 ///////////////////////////////////////////////////////////////////////////////
 
-pub(crate) fn upsert(styling: &Styling) -> StylingEnv {
-    CSS_REGISTRY.with(move |reg| {
-        reg .borrow_mut()
-            .upsert(styling);
+pub(crate) fn upsert(styling: &Styling, placement: SelfPlacement) -> StylingEnv {
+    CSS_REGISTRY.with({
+        let placement = placement.clone();
+        move |reg| {
+            reg .borrow_mut()
+                .upsert(styling, &placement);
+        }
     });
-    styling_env(&styling)
+    styling_env(&styling, &placement)
 }
 
-pub(crate) fn removed(styling: &Styling) -> StylingEnv {
-    styling_env(&styling)
+pub(crate) fn removed(styling: &Styling, placement: SelfPlacement) -> StylingEnv {
+    styling_env(&styling, &placement)
 }
 
 pub struct StylingEnv {
+    pub placement: SelfPlacement,
     pub css_id: u64,
     pub animation_ids: Vec<u64>,
 }
 
 impl StylingEnv {
     pub fn css_id(&self) -> String {
-        css_id_format(self.css_id)
+        css_id_format(self.css_id, &self.placement)
     }
     pub fn animation_ids(&self) -> Vec<String> {
         self.animation_ids
             .iter()
-            .map(|aid| css_id_format_pair(self.css_id, aid.clone()))
+            .map(|aid| css_keyframe_id(self.css_id, aid.clone(), &self.placement))
             .collect()
     }
 }
 
-pub(crate) fn css_id_format(x: u64) -> String {
-    let hasher = hashids::HashIds::new();
-    let short_id = hasher.encode(&[x]);
-    if short_id.chars().nth(0).expect("css_id_format failed").is_ascii_alphabetic() {
-        short_id
-    } else {
-        format!("_{}", short_id)
-    }
+pub(crate) fn css_id_format(x: u64, placement: &SelfPlacement) -> String {
+    format_hash_with_placement(x, placement)
 }
-fn css_id_format_pair(x: u64, y: u64) -> String {
+fn css_keyframe_id(styling_hash: u64, animation_hash: u64, styling_placement: &SelfPlacement) -> String {
     let hasher = hashids::HashIds::new();
-    let short_id = hasher.encode(&[x, y]);
-    if short_id.chars().nth(0).expect("css_id_format_pair failed").is_ascii_alphabetic() {
-        short_id
-    } else {
-        format!("_{}", short_id)
-    }
+    let short_id = hasher.encode(&[styling_hash, animation_hash]);
+    format!("aid-{}", short_id)
 }
 
 pub(crate) fn is_empty_hash(x: u64) -> bool {
     let empty: Styling = Styling::default();
     x == calculate_hash(&empty)
+}
+
+fn format_hash_with_placement(hash: u64, placement: &SelfPlacement) -> String {
+    let hasher = hashids::HashIds::new();
+    let short_id = hasher.encode(&[hash]);
+    format!("Z{}", short_id)
+    // match placement {
+    //     SelfPlacement::Direct => {
+    //         format!("Z{}", short_id)
+    //     }
+    //     SelfPlacement::Child => {
+    //         format!("A{}", short_id)
+    //     }
+    // }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,7 +92,7 @@ pub enum CssRegistry {
 
 pub struct LiveCssRegistry {
     mount: CssMount,
-    added: HashSet<u64>,
+    added: HashSet<(SelfPlacement, u64)>,
 }
 
 pub struct CssMount {
@@ -155,22 +163,23 @@ impl CssRegistry {
             }
         }
     }
-    fn upsert(&mut self, styling: &Styling) {
+    fn upsert(&mut self, styling: &Styling, placement: &SelfPlacement) {
         let hash = calculate_hash(&styling);
         let live = self.get_live();
-        let already_added = live.added.contains(&hash);
+        let already_added = live.added.contains(&(placement.clone(), hash));
         if !already_added {
             console!("new stylesheet");
-            insert_styling(styling, hash, &live.mount);
-            live.added.insert(hash);
+            insert_styling(styling, hash, &live.mount, placement);
+            live.added.insert((placement.clone(), hash));
         }
     }
 }
 
-fn styling_env(styling: &Styling) -> StylingEnv {
+fn styling_env(styling: &Styling, placement: &SelfPlacement) -> StylingEnv {
     // SETUP
     let hash = calculate_hash(&styling);
     let mut env = StylingEnv {
+        placement: placement.clone(),
         css_id: hash,
         animation_ids: Vec::new(),
     };
@@ -181,7 +190,7 @@ fn styling_env(styling: &Styling) -> StylingEnv {
     env
 }
 
-fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
+fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount, placement: &SelfPlacement) {
     // HELPERS
     let to_properties = |xs: &Vec<Style>| -> css::Properties {
         let xs = xs
@@ -197,11 +206,11 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
     };
     // DEFAULT
     let mut default = css::Declaration {
-        selector: format!(".{}", css_id_format(hash)),
+        selector: format!(".{}", css_id_format(hash, placement)),
         properties: to_properties(&styling.default.0),
     };
     if !styling.animations.is_empty() {
-        let styling_env = styling_env(styling);
+        let styling_env = styling_env(styling, placement);
         let aids = styling_env.animation_ids();
         default.properties.0.push(css::Property{
             property: String::from("animation-name"),
@@ -212,7 +221,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
     // STATE-SELECTOR
     for state in styling.state.iter() {
         let state = css::Declaration {
-            selector: format!(".{}{}", css_id_format(hash), state.name.as_str()),
+            selector: format!(".{}{}", css_id_format(hash, placement), state.name.as_str()),
             properties: to_properties(&state.body.0),
         };
         mount.state.push_declaration(state);
@@ -230,7 +239,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
             })
             .collect::<Vec<_>>();
         let keyfrmaes = css::Keyframes {
-            name: css_id_format_pair(hash, aid),
+            name: css_keyframe_id(hash, aid, placement),
             keyframes: keyfrmaes,
         };
         mount.state.push_keyframes(keyfrmaes);
@@ -240,7 +249,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
         let media = css::Media {
             condition: to_properties(&media.condition.0).0,
             declarations: vec![css::Declaration {
-                selector: format!(".{}", css_id_format(hash)),
+                selector: format!(".{}", css_id_format(hash, placement)),
                 properties: to_properties(&media.body.0),
             }],
         };

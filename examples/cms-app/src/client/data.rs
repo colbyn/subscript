@@ -237,7 +237,8 @@ pub struct Account {
     pub ts: Timestamp,
     pub name: String,
     pub master: User,
-    pub users: Users,
+    pub users: HashMap<UserName, User>,
+    pub inputs: HashMap<InputName, Input>
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -247,8 +248,29 @@ pub struct User {
     pub name: UserName,
 }
 
-pub type Users = std::collections::HashMap<UserName, User>;
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct Input {
+    pub id: Uuid,
+    pub ts: Timestamp,
+    pub name: InputName,
+    pub driver: InputDriver,
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum InputDriver {
+    Http {
+        address: String,
+    },
+    AwsS3 {
+
+    },
+    GoogleStorage {
+
+    },
+}
+
 pub type UserName = String;
+pub type InputName = String;
 pub type AccountName = String;
 
 impl Account {
@@ -262,6 +284,7 @@ impl Account {
             name: name.clone(),
         };
         let users = HashMap::new();
-        Account{id, ts, name, master, users}
+        let inputs = HashMap::new();
+        Account{id, ts, name, master, users, inputs}
     }
 }
