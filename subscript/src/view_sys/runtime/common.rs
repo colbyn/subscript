@@ -48,7 +48,7 @@ impl<Msg> Dom<Msg> {
                     dom_ref: &element.dom_ref,
                     rightward: &RefCell::new(None),
                 };
-                let styling_env = crate::view_sys::runtime::css::removed(&element.styling, SelfPlacement::Direct);
+                let styling_env = crate::view_sys::runtime::css::removed(&element.styling);
                 element.dom_ref.class_list.remove(&styling_env.css_id());
                 for event in element.events.iter() {
                     env.dom_ref.remove_event_listener(&event.event_type(), &event.backend_callback);
@@ -74,7 +74,7 @@ impl<Msg> Dom<Msg> {
                     dom_ref: &value.dom_ref,
                     rightward: &RefCell::new(None),
                 };
-                let styling_env = crate::view_sys::runtime::css::removed(&value.styling, SelfPlacement::Direct);
+                let styling_env = crate::view_sys::runtime::css::removed(&value.styling);
                 value.dom_ref.class_list.remove(&styling_env.css_id());
                 for event in value.events.iter() {
                     env.dom_ref.remove_event_listener(&event.event_type(), &event.backend_callback);
@@ -85,7 +85,7 @@ impl<Msg> Dom<Msg> {
                 env.dom_ref.remove_child(&value.dom_ref);
             }
             Dom::Mixin(value) => {
-                let styling_env = crate::view_sys::runtime::css::removed(&value.styling, SelfPlacement::Child);
+                let styling_env = crate::view_sys::runtime::css::removed(&value.styling);
                 env.dom_ref.class_list.remove(&styling_env.css_id());
                 for (key, value) in value.attributes.iter() {
                     remove_attribute(key, value, env);

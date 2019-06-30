@@ -14,43 +14,43 @@ use crate::view_sys::shared::*;
 // EXTERNAL API
 ///////////////////////////////////////////////////////////////////////////////
 
-pub(crate) fn upsert(styling: &Styling, placement: SelfPlacement) -> StylingEnv {
+pub(crate) fn upsert(styling: &Styling) -> StylingEnv {
     CSS_REGISTRY.with({
-        let placement = placement.clone();
         move |reg| {
             reg .borrow_mut()
-                .upsert(styling, &placement);
+                .upsert(styling);
         }
     });
-    styling_env(&styling, &placement)
+    styling_env(&styling)
 }
 
-pub(crate) fn removed(styling: &Styling, placement: SelfPlacement) -> StylingEnv {
-    styling_env(&styling, &placement)
+pub(crate) fn removed(styling: &Styling) -> StylingEnv {
+    styling_env(&styling)
 }
 
 pub struct StylingEnv {
-    pub placement: SelfPlacement,
     pub css_id: u64,
     pub animation_ids: Vec<u64>,
 }
 
 impl StylingEnv {
     pub fn css_id(&self) -> String {
-        css_id_format(self.css_id, &self.placement)
+        css_id_format(self.css_id)
     }
     pub fn animation_ids(&self) -> Vec<String> {
         self.animation_ids
             .iter()
-            .map(|aid| css_keyframe_id(self.css_id, aid.clone(), &self.placement))
+            .map(|aid| css_keyframe_id(self.css_id, aid.clone()))
             .collect()
     }
 }
 
-pub(crate) fn css_id_format(x: u64, placement: &SelfPlacement) -> String {
-    format_hash_with_placement(x, placement)
+pub(crate) fn css_id_format(x: u64) -> String {
+    let hasher = hashids::HashIds::new();
+    let short_id = hasher.encode(&[x]);
+    format!("_{}", short_id)
 }
-fn css_keyframe_id(styling_hash: u64, animation_hash: u64, styling_placement: &SelfPlacement) -> String {
+fn css_keyframe_id(styling_hash: u64, animation_hash: u64) -> String {
     let hasher = hashids::HashIds::new();
     let short_id = hasher.encode(&[styling_hash, animation_hash]);
     format!("aid-{}", short_id)
@@ -61,19 +61,6 @@ pub(crate) fn is_empty_hash(x: u64) -> bool {
     x == calculate_hash(&empty)
 }
 
-fn format_hash_with_placement(hash: u64, placement: &SelfPlacement) -> String {
-    let hasher = hashids::HashIds::new();
-    let short_id = hasher.encode(&[hash]);
-    format!("Z{}", short_id)
-    // match placement {
-    //     SelfPlacement::Direct => {
-    //         format!("Z{}", short_id)
-    //     }
-    //     SelfPlacement::Child => {
-    //         format!("A{}", short_id)
-    //     }
-    // }
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // DATA
@@ -92,7 +79,7 @@ pub enum CssRegistry {
 
 pub struct LiveCssRegistry {
     mount: CssMount,
-    added: HashSet<(SelfPlacement, u64)>,
+    added: HashSet<u64>,
 }
 
 pub struct CssMount {
@@ -163,23 +150,22 @@ impl CssRegistry {
             }
         }
     }
-    fn upsert(&mut self, styling: &Styling, placement: &SelfPlacement) {
+    fn upsert(&mut self, styling: &Styling) {
         let hash = calculate_hash(&styling);
         let live = self.get_live();
-        let already_added = live.added.contains(&(placement.clone(), hash));
+        let already_added = live.added.contains(&hash);
         if !already_added {
             console!("new stylesheet");
-            insert_styling(styling, hash, &live.mount, placement);
-            live.added.insert((placement.clone(), hash));
+            insert_styling(styling, hash, &live.mount);
+            live.added.insert(hash);
         }
     }
 }
 
-fn styling_env(styling: &Styling, placement: &SelfPlacement) -> StylingEnv {
+fn styling_env(styling: &Styling) -> StylingEnv {
     // SETUP
     let hash = calculate_hash(&styling);
     let mut env = StylingEnv {
-        placement: placement.clone(),
         css_id: hash,
         animation_ids: Vec::new(),
     };
@@ -190,7 +176,7 @@ fn styling_env(styling: &Styling, placement: &SelfPlacement) -> StylingEnv {
     env
 }
 
-fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount, placement: &SelfPlacement) {
+fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount) {
     // HELPERS
     let to_properties = |xs: &Vec<Style>| -> css::Properties {
         let xs = xs
@@ -206,11 +192,11 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount, placement: &Se
     };
     // DEFAULT
     let mut default = css::Declaration {
-        selector: format!(".{}", css_id_format(hash, placement)),
+        selector: format!(".{}", css_id_format(hash)),
         properties: to_properties(&styling.default.0),
     };
     if !styling.animations.is_empty() {
-        let styling_env = styling_env(styling, placement);
+        let styling_env = styling_env(styling);
         let aids = styling_env.animation_ids();
         default.properties.0.push(css::Property{
             property: String::from("animation-name"),
@@ -221,7 +207,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount, placement: &Se
     // STATE-SELECTOR
     for state in styling.state.iter() {
         let state = css::Declaration {
-            selector: format!(".{}{}", css_id_format(hash, placement), state.name.as_str()),
+            selector: format!(".{}{}", css_id_format(hash), state.name.as_str()),
             properties: to_properties(&state.body.0),
         };
         mount.state.push_declaration(state);
@@ -239,7 +225,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount, placement: &Se
             })
             .collect::<Vec<_>>();
         let keyfrmaes = css::Keyframes {
-            name: css_keyframe_id(hash, aid, placement),
+            name: css_keyframe_id(hash, aid),
             keyframes: keyfrmaes,
         };
         mount.state.push_keyframes(keyfrmaes);
@@ -249,7 +235,7 @@ fn insert_styling(styling: &Styling, hash: u64, mount: &CssMount, placement: &Se
         let media = css::Media {
             condition: to_properties(&media.condition.0).0,
             declarations: vec![css::Declaration {
-                selector: format!(".{}", css_id_format(hash, placement)),
+                selector: format!(".{}", css_id_format(hash)),
                 properties: to_properties(&media.body.0),
             }],
         };

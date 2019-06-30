@@ -35,7 +35,6 @@ impl<Msg: 'static> View<Msg> {
                 rightward: &RefCell::new(None),
             };
             let DomSegment{styling,attributes,events, children} = build_dom_segment(&new_env, ViewSegment {
-                placement: SelfPlacement::Direct,
                 styling: &Default::default(),
                 attributes: &Default::default(),
                 events: &Default::default(),
@@ -66,7 +65,6 @@ impl<Msg: 'static> View<Msg> {
                 };
                 let auto_listeners = get_and_add_auto_listeners::<Msg>(&new_env);
                 let DomSegment{styling,attributes,events, children} = build_dom_segment(&new_env, ViewSegment {
-                    placement: SelfPlacement::Direct,
                     styling: &x.styling,
                     attributes: &x.attributes,
                     events: &x.events,
@@ -87,7 +85,6 @@ impl<Msg: 'static> View<Msg> {
             }
             Dsl::Mixin(x) => {
                 let DomSegment{styling,attributes,events, children} = build_dom_segment(env, ViewSegment {
-                    placement: SelfPlacement::Child,
                     styling: &x.styling,
                     attributes: &x.attributes,
                     events: &x.events,
@@ -109,7 +106,6 @@ impl<Msg: 'static> View<Msg> {
             Dsl::Control(dsl::Control::Linked(sub)) => {
                 sub.build(&|children| {
                     let results = build_dom_segment(env, ViewSegment{
-                        placement: SelfPlacement::Child,
                         styling: &Styling::default(),
                         attributes: &HashMap::new(),
                         events: &Vec::new(),
@@ -140,7 +136,6 @@ impl<Msg: 'static> View<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 struct ViewSegment<'a, Msg> {
-    placement: SelfPlacement,
     styling: &'a Styling,
     attributes: &'a HashMap<String, Either<Value<String>, Value<bool>>>,
     events: &'a Vec<EventHandler<Msg>>,
@@ -156,7 +151,7 @@ struct DomSegment<Msg> {
 
 fn build_dom_segment<'a, Msg: 'static>(env: &ElementEnv<'a>, view_segment: ViewSegment<Msg>) -> DomSegment<Msg> {
     // SETUP
-    let ViewSegment{placement,styling,attributes,events,children} = view_segment;
+    let ViewSegment{styling,attributes,events,children} = view_segment;
     let mut dom_segment = DomSegment {
         styling: styling.clone(),
         attributes: HashMap::new(),
@@ -165,8 +160,8 @@ fn build_dom_segment<'a, Msg: 'static>(env: &ElementEnv<'a>, view_segment: ViewS
     };
     // STYLING
     if !styling.is_empty() {
-        let styling_env = css::upsert(&styling, placement.clone());
-        env.dom_ref.class_list.add(&css::css_id_format(styling_env.css_id, &placement));
+        let styling_env = css::upsert(&styling);
+        env.dom_ref.class_list.add(&css::css_id_format(styling_env.css_id));
     }
     // ATTRIBUTES
     for (key, value) in attributes.iter() {
