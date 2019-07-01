@@ -1,10 +1,3 @@
-//! Client side specific data types. 
-//!
-//! Some things like an Account type may have two seemingly redundant definitions,
-//! this may be due to the need of excluding certain properties or fields from
-//! being publicly exposed in any way. Since apart from perhaps security, any form of
-//! publicly exposed data creates an implicit interface where the slightest of changes
-//! may brake fragile parsers from integrating end-users.
 use std::collections::*;
 use either::{Either, Either::*};
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};

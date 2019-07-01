@@ -6,6 +6,7 @@ use wasm_bindgen::prelude::*;
 
 mod client;
 mod server;
+pub mod schema;
 
 
 #[wasm_bindgen]
