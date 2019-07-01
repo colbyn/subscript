@@ -1,7 +1,10 @@
 [workspace]
 members = [
     "subscript",
-    "examples/cms-app",
+    "subscript-server",
     "examples/todo-app",
     "examples/counter-app",
+    "project/schema",
+    "project/client",
+    "project/server",
 ]

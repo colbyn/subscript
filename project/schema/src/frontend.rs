@@ -1,10 +1,8 @@
 use std::collections::*;
 use either::{Either, Either::*};
 use serde::{self, Serialize, Deserialize, de::DeserializeOwned};
-use wasm_bindgen::JsValue;
 use uuid::Uuid;
 use chrono::prelude::*;
-use subscript::prelude::{UrlString};
 
 pub use super::common::*;
 
@@ -20,14 +18,7 @@ pub struct Account {
     pub name: String,
     pub master: User,
     pub users: HashMap<UserName, User>,
-    pub inputs: HashMap<InputName, Source>
-}
-
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct User {
-    pub id: Uuid,
-    pub ts: Timestamp,
-    pub name: UserName,
+    pub sources: HashMap<InputName, Source>
 }
 
 impl Account {
@@ -41,7 +32,19 @@ impl Account {
             name: name.clone(),
         };
         let users = HashMap::new();
-        let inputs = HashMap::new();
-        Account{id, ts, name, master, users, inputs}
+        let sources = HashMap::new();
+        Account{id, ts, name, master, users, sources}
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// USERS
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct User {
+    pub id: Uuid,
+    pub ts: Timestamp,
+    pub name: UserName,
+}
+

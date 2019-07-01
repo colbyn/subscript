@@ -1,0 +1,16 @@
+[package]
+name = "schema"
+version = "0.2.0"
+authors = ["Colbyn Wadman <hello@colbyn.com>"]
+edition = "2018"
+description = "Work in progress..."
+repository = "https://github.com/colbyn/subscript"
+
+[dependencies]
+serde = {version = "1.0.89", features = ["derive", "rc"]}
+serde_json = "1.0.39"
+either = "1.5.2"
+uuid = { version = "0.7", features = ["serde", "v4", "wasm-bindgen"] }
+chrono = { version = "0.4", features = ["serde"] }
+rust-argon2 = "0.4.0"
+rand = {version="0.6.5", features = ["wasm-bindgen"]}
