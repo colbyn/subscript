@@ -64,6 +64,17 @@ macro_rules! v1_impl {
     ///////////////////////////////////////////////////////////////////////////
     // CONTROL-FLOW
     ///////////////////////////////////////////////////////////////////////////
+    ($env:expr; const if $pred:expr => {$($x:tt)*}; $($rest:tt)*) => {{
+        if $pred {
+            let mut mixin = View::new_mixin();
+            if let Some(mut inner_env) = mixin.get_env() {
+                v1_impl!(&mut inner_env; $($x)*);
+            }
+            else {panic!()}
+            $env.children.push(mixin);
+        }
+        v1_impl!($env; $($rest)*);
+    }};
     ($env:expr; if $pred:expr => {$($x:tt)*}; $($rest:tt)*) => {{
         let mut mixin = View::new_mixin();
         if let Some(mut inner_env) = mixin.get_env() {

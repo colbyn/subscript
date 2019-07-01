@@ -288,3 +288,24 @@ impl Account {
         Account{id, ts, name, master, users, inputs}
     }
 }
+
+impl InputDriver {
+    pub fn is_http(&self) -> bool {
+        match self {
+            InputDriver::Http{..} => true,
+            _ => false,
+        }
+    }
+    pub fn is_aws_s3(&self) -> bool {
+        match self {
+            InputDriver::AwsS3{..} => true,
+            _ => false,
+        }
+    }
+    pub fn is_google_storage(&self) -> bool {
+        match self {
+            InputDriver::GoogleStorage{..} => true,
+            _ => false,
+        }
+    }
+}

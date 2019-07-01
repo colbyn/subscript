@@ -4,6 +4,7 @@ use std::collections::*;
 use std::any::*;
 use serde::{Serialize, Deserialize};
 use subscript::prelude::*;
+use uuid::Uuid;
 
 use crate::client::AppSpec;
 use crate::client::data::*;
@@ -25,6 +26,7 @@ pub enum Msg {
     ToggleEditMode,
     ToggleAddInputMode,
     SubmitNewInput,
+    DeleteInput(Uuid),
     InputType(InputType),
     Name(String),
     HttpAddress(String),
@@ -38,6 +40,8 @@ pub struct Model {
     input_type: Signal<InputType>,
     name: Signal<String>,
     http_address: Signal<String>,
+    name_checks: Vec<Check>,
+    http_address_checks: Vec<Check>,
 }
 
 #[derive(PartialEq, Clone)]
@@ -57,6 +61,95 @@ impl Default for InputType {
 ///////////////////////////////////////////////////////////////////////////////
 // MISCELLANEOUS
 ///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct Check {
+    pub error_msg: String,
+    pub active: Formula<bool>,
+    pub valid: Formula<bool>,
+}
+
+pub fn all_valid(checks: &Vec<Check>) -> bool {
+    checks
+        .iter()
+        .all(|check| check.valid.get_copy())
+}
+pub fn name_checks(account: &Account, name: &Signal<String>) -> Vec<Check> {
+    let name = name.clone();
+    let active = name.map(|value| !value.is_empty());
+    let mut xs = Vec::new();
+    xs.push(Check {
+        error_msg: String::from("Already taken"),
+        active: active.clone(),
+        valid: name.map({
+            let account = account.clone();
+            move |value| {
+                !account.inputs.contains_key(value)
+            }
+        }),
+    });
+    xs.push(Check {
+        error_msg: String::from("Must be ASCII"),
+        active: active.clone(),
+        valid: name.map(|value| value.is_ascii()),
+    });
+    xs.push(Check {
+        error_msg: String::from("Invalid length"),
+        active: active.clone(),
+        valid: name.map(|value| {
+            value.len() >= 3 && 
+            value.len() <= 20
+        })
+    });
+    xs.push(Check {
+        error_msg: String::from("Must not contain spaces"),
+        active: active.clone(),
+        valid: name.map(|value| {
+            !value.contains(" ")
+        })
+    });
+    xs.push(Check {
+        error_msg: String::from("Must be all lowercase"),
+        active: active.clone(),
+        valid: name.map(|value| {
+            !value.contains(char::is_uppercase)
+        })
+    });
+    xs
+}
+pub fn http_address_checks(address: &Signal<String>) -> Vec<Check> {
+    let address = address.clone();
+    let active = address.map(|value| !value.is_empty());
+    let mut xs = Vec::new();
+    xs.push(Check {
+        error_msg: String::from("Must be ASCII"),
+        active: active.clone(),
+        valid: address.map(|value| value.is_ascii()),
+    });
+    xs.push(Check {
+        error_msg: String::from("Invalid length"),
+        active: active.clone(),
+        valid: address.map(|value| {
+            value.len() >= 3 && 
+            value.len() <= 200
+        })
+    });
+    xs.push(Check {
+        error_msg: String::from("Must not contain spaces"),
+        active: active.clone(),
+        valid: address.map(|value| {
+            !value.contains(" ")
+        })
+    });
+    xs.push(Check {
+        error_msg: String::from("Must be all lowercase"),
+        active: active.clone(),
+        valid: address.map(|value| {
+            !value.contains(char::is_uppercase)
+        })
+    });
+    xs
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -79,7 +172,16 @@ impl Spec for InputSpec {
         } else {
             Default::default()
         };
-        let model = Model {name, ..Default::default()};
+        let http_address = Default::default();
+        let name_checks = name_checks(&self.session.account, &name);
+        let http_address_checks = http_address_checks(&http_address);
+        let model = Model {
+            name,
+            http_address,
+            name_checks,
+            http_address_checks,
+            ..Default::default()
+        };
         Init {
             model,  
             ..Default::default()
@@ -91,7 +193,27 @@ impl Spec for InputSpec {
             model.loading.set(true);
             match model.input_type.get_copy() {
                 InputType::Http => {
-
+                    let no_errors = {
+                        all_valid(&model.name_checks) &&
+                        all_valid(&model.http_address_checks)
+                    };
+                    if no_errors {
+                        let mut account = self.session.account.clone();
+                        let input_name = model.name.get_copy();
+                        account.inputs.insert(input_name.clone(), Input {
+                            id: Uuid::new_v4(),
+                            ts: Timestamp::new(),
+                            name: input_name.clone(),
+                            driver: InputDriver::Http {
+                                address: model.http_address.get_copy(),
+                            },
+                        });
+                        let session = Session::new(&account);
+                        model.in_add_input_mode.set(Default::default());
+                        model.name.set(Default::default());
+                        model.http_address.set(Default::default());
+                        sh.broadcast(NewSession(session));
+                    }
                 }
                 InputType::AwsS3 => {
 
@@ -99,6 +221,25 @@ impl Spec for InputSpec {
                 InputType::GoogleStorage => {
 
                 }
+            }
+            model.loading.set(false);
+        };
+        let mut delete_input = |model: &mut Model, sh: &mut Shell<InputSpec>, uid: Uuid| {
+            let mut account = self.session.account.clone();
+            let key = account.inputs
+                .iter()
+                .find_map(|(k, v)| {
+                    let mut result = None;
+                    if v.id == uid {
+                        result = Some(k.clone());
+                    }
+                    result
+                });
+            assert!(key.is_some());
+            if let Some(key) = key {
+                account.inputs.remove(&key);
+                let session = Session::new(&account);
+                sh.broadcast(NewSession(session));
             }
         };
         // GO!
@@ -115,6 +256,9 @@ impl Spec for InputSpec {
             }
             Msg::SubmitNewInput => {
                 submit_new_input(model, sh);
+            }
+            Msg::DeleteInput(uid) => {
+                delete_input(model, sh, uid);
             }
             Msg::InputType(input_type) => {
                 model.input_type.set(input_type);
@@ -328,35 +472,28 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
             id = &http_server_id;
             placeholder = "https://example.com/optional-mount-path";
             type = "text";
+            value = &model.http_address;
             event.input[] => move |str| Msg::HttpAddress(str);
         };
+        render_checks(&model.http_address_checks);
     };
-    pub fn alt_text_theme<Msg: 'static>() -> View<Msg> {v1!{
-        font_family: "'Source Sans Pro', sans-serif";
-        color: "#ccc";
-        font_weight: "800";
-    }}
     let aws_s3_input = v1!{
         h2 !{
             text_theme();
-            // font_size: "2em";
-            // margin: "0";
-            // font_weight: "600";
-            font_family: "'Source Sans Pro', sans-serif";
-            color: "#000";
-            font_weight: "800";
+            color: "#ccc !important";
+            font_size: "2em !important";
+            font_weight: "600 !important";
+            margin: "0";
             "Not yet supported";
         };
     };
     let google_storage_input = v1!{
         h2 !{
             text_theme();
-            // font_size: "2em";
-            // margin: "0";
-            // font_weight: "600";
-            font_family: "'Source Sans Pro', sans-serif";
-            color: "#000";
-            font_weight: "800";
+            color: "#ccc !important";
+            font_size: "2em !important";
+            font_weight: "600 !important";
+            margin: "0";
             "Not yet supported";
         };
     };
@@ -393,8 +530,12 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
                             user_select: "none";
                             readonly = true;
                         };
+                        if &Signal::new(!spec.session.account.inputs.is_empty()) => {
+                            event.input[] => move |x| Msg::Name(x);
+                        };
                         value = &model.name;
                     };
+                    render_checks(&model.name_checks);
                     if &Signal::new(spec.session.account.inputs.is_empty()) => {
                         ul !{
                             padding: "0";
@@ -469,7 +610,11 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
                     };
                     if &model.name.map({
                         let account_name = spec.session.account.name.clone();
-                        move |x| x != &account_name.clone()
+                        let name_checks = model.name_checks.clone();
+                        move |x| {
+                            (!x.is_empty() && x != &account_name.clone()) &&
+                            all_valid(&name_checks)
+                        }
                     }) => {
                         dl !{
                             margin: "0";
@@ -494,7 +639,14 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
                                     margin_left: "0";
                                     border_radius: "3px";
                                     margin_bottom: "4px";
-                                    model.name.map(|x| format!("logo.media/test/{}/url-path", x));
+                                    model.name.map({
+                                        let account_name = spec.session.account.name.clone();
+                                        move |x| format!(
+                                            "logo.media/{}/{}/url-path",
+                                            account_name.clone(),
+                                            x,
+                                        )
+                                    });
                                 };
                             };
                         };
@@ -616,13 +768,89 @@ fn add_input_form(spec: &InputSpec, model: &Model) -> View<Msg> {
 }
 
 fn inputs_list(spec: &InputSpec, model: &Model) -> View<Msg> {
-    // let input_entry = |name: &str| v1!{
-    //     li !{
-    //         span !{
-    //             name;
-    //         };
-    //     };
-    // };
+    let input_entry = |input: &Input| match &input.driver {
+        InputDriver::Http{address, ..} => {
+            let dest_address = format!(
+                "logo.media/{}/{}",
+                spec.session.account.name.clone(),
+                &input.name,
+            );
+            v1!{
+                tr !{
+                    border_bottom: "1px solid #c3c3c3";
+                    css.hover => s1!{
+                        background_color: "#f0f9ff";
+                    };
+                    css.last_child => s1!{
+                        border_bottom: "none !important";
+                    };
+                    if &model.in_edit_mode => {
+                        td !{
+                            font_weight: "800";
+                            color: "#777";
+                            border_right: "1px solid #c3c3c3";
+                            display: "table-cell";
+                            outline: "none";
+                            transition: "box-shadow 0.5s";
+                            padding: "0 12px";
+                            position: "relative";
+                            text_align: "center";
+                            css.hover => s1!{
+                                box_shadow: "0px 0px 2px #ea0404";
+                                z_index: "1";
+                            };
+                            event.click[id@input.id] => move || Msg::DeleteInput(id);
+                            i !{class = "fas fa-trash-alt";};
+                        };
+                    };
+                    td !{
+                        padding: "8px";
+                        font_weight: "800";
+                        color: "#777";
+                        border_right: "1px solid #c3c3c3";
+                        text_align: "center";
+                        "HTTP";
+                    };
+                    td !{
+                        padding: "0";
+                        padding_left: "8px";
+                        padding_right: "8px";
+                        border_right: "1px solid #c3c3c3";
+                        &input.name;
+                    };
+                    td !{
+                        padding: "0";
+                        padding_left: "8px";
+                        padding_right: "8px";
+                        const if (dest_address.len() >= 50) => {
+                            font_size: "0.8em";
+                        };
+                        &dest_address;
+                    };
+                    td !{
+                        i !{
+                            class = "fas fa-long-arrow-alt-right";
+                        };
+                    };
+                    td !{
+                        padding: "0";
+                        padding_left: "8px";
+                        padding_right: "8px";
+                        const if (address.len() >= 50) => {
+                            font_size: "0.8em";
+                        };
+                        address;
+                    };
+                };
+            }
+        },
+        InputDriver::AwsS3{..} => v1!{
+
+        },
+        InputDriver::GoogleStorage{..} => v1!{
+
+        },
+    };
     if spec.session.account.inputs.is_empty() {v1!{
         h2 !{
             text_theme();
@@ -636,13 +864,54 @@ fn inputs_list(spec: &InputSpec, model: &Model) -> View<Msg> {
         };
     }}
     else {v1!{
-        // ul !{
-        //     height: "100px";
-        //     list_style: "none";
-        //     padding: "0";
-        //     margin: "0";
-        //     // input_entry("master");
-        // };
+        table !{
+            list_style: "none";
+            padding: "0";
+            margin: "0";
+            width: "100%";
+            border_collapse: "collapse";
+            cellspacing = "0";
+            spec.session.account.inputs
+                .values()
+                .map(|x| input_entry(x))
+                .collect::<Vec<_>>();
+        };
     }}
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// VALIDATION VIEW HELPERS
+///////////////////////////////////////////////////////////////////////////////
+
+pub fn render_checks(checks: &Vec<Check>) -> View<Msg> {v1!{
+    ul !{
+        padding: "0";
+        margin: "0";
+        margin_left: "34px";
+        margin_top: "6px";
+        font_family: "'Source Sans Pro', sans-serif";
+        text_transform: "uppercase";
+        font_size: "0.9em";
+        color: "#505050";
+        checks
+            .clone()
+            .iter()
+            .map(|check| render_check(check))
+            .collect::<Vec<_>>();
+    };
+}}
+
+pub fn render_check(check: &Check) -> View<Msg> {
+    let pred = check.active.zip(&check.valid).map(|(active, valid)| active.clone() && !valid);
+    v1!{
+        if &pred => {
+            li !{
+                font_weight: "100";
+                font_size: "0.9em";
+                color: "#ff6262";
+                check.error_msg.clone();
+            };
+        };
+    }
+}
