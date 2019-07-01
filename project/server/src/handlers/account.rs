@@ -5,14 +5,6 @@ use schema::backend::*;
 use schema::common::*;
 use super::common::*;
 
-// account::new
-// account::get
-// account::is_taken
-// account::user::token::new
-// account::user::new
-// account.user::delete
-// account.user.password::set
-// account::delete
 
 pub fn new(input: AccountForm) -> Result<Account, ApiError> {
     unimplemented!()

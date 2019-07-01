@@ -5,6 +5,7 @@ authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
 description = "Work in progress..."
 repository = "https://github.com/colbyn/subscript"
+license = "MPL-2.0"
 
 [lib]
 crate-type=["cdylib", "rlib"]
