@@ -1,5 +1,8 @@
 #![allow(dead_code, unused)]
 
+pub mod root;
+pub mod handlers;
+
 fn main() {
-    println!("Hello World...");
+    root::run();
 }

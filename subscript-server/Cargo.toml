@@ -5,3 +5,5 @@ authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
 
 [dependencies]
+hyper = "0.12.31"
+http = "0.1.17"
