@@ -59,7 +59,7 @@ macro_rules! animation_intervals {
 ///
 /// In contrast to the view macro (`v1!{…}`), this only supports css-properties.
 ///
-/// Technically this should be `s0!`.
+/// Technically this should be `s0`.
 macro_rules! s1 {
     ($($x:tt)*) => {{
         use $crate::view_sys::dsl::*;
@@ -452,7 +452,7 @@ macro_rules! v1_impl {
 /// expression;
 /// ```
 ///
-/// Technically this should be `v0!`.
+/// Technically this should be `v0`.
 #[macro_export]
 macro_rules! v1 {
     ($($x:tt)*) => {{
