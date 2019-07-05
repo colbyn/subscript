@@ -1,6 +1,6 @@
 pub mod signal;
 pub mod vec;
-pub mod map;
+mod map; // IN-DEV...
 pub mod value;
 
 pub use signal::{Reactive,Signal,Formula};
