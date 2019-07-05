@@ -52,6 +52,11 @@ macro_rules! animation_intervals {
 /// };
 /// ```
 ///
+/// Syntax:
+/// ```
+/// property_name: "value";
+/// ```
+///
 /// In contrast to the view macro (v1!{…}), this only supports css-properties.
 ///
 /// Technically this should be `s0!`.
@@ -375,7 +380,7 @@ macro_rules! v1_impl {
 /// bind[name@model.name] any_value => move |new_value| -> v1!{...};
 /// 
 /// // CSS PROPERTY
-/// property: "value";
+/// property_name: "value";
 /// 
 /// // CSS MEDIA
 /// css.media[property: value, ...] => s1!{...};
@@ -418,7 +423,7 @@ macro_rules! v1_impl {
 /// 
 /// // EVENTS FORMAT
 /// event.name[<scope-helper>] => closure_expression;
-/// event.name[name@model.name_str, ...] => closure_expression;
+/// event.name[name@model.name, ...] => closure_expression;
 ///
 /// // DOM-EVENTS
 /// event.click[] => move || Msg::Value;
