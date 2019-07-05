@@ -1,4 +1,10 @@
 #![allow(dead_code, unused)]
+//! [Examples](https://github.com/colbyn/subscript/tree/master/examples):
+//! * [Client Server](https://github.com/colbyn/subscript/tree/master/examples/client-server)
+//! * [Counter App](https://github.com/colbyn/subscript/tree/master/examples/counter-app)
+//! * [Nav App](https://github.com/colbyn/subscript/tree/master/examples/nav-app)
+//! * [Saas App](https://github.com/colbyn/subscript/tree/master/examples/saas-app)
+//! * [Todo App](https://github.com/colbyn/subscript/tree/master/examples/todo-app)
 
 #[macro_use]
 pub mod backend;

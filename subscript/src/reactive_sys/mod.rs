@@ -1,7 +1,7 @@
 pub mod signal;
 pub mod vec;
 mod map; // IN-DEV...
-pub mod value;
+pub(crate) mod value;
 
 pub use signal::{Reactive,Signal,Formula};
 pub use vec::{VecSignal,VecFormula};
