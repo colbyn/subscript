@@ -397,6 +397,7 @@ macro_rules! v1_impl {
 /// };
 /// 
 /// // CSS PSEUDO-SELECTORS
+/// css.hover => s1!{...};
 /// css.active => s1!{...};
 /// css.after => s1!{...};
 /// css.before => s1!{...};
@@ -408,7 +409,6 @@ macro_rules! v1_impl {
 /// css.first_letter => s1!{...};
 /// css.first_line => s1!{...};
 /// css.focus => s1!{...};
-/// css.hover => s1!{...};
 /// css.last_child => s1!{...};
 /// css.only_child => s1!{...};
 /// css.link => s1!{...};
