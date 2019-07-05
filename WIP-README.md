@@ -5,9 +5,9 @@
 * Built for backend-developers wishing to standardize their infrastructure on Rust.
 * Built for backend-developers accustomed to implementing services akin to a client-server model, and by extension, to implement the frontend as yet another client without special treatment or ceremony.
 * Build for backend-developers that wanna write inline CSS properties, media-queries, keyframes and pseudo classes/elements.
-> Yes this includes <b>inline media-queries</b>, keyframes and pseudo classes/elements:
-  * <small>I call it "<b>selector-less functionalized CSS</b>", since it doesn't use global selectors and so therefore CSS styling can be abstracted by any rust function and therein operable with the native rust module system; unlike CSS modules, and unlike CSS itself there will never be specificity errors from global sectors (not including framework malfunction). Internally this translates to, and is using the browsers CSSOM APIs.</small>
-  * <small>Also this <b>doesn't bloat the debug DOM tree</b> with inline css-properties (if it’s not already obvious).</small>
+  > Yes this includes <b>inline media-queries</b>, keyframes and pseudo classes/elements:
+    * <small>I call it "<b>selector-less functionalized CSS</b>", since it doesn't use global selectors and so therefore CSS styling can be abstracted by any rust function and therein operable with the native rust module system; unlike CSS modules, and unlike CSS itself there will never be specificity errors from global sectors (not including framework malfunction). Internally this translates to, and is using the browsers CSSOM APIs.</small>
+    * <small>Also this <b>doesn't bloat the debug DOM tree</b> with inline css-properties (if it’s not already obvious).</small>
 
 
 
