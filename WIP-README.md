@@ -87,7 +87,7 @@ sh.message::<SomeComponentType>(message_value);
       };
       attr = "value";
       // (personally, i generally put css styling, html attributes/events first and children last)
-      h1{
+      h1 !{
           display: "flex";
           justify_content: "center";
           font_family: "monospace";
@@ -105,14 +105,14 @@ sh.message::<SomeComponentType>(message_value);
             format!("{}", x)
           });
       };
-      button {
+      button !{
           button_styling();
           event.click[] => move || {
               Msg::Increment
           };
           "Increment";
       };
-      button {
+      button !{
           button_styling();
           event.click[] => move || {
               Msg::Decrement
@@ -144,7 +144,7 @@ Here are some suggestions thats on my immediate roadmap:
 * Typed/Value-level API for CSS properties and values. e.g.
   ```rust
   v1!{
-    div {
+    div !{
         // With the current implementation, this is treaded or rather parsed specially by the view macro and so not conducive to auto-complete:
         background_color: "gray";
         
@@ -172,7 +172,7 @@ Here are some suggestions thats on my immediate roadmap:
           color(hsl(0, 0, 0));
         });
         
-        h1 {
+        h1 !{
           // For a reference this string -value or expression also implements the mixable trait:
           "Hello World";
         }
