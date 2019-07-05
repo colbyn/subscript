@@ -49,12 +49,12 @@ impl Spec for AppSpec {
     type Msg = Msg;
     type Model = Model;
 
-    fn init(&self, startup: &Shell<Self>) -> Init<Self> {
+    fn init(&self, sh: &Shell<Self>) -> Init<Self> {
         Init{
             ..Default::default()
         }
     }
-    fn update(&self, model: &mut Model, msg: Msg, sys: &mut Shell<Self>) {
+    fn update(&self, model: &mut Model, msg: Msg, sh: &mut Shell<Self>) {
         match msg {
             Msg::NoOp => {}
             Msg::Increment => {

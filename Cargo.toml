@@ -4,6 +4,7 @@ members = [
     "examples/todo-app",
     "examples/counter-app",
     "examples/saas-app",
+    "examples/nav-app",
     "examples/client-server/frontend",
     "examples/client-server/backend",
 ]
