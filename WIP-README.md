@@ -48,15 +48,15 @@ From the above, for things like `user_id: Uuid` it uses the `FromStr` instance o
 * subscriptions and component-to-component <b>heterogeneous</b> messaging (also supports broadcasting)
 ```rust
 // ... from your init function ...
-subscriptions!{
-      mail update_session(msg: NewSession) -> Msg {
+subs!{
+      msg update_session(value: NewSession) -> Msg {
           Msg::NewSession(msg.session)
       }
-      mail update_page(msg: UrlChanged) -> Msg {
-          Msg::UrlChanged(parse_url(msg))
+      msg update_page(value: UrlChanged) -> Msg {
+          Msg::UrlChanged(parse_url(value))
       }
-      mail maybe_update_page(msg: UrlRequest) -> Msg {
-          Msg::UrlRequest(msg.page)
+      msg maybe_update_page(value: UrlRequest) -> Msg {
+          Msg::UrlRequest(value.page)
       }
 };
 // ... from some update function ...
@@ -158,7 +158,7 @@ Here are some suggestions thats on my immediate roadmap:
         
         // Future CSS API examples:
         
-        // These are regular auto-completable rust expressions (that implement the current (for lack of a better name) `Mixable` trait).
+        // These are regular auto-completable rust expressions (that implement the current (for lack of a better name) `ViewExt` trait).
         background_color(gray())
         padding(0);
         padding(px(1));
