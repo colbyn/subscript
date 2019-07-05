@@ -381,3 +381,67 @@ impl EventListenerApi for VoidCallback {
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// ONCE-CALLBACK
+///////////////////////////////////////////////////////////////////////////////
+
+// pub struct OnceCallback {
+//     callback: Option<Rc<Fn(JsValue)>>,
+//     bindgen_closure: Rc<Closure<dyn Fn(JsValue)>>,
+// }
+
+// impl VoidCallback {
+//     pub fn new(dom_ref: &NodeApi, event_type: &str, settings: CallbackSettings) -> Self {
+//         let bindgen_closure: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
+//             let settings = settings.clone();
+//             move |value: JsValue| {
+//                 callback_settings_handler(settings.clone(), &value);
+//             }
+//         }));
+//         let js_function: &js_sys::Function = bindgen_closure.as_ref().unchecked_ref();
+//         dom_ref.add_event_listener(event_type, js_function);
+//         VoidCallback {settings, callback: None, bindgen_closure: Rc::new(bindgen_closure)}
+//     }
+//     pub fn new_with_fn(dom_ref: &NodeApi, event_type: &str, settings: CallbackSettings, callback: impl Fn(JsValue) + 'static) -> Self {
+//         let callback = Rc::new(callback);
+//         let bindgen_closure: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
+//             let callback = callback.clone();
+//             let settings = settings.clone();
+//             move |value: JsValue| {
+//                 callback_settings_handler(settings.clone(), &value);
+//                 callback(value);
+//             }
+//         }));
+//         let js_function: &js_sys::Function = bindgen_closure.as_ref().unchecked_ref();
+//         dom_ref.add_event_listener(event_type, js_function);
+//         VoidCallback {settings, callback: Some(callback), bindgen_closure: Rc::new(bindgen_closure)}
+//     }
+//     pub fn new_with_fn_unset(settings: CallbackSettings, callback: impl Fn(JsValue) + 'static) -> Self {
+//         let callback = Rc::new(callback);
+//         let bindgen_closure: Closure<dyn Fn(JsValue)> = Closure::wrap(Box::new({
+//             let callback = callback.clone();
+//             let settings = settings.clone();
+//             move |value: JsValue| {
+//                 callback_settings_handler(settings.clone(), &value);
+//                 callback(value);
+//             }
+//         }));
+//         let js_function: &js_sys::Function = bindgen_closure.as_ref().unchecked_ref();
+//         VoidCallback {settings, callback: Some(callback), bindgen_closure: Rc::new(bindgen_closure)}
+//     }
+// }
+// impl std::fmt::Debug for VoidCallback {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "VoidCallback")
+//     }
+// }
+// impl PartialEq for VoidCallback {
+//     fn eq(&self, other: &VoidCallback) -> bool {true}
+// }
+// impl EventListenerApi for VoidCallback {
+//     fn as_js_function(&self) -> &Function {
+//         let bindgen_closure: &Closure<dyn Fn(JsValue)> = &self.bindgen_closure;
+//         bindgen_closure.as_ref().unchecked_ref()
+//     }
+// }

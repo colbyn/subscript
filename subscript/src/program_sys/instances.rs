@@ -62,24 +62,28 @@ impl<S: Spec + 'static> Component<S> {
     pub(crate) fn build_impl(&self, is_root: bool) -> Process<S> {
         let window = browser::window();
         let component = self.clone();
-        let mut sub_systems = Shell {
+        let mut shell = Shell {
             instance_name: component.name.clone(),
             commands: RefCell::new(VecDeque::new()),
             mark: PhantomData,
+            http_client: HttpClient {
+                mark: PhantomData,
+                local_queue: Default::default(),
+            }
         };
-        let init = component.spec.init(&sub_systems);
-        assert!(sub_systems.commands.try_borrow().is_ok());
-        assert!(sub_systems.commands.borrow().is_empty());
+        let init = component.spec.init(&shell);
+        assert!(shell.commands.try_borrow().is_ok());
+        assert!(shell.commands.borrow().is_empty());
         let model = init.model;
         let view = component.spec.view(&model);
         let dom = view.build_component(is_root);
-        process_system_requests(&component.name, &model, &mut sub_systems);
+        process_system_requests(&component.name, &model, &mut shell);
         Process {
             name: component.name,
             spec: component.spec,
             subs: init.subs,
             model,
-            sub_systems,
+            shell,
             dom: Some(dom),
         }
     }
@@ -101,7 +105,7 @@ pub(crate) struct Process<S: Spec> {
     subs: Subscriptions<S::Msg>,
     model: S::Model,
     dom: Option<Dom<S::Msg>>,
-    sub_systems: Shell<S>,
+    shell: Shell<S>,
 }
 
 
@@ -162,12 +166,13 @@ impl<S: Spec + 'static> Process<S> {
             // TICK
             self.get_dom_mut().unsafe_tick_root(&mut tick_env);
             self.subs.tick::<S>(self.name.as_str(), &mut tick_env);
+            self.shell.tick(&mut tick_env);
             local_messages
         };
         // UPDATE
         for msg in local_messages {
-            self.spec.update(&mut self.model, msg, &mut self.sub_systems);
+            self.spec.update(&mut self.model, msg, &mut self.shell);
         }
-        process_system_requests(&self.name, &self.model, &mut self.sub_systems);
+        process_system_requests(&self.name, &self.model, &mut self.shell);
     }
 }

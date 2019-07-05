@@ -1,0 +1,8 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["Colbyn Wadman <hello@colbyn.com>"]
+edition = "2018"
+
+[dependencies]
+hyper = "0.12.31"

@@ -155,7 +155,7 @@ impl<T> VecSignal<T> {
     }
 }
 
-impl<T: Default> Default for VecSignal<T> {
+impl<T> Default for VecSignal<T> {
     fn default() -> Self {
         VecSignal {
             value: Rc::new(RefCell::new(Vec::new())),

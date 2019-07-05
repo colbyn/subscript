@@ -7,13 +7,13 @@ use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsValue, JsCast};
 use js_sys::Function;
+use uuid::Uuid;
 
 use crate::backend::browser;
 use crate::view_sys::dsl::View;
 use crate::program_sys::instances::TickEnv;
 use crate::program_sys::spec::Spec;
 use crate::program_sys::effect::nav::*;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // SHELL
@@ -29,7 +29,7 @@ pub struct Shell<S: Spec> {
     pub(crate) instance_name: String,
     pub(crate) commands: RefCell<VecDeque<Command>>,
     pub(crate) mark: PhantomData<S>,
-    // pub(crate) timeouts: Vec<>,
+    pub(crate) http_client: HttpClient<S>,
 }
 
 pub(crate) enum Command {
@@ -71,6 +71,17 @@ impl<S: Spec + 'static> Shell<S> {
     pub fn cache(&self) -> Cache {
         Cache(())
     }
+    pub fn http_client(&self) -> &HttpClient<S> {
+        &self.http_client
+    }
+    pub(crate) fn tick(&self, tick_env: &mut TickEnv<S::Msg>) where S: 'static {
+        tick_env.local_messages.append(
+            &mut self.http_client.local_queue
+                .borrow_mut()
+                .drain(..)
+                .collect::<Vec<_>>()
+        );
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,6 +107,132 @@ impl Cache {
             .remove(key);
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// HTTP-CLIENT
+///////////////////////////////////////////////////////////////////////////////
+
+pub struct HttpClient<S: Spec> {
+    pub(crate) mark: PhantomData<S>,
+    pub(crate) local_queue: Rc<RefCell<VecDeque<S::Msg>>>,
+}
+
+impl<S: Spec> HttpClient<S> {
+    pub fn send(
+        &self,
+        request: impl ToHttpRequest,
+        f: impl Fn(HttpResponse) -> S::Msg + 'static,
+    ) -> Result<(), ()> where S::Msg: 'static {
+        // HELPERS
+        fn parse_headers(value: String) -> Vec<(String, String)> {
+            value
+                .split("\r\n")
+                .map(|line| -> (String, String) {
+                    let pos = line
+                        .chars()
+                        .position(|x| {
+                            x == ':'
+                        })
+                        .expect("missing colon");
+                    let (x, y) = line.split_at(pos);
+                    let x = String::from(x);
+                    let y = String::from(y.trim_start_matches(":"));
+                    (x, y)
+                })
+                .collect::<Vec<_>>()
+        }
+        // SETUP
+        let HttpRequest{url,method,headers,body} = request.to_http_request();
+        let mut request = web_sys::XmlHttpRequest::new().expect("new XmlHttpRequest failed");
+        let method = method.unwrap_or(String::from("GET"));
+        request.open(&method, &url);
+        for (k, v) in headers {
+            request.set_request_header(&k, &v).expect("XmlHttpRequest.setRequestHeader() failed");
+        }
+        let onload_callback = Closure::once_into_js({
+            let local_queue = self.local_queue.clone();
+            let request = request.clone();
+            move |value: JsValue| {
+                let request = request;
+                let local_queue = local_queue;
+                let response_text = request
+                    .response_text()
+                    .expect("XmlHttpRequest.responseText getter failed");
+                let response_status = request
+                    .status()
+                    .expect("XmlHttpRequest.status getter failed");
+                let response_headers = request
+                    .get_all_response_headers()
+                    .expect("XmlHttpRequest.getAllResponseHeaders() failed");
+                console!("headers: {:#?}", &response_headers);
+                let response_headers = {
+                    if response_headers.is_empty() {
+                        Default::default()
+                    } else {
+                        parse_headers(response_headers)
+                    }
+                };
+                let response = HttpResponse {
+                    status: response_status,
+                    headers: response_headers,
+                    body: response_text.unwrap_or(Default::default()),
+                };
+                local_queue
+                    .borrow_mut()
+                    .push_back(f(response));
+            }
+        });
+        let onload_callback: js_sys::Function = From::from(onload_callback);
+        request.set_onloadend(Some(&onload_callback));
+        // SEND
+        if let Some(body) = body {
+            request.send_with_opt_str(Some(&body)).expect("XmlHttpRequest.send method failed");
+        } else {
+            request.send().expect("XmlHttpRequest.send method failed");
+        }
+        // DONE
+        Ok(())
+    }
+    pub fn send_ext(
+        &self,
+        custom: impl HttpClientExt<S::Msg> + 'static
+    ) -> Result<(), ()> where S::Msg: 'static {
+        self.send(custom.to_http_request(), move |res| {
+            custom.on_reply(res)
+        })
+    }
+}
+
+pub trait HttpClientExt<Msg> : ToHttpRequest {
+    fn on_reply(&self, value: HttpResponse)->Msg;
+}
+
+pub trait ToHttpRequest {
+    fn to_http_request(&self) -> HttpRequest;
+}
+
+impl ToHttpRequest for HttpRequest {
+    fn to_http_request(&self) -> HttpRequest {
+        self.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HttpRequest {
+    pub url: String,
+    pub method: Option<String>,
+    pub headers: Vec<(String, String)>,
+    pub body: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HttpResponse {
+    pub status: u16,
+    pub headers: Vec<(String, String)>,
+    pub body: String,
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // TIMEOUT
@@ -222,3 +359,5 @@ pub(crate) fn navigate(route: &str) {
         .history
         .push_state(route);
 }
+
+// pub(crate) fn http_request()

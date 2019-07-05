@@ -52,5 +52,7 @@ features = [
     "Storage",
     "DomTokenList",
     "CssStyleSheet",
+    "XmlHttpRequest",
+    "XmlHttpRequestEventTarget",
 ]
 
