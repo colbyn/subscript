@@ -1,2 +1,2 @@
 # Building WASM code:
-.1 `npm install && npm start`
+1. `npm install && npm start`

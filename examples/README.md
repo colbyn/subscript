@@ -2,4 +2,4 @@ Note that `./nav-app` currently showcases navigation, components, and subscripti
 It's currently perhaps the best example feature-wise.
 
 # Building WASM code (in general):
-.1 `npm install && npm start`
+1. `npm install && npm start`
