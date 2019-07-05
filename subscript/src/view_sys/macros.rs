@@ -57,7 +57,7 @@ macro_rules! animation_intervals {
 /// property_name: "value";
 /// ```
 ///
-/// In contrast to the view macro (v1!{…}), this only supports css-properties.
+/// In contrast to the view macro (`v1!{…}`), this only supports css-properties.
 ///
 /// Technically this should be `s0!`.
 macro_rules! s1 {
