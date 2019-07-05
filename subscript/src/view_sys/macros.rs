@@ -372,7 +372,7 @@ macro_rules! v1_impl {
 ///
 /// Syntax:
 /// ```
-/// // Control
+/// // CONTROL
 /// if &bool_signal => {...};
 /// const if value => {...};
 /// bind any_value => move |new_value| -> v1!{...};
