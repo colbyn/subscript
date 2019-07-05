@@ -1,6 +1,6 @@
 [package]
 name = "subscript"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Colbyn Wadman <hello@colbyn.com>"]
 edition = "2018"
 description = "Work in progress..."

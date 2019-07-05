@@ -45,6 +45,15 @@ macro_rules! animation_intervals {
 
 #[macro_export]
 /// Style list maco.
+///
+/// ```
+/// let ss: StyleList = s1!{
+///     display: "flex";
+/// };
+/// ```
+///
+/// In contrast to the view macro (v1!{…}), this only supports css-properties.
+///
 /// Technically this should be `s0!`.
 macro_rules! s1 {
     ($($x:tt)*) => {{
@@ -347,6 +356,97 @@ macro_rules! v1_impl {
 }
 
 /// View macro.
+/// ```
+/// let v: View<Msg> = v1!{
+///     h1 !{
+///         color: "#777";
+///         "Hello World";
+///     };
+/// };
+/// ```
+///
+/// Syntax:
+/// ```
+/// // Control
+/// if &bool_signal => {...};
+/// const if value => {...};
+/// bind any_value => move |new_value| -> v1!{...};
+/// bind[<scope-helper>] any_value => move |new_value| -> v1!{...};
+/// bind[name@model.name] any_value => move |new_value| -> v1!{...};
+/// 
+/// // CSS PROPERTY
+/// property: "value";
+/// 
+/// // CSS MEDIA
+/// css.media[property: value, ...] => s1!{...};
+/// 
+/// // CSS ANIMATION
+/// css.animation => {
+///     from => s1!{...};
+///     to => s1!{...};
+/// };
+/// css.animation => {
+///     0 => s1!{...};
+///     ...
+///     100 => s1!{...};
+/// };
+/// 
+/// // CSS PSEUDO-SELECTORS
+/// css.active => s1!{...};
+/// css.after => s1!{...};
+/// css.before => s1!{...};
+/// css.checked => s1!{...};
+/// css.disabled => s1!{...};
+/// css.empty => s1!{...};
+/// css.enabled => s1!{...};
+/// css.first_child => s1!{...};
+/// css.first_letter => s1!{...};
+/// css.first_line => s1!{...};
+/// css.focus => s1!{...};
+/// css.hover => s1!{...};
+/// css.last_child => s1!{...};
+/// css.only_child => s1!{...};
+/// css.link => s1!{...};
+/// css.visited => s1!{...};
+/// css.spelling_error => s1!{...};
+/// css.grammar_error => s1!{...};
+/// css.selection => s1!{...};
+/// css.placeholder => s1!{...};
+/// css.marker => s1!{...};
+/// css.cue => s1!{...};
+/// css.backdrop => s1!{...};
+/// 
+/// // EVENTS FORMAT
+/// event.name[<scope-helper>] => closure_expression;
+/// event.name[name@model.name_str, ...] => closure_expression;
+///
+/// // DOM-EVENTS
+/// event.click[] => move || Msg::Value;
+/// event.mouse_down[] => move || Msg::Value;
+/// event.mouse_up[] => move || Msg::Value;
+/// event.mouse_enter[] => move || Msg::Value;
+/// event.mouse_leave[] => move || Msg::Value;
+/// event.mouse_over[] => move || Msg::Value;
+/// event.mouse_out[] => move || Msg::Value;
+/// event.input[] => move |x: String| Msg::Value;
+/// event.check[] => move |x: bool| Msg::Value;
+/// event.submit[] => move || Msg::Value;
+/// event.blur[] => move || Msg::Value;
+/// event.focus[] => move || Msg::Value;
+///
+/// 
+/// // HTML ATTRIBUTES
+/// key_name = "string";
+/// key_name = bool;
+/// key_name = signal;
+/// 
+/// // HTML TAGS
+/// tag_name !{...};
+/// 
+/// // VIEW-EXT EXPRESSIONS
+/// expression;
+/// ```
+///
 /// Technically this should be `v0!`.
 #[macro_export]
 macro_rules! v1 {
