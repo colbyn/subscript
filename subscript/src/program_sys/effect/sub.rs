@@ -114,6 +114,7 @@ impl<Msg> Subscriptions<Msg> {
 ///////////////////////////////////////////////////////////////////////////////
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! i_subs_entry {
     ($subs:expr; sig $name:ident ($value:expr => $new_value:ident) -> $msg:ty {$($body:tt)*}) => {{
         $subs.add_signal_sub(&$value, move |$new_value| -> $msg {{
@@ -128,16 +129,40 @@ macro_rules! i_subs_entry {
 }
 
 #[macro_export]
+/// Core to Subscript component-to-component communication.
+/// In essence we map events to messages, nothing more.
+/// ```
+/// let subs: Subscriptions = subs!{
+///     msg url_changed(value: UrlChanged) -> Msg {
+///         Msg::UrlChanged(
+///             url_parser
+///                 .clone()
+///                 .parse(&value.url())
+///         )
+///     }
+///     msg url_request(value: UrlRequest) -> Msg {
+///         Msg::UrlRequest(value.0)
+///     }
+/// };
+/// ```
+///
+/// Note that the terminology is a bit overloaded here (for lack of a better name).
+/// If it helps, think of `Msg` as the Spec’s internal message type, and
+/// subscription messages as global messages.
+///
+/// ### Framework generated global-messages
+/// * `UrlChanged`: Emitted whenever the URL changes.
+///
 macro_rules! subs {
     () => {{
-        use ::subscript::program_sys::spec::*;
+        use $crate::program_sys::spec::*;
         let subs = Subscriptions::default();
         subs
     }};
     ($($kind:ident $fn_name:ident $args:tt -> $msg:ty {$($body:tt)*})*) => {{
         use std::any::{Any, TypeId};
         use std::rc::Rc;
-        use ::subscript::program_sys::spec::*;
+        use $crate::program_sys::spec::*;
 
         let mut subs = Subscriptions::default();
         $({

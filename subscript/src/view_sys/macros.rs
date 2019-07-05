@@ -1,4 +1,5 @@
 #[macro_export]
+#[doc(hidden)]
 macro_rules! s1_impl_commas {
     () => {StyleList::new()};
     ($($prop:ident : $value:expr),*) => {{
@@ -11,6 +12,7 @@ macro_rules! s1_impl_commas {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! s1_impl {
     () => {StyleList::new()};
     ($($prop:ident : $value:expr;)*) => {{
@@ -23,6 +25,7 @@ macro_rules! s1_impl {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! animation_intervals {
     ($xs:expr;) => {};
     ($xs:expr; from => $value:expr; $($rest:tt)*) => {{
@@ -41,23 +44,27 @@ macro_rules! animation_intervals {
 }
 
 #[macro_export]
+/// Style list maco.
+/// Technically this should be `s0!`.
 macro_rules! s1 {
     ($($x:tt)*) => {{
-        use ::subscript::view_sys::dsl::*;
-        use ::subscript::view_sys::shared::*;
-        use ::subscript::view_sys::macros::*;
-        use ::subscript::view_sys::adapters::*;
+        use $crate::view_sys::dsl::*;
+        use $crate::view_sys::shared::*;
+        use $crate::view_sys::macros::*;
+        use $crate::view_sys::adapters::*;
 
         s1_impl!($($x)*)
     }};
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! to_expr {
     ($x:expr) => {$x}
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! v1_impl {
     ($env:expr;) => {};
     
@@ -339,13 +346,15 @@ macro_rules! v1_impl {
     }};
 }
 
+/// View macro.
+/// Technically this should be `v0!`.
 #[macro_export]
 macro_rules! v1 {
     ($($x:tt)*) => {{
-        use ::subscript::view_sys::dsl::*;
-        use ::subscript::view_sys::shared::*;
-        use ::subscript::view_sys::macros::*;
-        use ::subscript::view_sys::adapters::*;
+        use $crate::view_sys::dsl::*;
+        use $crate::view_sys::shared::*;
+        use $crate::view_sys::macros::*;
+        use $crate::view_sys::adapters::*;
         use ::either::{Either, Either::*};
 
         let mut mixin = View::new_mixin();
@@ -366,6 +375,7 @@ pub fn rewrite_ident(x: &str) -> String {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! extend_callback_env {
     ($inner:expr;) => {
         {move || {$inner}}
@@ -390,6 +400,7 @@ macro_rules! extend_callback_env {
 
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! clone_ident_arguments_outer {
     () => {};
     ($name:ident @ $value:expr) => {
@@ -409,6 +420,7 @@ macro_rules! clone_ident_arguments_outer {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! clone_ident_arguments_inner {
     () => {};
     ($name:ident @ $value:expr) => {

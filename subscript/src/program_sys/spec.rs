@@ -16,6 +16,28 @@ pub use crate::program_sys::effect::nav::{UrlString, UrlParser, UrlChanged};
 pub use crate::program_sys::effect::sub::Subscriptions;
 
 
+/// A spec is like a blueprint, that may manifest itself as either the root
+/// component (a `Program`) or some child `Component`.
+/// The spec’s model and message types should be considered
+/// internal, and not exposed to the parent.
+///
+/// A child-spec may define fields that the parent-spec must fulfill like so:
+/// ```
+/// #[derive(Clone)]
+/// pub struct AccountSpec {
+///     pub session: Session,
+///     pub page: AccountPage,
+/// }
+/// ```
+/// Then from the parent-specs view:
+/// ```
+/// v1!{
+///     Component::singleton(AccountSpec {
+///         page: accunt_page.clone(),
+///         session: session.clone(),
+///     });
+/// }
+/// ```
 pub trait Spec where Self: Clone {
 	type Msg;
     type Model;

@@ -40,9 +40,17 @@ pub(crate) enum Command {
 
 
 impl<S: Spec + 'static> Shell<S> {
-    pub fn save(&mut self) {
-        self.commands.borrow_mut().push_back(Command::Save);
-    }
+    // pub fn save(&mut self) {
+    //     self.commands.borrow_mut().push_back(Command::Save);
+    // }
+
+    /// Heterogeneous value broadcasting system.
+    /// ```
+    /// // lets broadcast some random messages (values) of different types
+    /// sh.broadcast(SomeType(...));
+    /// sh.broadcast(SomeOtherType(...));
+    /// sh.broadcast(UrlRequest(Page::Something));
+    /// ```
     pub fn broadcast(&mut self, msg: impl Any) {
         self.commands.borrow_mut().push_back(Command::Message(
             SystemMessage::Public {
@@ -52,6 +60,12 @@ impl<S: Spec + 'static> Shell<S> {
             }
         ));
     }
+    /// Heterogeneous "component-to-component" value messaging system.
+    /// ```
+    /// // This is perhaps impossible without types hehe
+    /// sh.message::<SomeComponentType>(message_value);
+    /// ///         ^^^^^^^^^^^^^^^^^^^ sent a message to any component of the given type.
+    /// ```
     pub fn message<T: Spec + 'static, V: Any>(&mut self, msg: V) {
         let from_tid = TypeId::of::<S>();
         let to_tid = TypeId::of::<T>();
@@ -62,15 +76,22 @@ impl<S: Spec + 'static> Shell<S> {
             value: Rc::new(msg)
         }));
     }
+    /// Update the browser’s URL (i.e. for SPAs).
+    /// ```
+    /// sh.navigate("/account");
+    /// ```
     pub fn navigate(&mut self, path: impl UrlString) {
         self.commands.borrow_mut().push_back(Command::Navigate(path.url_string()));
     }
+    /// Returns the current URL.
     pub fn current_url(&self) -> Url {
         Url::get_current(&browser::window())
     }
+    /// Caching support.
     pub fn cache(&self) -> Cache {
         Cache(())
     }
+    /// Make http requests (e.g. for interacting with backend API services).
     pub fn http_client(&self) -> &HttpClient<S> {
         &self.http_client
     }

@@ -168,6 +168,7 @@ pub enum UrlPattern {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! try_parse_binders  {
     ($path_data:expr; $result:expr;) => {{
         // DONE
@@ -217,6 +218,7 @@ macro_rules! try_parse_binders  {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! with_ident_binders {
     ($path_data:expr; _; $result:expr) => {
         $result
@@ -230,6 +232,7 @@ macro_rules! with_ident_binders {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! url_path_segments {
     ($xs:expr;) => {};
     ($xs:expr; _) => {{
@@ -257,6 +260,7 @@ macro_rules! url_path_segments {
 
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! url_pattern {
     (_) => {
         UrlPattern::AlwaysMatch
@@ -273,6 +277,7 @@ macro_rules! url_pattern {
 
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! url_parser_impl {
     ($url_changed:expr; $($pattern:tt => $body:tt)*) => {{
         let mut result = None;
@@ -314,6 +319,7 @@ macro_rules! url_parser_impl {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! check_for_totality  {
     () => {
         // BAD
@@ -355,11 +361,67 @@ macro_rules! check_for_totality  {
     };
 }
 
+/// SPA Application Routing/Navigation
+/// ```
+/// let url_parser: UrlParser<Page> = url_parser!{
+///     [] => {
+///         Page::Homepage
+///     }
+///     ["content"] => {
+///         Page::Content
+///     }
+///     ["input"] => {
+///         Page::Input
+///     }
+///     ["insight"] => {
+///         Page::Insight(InsightPage::Overview)
+///     }
+///     ["insight", "health"] => {
+///         Page::Insight(InsightPage::Health)
+///     }
+///     ["insight", "traffic"] => {
+///         Page::Insight(InsightPage::Traffic)
+///     }
+///     ["insight", "bandwidth"] => {
+///         Page::Insight(InsightPage::Bandwidth)
+///     }
+///     ["insight", "cache"] => {
+///         Page::Insight(InsightPage::Cache)
+///     }
+///     ["insight", "storage"] => {
+///         Page::Insight(InsightPage::Storage)
+///     }
+///     ["account"] => {
+///         Page::Account(AccountPage::default())
+///     }
+///     ["account", "billing"] => {
+///         Page::Account(AccountPage::Billing)
+///     }
+///     ["account", "password"] => {
+///         Page::Account(AccountPage::Password)
+///     }
+///     ["account", "users"] => {
+///         Page::Account(AccountPage::Users(UsersPage::Index))
+///     }
+///     ["account", "users", "add-user"] => {
+///         Page::Account(AccountPage::Users(UsersPage::AddUser))
+///     }
+///     ["login"] => {
+///         Page::Login(LoginPage::Login)
+///     }
+///     ["signup"] => {
+///         Page::Login(LoginPage::Signup)
+///     }
+///     _ => {
+///         Page::NotFound
+///     }
+/// };
+/// ```
 #[macro_export]
 macro_rules! url_parser {
     ($($x:tt)*) => {{
         use std::str::FromStr;
-        use ::subscript::program_sys::effect::nav::*;
+        use $crate::program_sys::effect::nav::*;
 
         UrlParser(Rc::new(move |url_changed: Url| {
             check_for_totality!($($x)*);
