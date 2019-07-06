@@ -217,7 +217,7 @@ impl<S: Spec> HttpClient<S> {
     }
     pub fn send_ext(
         &self,
-        custom: impl HttpClientExt<S::Msg> + 'static
+        custom: impl HttpClientExt + 'static
     ) -> Result<(), ()> where S::Msg: 'static {
         // HELPERS
         fn parse_headers(value: String) -> Vec<(String, String)> {
@@ -293,7 +293,7 @@ impl<S: Spec> HttpClient<S> {
     }
 }
 
-pub trait HttpClientExt<Msg> : ToHttpRequest {
+pub trait HttpClientExt : ToHttpRequest {
     fn on_reply(&self, value: HttpResponse)-> Rc<Any>;
 }
 
