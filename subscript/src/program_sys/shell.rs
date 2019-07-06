@@ -273,11 +273,13 @@ impl<S: Spec> HttpClient<S> {
                     headers: response_headers,
                     body: response_text.unwrap_or(Default::default()),
                 };
-                register_message(SystemMessage::Public {
-                    from_name: String::from(""),
-                    from_tid: TypeId::of::<()>(),
-                    value: custom.on_reply(response),
-                });
+                if let Some(value) = custom.on_reply(response) {
+                    register_message(SystemMessage::Public {
+                        from_name: String::from(""),
+                        from_tid: TypeId::of::<()>(),
+                        value,
+                    });
+                }
             }
         });
         let onload_callback: js_sys::Function = From::from(onload_callback);
@@ -294,7 +296,7 @@ impl<S: Spec> HttpClient<S> {
 }
 
 pub trait HttpClientExt : ToHttpRequest {
-    fn on_reply(&self, value: HttpResponse)-> Rc<Any>;
+    fn on_reply(&self, value: HttpResponse)-> Option<Rc<Any>>;
 }
 
 pub trait ToHttpRequest {
