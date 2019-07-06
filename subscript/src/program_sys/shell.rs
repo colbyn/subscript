@@ -15,6 +15,7 @@ use crate::program_sys::instances::TickEnv;
 use crate::program_sys::spec::Spec;
 use crate::program_sys::effect::nav::*;
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // SHELL
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,14 +219,82 @@ impl<S: Spec> HttpClient<S> {
         &self,
         custom: impl HttpClientExt<S::Msg> + 'static
     ) -> Result<(), ()> where S::Msg: 'static {
-        self.send(custom.to_http_request(), move |res| {
-            custom.on_reply(res)
-        })
+        // HELPERS
+        fn parse_headers(value: String) -> Vec<(String, String)> {
+            value
+                .split("\r\n")
+                .map(|line| -> (String, String) {
+                    let pos = line
+                        .chars()
+                        .position(|x| {
+                            x == ':'
+                        })
+                        .expect("missing colon");
+                    let (x, y) = line.split_at(pos);
+                    let x = String::from(x);
+                    let y = String::from(y.trim_start_matches(":"));
+                    (x, y)
+                })
+                .collect::<Vec<_>>()
+        }
+        // SETUP
+        let HttpRequest{url,method,headers,body} = custom.to_http_request();
+        let mut request = web_sys::XmlHttpRequest::new().expect("new XmlHttpRequest failed");
+        let method = method.unwrap_or(String::from("GET"));
+        request.open(&method, &url);
+        for (k, v) in headers {
+            request.set_request_header(&k, &v).expect("XmlHttpRequest.setRequestHeader() failed");
+        }
+        let onload_callback = Closure::once_into_js({
+            let local_queue = self.local_queue.clone();
+            let request = request.clone();
+            move |value: JsValue| {
+                let request = request;
+                let local_queue = local_queue;
+                let response_text = request
+                    .response_text()
+                    .expect("XmlHttpRequest.responseText getter failed");
+                let response_status = request
+                    .status()
+                    .expect("XmlHttpRequest.status getter failed");
+                let response_headers = request
+                    .get_all_response_headers()
+                    .expect("XmlHttpRequest.getAllResponseHeaders() failed");
+                console!("headers: {:#?}", &response_headers);
+                let response_headers = {
+                    if response_headers.is_empty() {
+                        Default::default()
+                    } else {
+                        parse_headers(response_headers)
+                    }
+                };
+                let response = HttpResponse {
+                    status: response_status,
+                    headers: response_headers,
+                    body: response_text.unwrap_or(Default::default()),
+                };
+                register_message(SystemMessage::Public {
+                    from_name: String::from(""),
+                    from_tid: TypeId::of::<()>(),
+                    value: custom.on_reply(response),
+                });
+            }
+        });
+        let onload_callback: js_sys::Function = From::from(onload_callback);
+        request.set_onloadend(Some(&onload_callback));
+        // SEND
+        if let Some(body) = body {
+            request.send_with_opt_str(Some(&body)).expect("XmlHttpRequest.send method failed");
+        } else {
+            request.send().expect("XmlHttpRequest.send method failed");
+        }
+        // DONE
+        Ok(())
     }
 }
 
 pub trait HttpClientExt<Msg> : ToHttpRequest {
-    fn on_reply(&self, value: HttpResponse)->Msg;
+    fn on_reply(&self, value: HttpResponse)-> Rc<Any>;
 }
 
 pub trait ToHttpRequest {
@@ -281,13 +350,13 @@ pub(crate) enum SystemMessage {
     Public {
         from_name: String,
         from_tid: TypeId,
-        value: Rc<Any>,
+        value: Rc<dyn Any>,
     },
     Private {
         from_name: String,
         from_tid: TypeId,
         to_tid: TypeId,
-        value: Rc<Any>,
+        value: Rc<dyn Any>,
     },
 }
 
@@ -298,7 +367,7 @@ impl SystemMessage {
             _ => None
         }
     }
-    pub(crate) fn value(&self) -> Rc<Any> {
+    pub(crate) fn value(&self) -> Rc<dyn Any> {
         match self {
             SystemMessage::Private{value, ..} => value.clone(),
             SystemMessage::Public{value, ..} => value.clone(),
