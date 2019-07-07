@@ -2,9 +2,9 @@ pub use crate::program_sys::spec::*;
 pub use crate::program_sys::shell::{
     HttpRequest,
     HttpResponse,
-    HttpClient,
+    // SimpleHttpClient,
     ToHttpRequest,
-    HttpClientExt,
+    // HttpClientExt,
 };
 pub use crate::program_sys::Program;
 pub use crate::view_sys::dsl::View;

@@ -66,8 +66,11 @@ impl<S: Spec + 'static> Component<S> {
             instance_name: component.name.clone(),
             commands: RefCell::new(VecDeque::new()),
             mark: PhantomData,
-            http_client: HttpClient {
-                mark: PhantomData,
+            // simple_http_client: SimpleHttpClient {
+            //     mark: PhantomData,
+            //     local_queue: Default::default(),
+            // },
+            tasks: Tasks {
                 local_queue: Default::default(),
             }
         };

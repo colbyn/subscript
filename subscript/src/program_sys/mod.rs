@@ -3,6 +3,7 @@ pub mod effect;
 pub mod spec;
 pub mod instances;
 pub mod shell;
+pub mod tasks;
 
 use std::collections::*;
 use std::rc::*;

@@ -72,15 +72,18 @@ impl Spec for AppSpec {
                 model.replies.push(Reply(value));
             }
             Msg::Clicked => {
-                // let req = HttpRequest {
-                //     url: String::from("http://127.0.0.1:3000"),
-                //     ..HttpRequest::default()
-                // };
-                // let f = |response: HttpResponse| {
-                //     let body = response.body.clone();
-                //     Msg::ServerReply(body)
-                // };
-                // sh.http_client().request(req, f);
+                use futures::future::Future;
+                use subscript::program_sys::tasks::http::{Request, Response, ToHttpRequest};
+                let req = Request {
+                    url: String::from("http://127.0.0.1:3000"),
+                    ..Request::default()
+                };
+                sh.task(req
+                    .send()
+                    .map(|response: Response| -> Msg {
+                        let body = response.body.clone();
+                        Msg::ServerReply(body)
+                    }));
             }
         }
     }

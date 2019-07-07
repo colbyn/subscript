@@ -8,6 +8,7 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsValue, JsCast};
 use js_sys::Function;
 use uuid::Uuid;
+use futures::{Future};
 
 use crate::backend::browser;
 use crate::view_sys::dsl::View;
@@ -30,7 +31,7 @@ pub struct Shell<S: Spec> {
     pub(crate) instance_name: String,
     pub(crate) commands: RefCell<VecDeque<Command>>,
     pub(crate) mark: PhantomData<S>,
-    pub(crate) http_client: HttpClient<S>,
+    pub(crate) tasks: Tasks<S>,
 }
 
 pub(crate) enum Command {
@@ -41,6 +42,16 @@ pub(crate) enum Command {
 
 
 impl<S: Spec + 'static> Shell<S> {
+    /// Internal.
+    pub(crate) fn tick(&self, tick_env: &mut TickEnv<S::Msg>) where S: 'static {
+        tick_env.local_messages.append(
+            &mut self.tasks.local_queue
+                .borrow_mut()
+                .drain(..)
+                .collect::<Vec<_>>()
+        );
+    }
+
     // pub fn save(&mut self) {
     //     self.commands.borrow_mut().push_back(Command::Save);
     // }
@@ -92,17 +103,26 @@ impl<S: Spec + 'static> Shell<S> {
     pub fn cache(&self) -> Cache {
         Cache(())
     }
-    /// Make http requests (e.g. for interacting with backend API services).
-    pub fn http_client(&self) -> &HttpClient<S> {
-        &self.http_client
+    // /// Make http requests (e.g. for interacting with backend API services).
+    // pub fn simple_http_client(&self) -> &SimpleHttpClient<S> {
+    //     &self.simple_http_client
+    // }
+    pub fn void_task<F>(&self, future: F) where F: Future<Item = (), Error = ()> + 'static {
+        wasm_bindgen_futures::spawn_local(future);
     }
-    pub(crate) fn tick(&self, tick_env: &mut TickEnv<S::Msg>) where S: 'static {
-        tick_env.local_messages.append(
-            &mut self.http_client.local_queue
-                .borrow_mut()
-                .drain(..)
-                .collect::<Vec<_>>()
+    pub fn task<F>(&self, future: F) where F: Future<Item = S::Msg, Error=()> + 'static {
+        let tasks = self.tasks.local_queue.clone();
+        let future: Box<dyn Future<Item = (), Error = ()>> = Box::new(
+            future
+                .map({
+                    let tasks = tasks.clone();
+                    move |x: S::Msg| {
+                        tasks.borrow_mut().push_back(x);
+                        ()
+                    }
+                })
         );
+        wasm_bindgen_futures::spawn_local(future);
     }
 }
 
@@ -131,173 +151,181 @@ impl Cache {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HTTP-CLIENT
+// TASKS
 ///////////////////////////////////////////////////////////////////////////////
 
-pub struct HttpClient<S: Spec> {
-    pub(crate) mark: PhantomData<S>,
+pub struct Tasks<S: Spec> {
     pub(crate) local_queue: Rc<RefCell<VecDeque<S::Msg>>>,
 }
 
-impl<S: Spec> HttpClient<S> {
-    pub fn send(
-        &self,
-        request: impl ToHttpRequest,
-        f: impl Fn(HttpResponse) -> S::Msg + 'static,
-    ) -> Result<(), ()> where S::Msg: 'static {
-        // HELPERS
-        fn parse_headers(value: String) -> Vec<(String, String)> {
-            value
-                .split("\r\n")
-                .map(|line| -> (String, String) {
-                    let pos = line
-                        .chars()
-                        .position(|x| {
-                            x == ':'
-                        })
-                        .expect("missing colon");
-                    let (x, y) = line.split_at(pos);
-                    let x = String::from(x);
-                    let y = String::from(y.trim_start_matches(":"));
-                    (x, y)
-                })
-                .collect::<Vec<_>>()
-        }
-        // SETUP
-        let HttpRequest{url,method,headers,body} = request.to_http_request();
-        let mut request = web_sys::XmlHttpRequest::new().expect("new XmlHttpRequest failed");
-        let method = method.unwrap_or(String::from("GET"));
-        request.open(&method, &url);
-        for (k, v) in headers {
-            request.set_request_header(&k, &v).expect("XmlHttpRequest.setRequestHeader() failed");
-        }
-        let onload_callback = Closure::once_into_js({
-            let local_queue = self.local_queue.clone();
-            let request = request.clone();
-            move |value: JsValue| {
-                let request = request;
-                let local_queue = local_queue;
-                let response_text = request
-                    .response_text()
-                    .expect("XmlHttpRequest.responseText getter failed");
-                let response_status = request
-                    .status()
-                    .expect("XmlHttpRequest.status getter failed");
-                let response_headers = request
-                    .get_all_response_headers()
-                    .expect("XmlHttpRequest.getAllResponseHeaders() failed");
-                console!("headers: {:#?}", &response_headers);
-                let response_headers = {
-                    if response_headers.is_empty() {
-                        Default::default()
-                    } else {
-                        parse_headers(response_headers)
-                    }
-                };
-                let response = HttpResponse {
-                    status: response_status,
-                    headers: response_headers,
-                    body: response_text.unwrap_or(Default::default()),
-                };
-                local_queue
-                    .borrow_mut()
-                    .push_back(f(response));
-            }
-        });
-        let onload_callback: js_sys::Function = From::from(onload_callback);
-        request.set_onloadend(Some(&onload_callback));
-        // SEND
-        if let Some(body) = body {
-            request.send_with_opt_str(Some(&body)).expect("XmlHttpRequest.send method failed");
-        } else {
-            request.send().expect("XmlHttpRequest.send method failed");
-        }
-        // DONE
-        Ok(())
-    }
-    pub fn send_ext(
-        &self,
-        custom: impl HttpClientExt + 'static
-    ) -> Result<(), ()> where S::Msg: 'static {
-        // HELPERS
-        fn parse_headers(value: String) -> Vec<(String, String)> {
-            value
-                .split("\r\n")
-                .map(|line| -> (String, String) {
-                    let pos = line
-                        .chars()
-                        .position(|x| {
-                            x == ':'
-                        })
-                        .expect("missing colon");
-                    let (x, y) = line.split_at(pos);
-                    let x = String::from(x);
-                    let y = String::from(y.trim_start_matches(":"));
-                    (x, y)
-                })
-                .collect::<Vec<_>>()
-        }
-        // SETUP
-        let HttpRequest{url,method,headers,body} = custom.to_http_request();
-        let mut request = web_sys::XmlHttpRequest::new().expect("new XmlHttpRequest failed");
-        let method = method.unwrap_or(String::from("GET"));
-        request.open(&method, &url);
-        for (k, v) in headers {
-            request.set_request_header(&k, &v).expect("XmlHttpRequest.setRequestHeader() failed");
-        }
-        let onload_callback = Closure::once_into_js({
-            let local_queue = self.local_queue.clone();
-            let request = request.clone();
-            move |value: JsValue| {
-                let request = request;
-                let local_queue = local_queue;
-                let response_text = request
-                    .response_text()
-                    .expect("XmlHttpRequest.responseText getter failed");
-                let response_status = request
-                    .status()
-                    .expect("XmlHttpRequest.status getter failed");
-                let response_headers = request
-                    .get_all_response_headers()
-                    .expect("XmlHttpRequest.getAllResponseHeaders() failed");
-                console!("headers: {:#?}", &response_headers);
-                let response_headers = {
-                    if response_headers.is_empty() {
-                        Default::default()
-                    } else {
-                        parse_headers(response_headers)
-                    }
-                };
-                let response = HttpResponse {
-                    status: response_status,
-                    headers: response_headers,
-                    body: response_text.unwrap_or(Default::default()),
-                };
-                if let Some(value) = custom.on_reply(response) {
-                    register_message(SystemMessage::Public {
-                        from_name: String::from(""),
-                        from_tid: TypeId::of::<()>(),
-                        value,
-                    });
-                }
-            }
-        });
-        let onload_callback: js_sys::Function = From::from(onload_callback);
-        request.set_onloadend(Some(&onload_callback));
-        // SEND
-        if let Some(body) = body {
-            request.send_with_opt_str(Some(&body)).expect("XmlHttpRequest.send method failed");
-        } else {
-            request.send().expect("XmlHttpRequest.send method failed");
-        }
-        // DONE
-        Ok(())
-    }
-}
+///////////////////////////////////////////////////////////////////////////////
+// HTTP-CLIENT
+///////////////////////////////////////////////////////////////////////////////
 
-pub trait HttpClientExt : ToHttpRequest {
-    fn on_reply(&self, value: HttpResponse)-> Option<Rc<Any>>;
-}
+// pub struct SimpleHttpClient<S: Spec> {
+//     pub(crate) mark: PhantomData<S>,
+//     pub(crate) local_queue: Rc<RefCell<VecDeque<S::Msg>>>,
+// }
+
+// impl<S: Spec> SimpleHttpClient<S> {
+//     pub fn send(
+//         &self,
+//         request: impl ToHttpRequest,
+//         f: impl Fn(HttpResponse) -> S::Msg + 'static,
+//     ) -> Result<(), ()> where S::Msg: 'static {
+//         // HELPERS
+//         fn parse_headers(value: String) -> Vec<(String, String)> {
+//             value
+//                 .split("\r\n")
+//                 .map(|line| -> (String, String) {
+//                     let pos = line
+//                         .chars()
+//                         .position(|x| {
+//                             x == ':'
+//                         })
+//                         .expect("missing colon");
+//                     let (x, y) = line.split_at(pos);
+//                     let x = String::from(x);
+//                     let y = String::from(y.trim_start_matches(":"));
+//                     (x, y)
+//                 })
+//                 .collect::<Vec<_>>()
+//         }
+//         // SETUP
+//         let HttpRequest{url,method,headers,body} = request.to_http_request();
+//         let mut request = web_sys::XmlHttpRequest::new().expect("new XmlHttpRequest failed");
+//         let method = method.unwrap_or(String::from("GET"));
+//         request.open(&method, &url);
+//         for (k, v) in headers {
+//             request.set_request_header(&k, &v).expect("XmlHttpRequest.setRequestHeader() failed");
+//         }
+//         let onload_callback = Closure::once_into_js({
+//             let local_queue = self.local_queue.clone();
+//             let request = request.clone();
+//             move |value: JsValue| {
+//                 let request = request;
+//                 let local_queue = local_queue;
+//                 let response_text = request
+//                     .response_text()
+//                     .expect("XmlHttpRequest.responseText getter failed");
+//                 let response_status = request
+//                     .status()
+//                     .expect("XmlHttpRequest.status getter failed");
+//                 let response_headers = request
+//                     .get_all_response_headers()
+//                     .expect("XmlHttpRequest.getAllResponseHeaders() failed");
+//                 console!("headers: {:#?}", &response_headers);
+//                 let response_headers = {
+//                     if response_headers.is_empty() {
+//                         Default::default()
+//                     } else {
+//                         parse_headers(response_headers)
+//                     }
+//                 };
+//                 let response = HttpResponse {
+//                     status: response_status,
+//                     headers: response_headers,
+//                     body: response_text.unwrap_or(Default::default()),
+//                 };
+//                 local_queue
+//                     .borrow_mut()
+//                     .push_back(f(response));
+//             }
+//         });
+//         let onload_callback: js_sys::Function = From::from(onload_callback);
+//         request.set_onloadend(Some(&onload_callback));
+//         // SEND
+//         if let Some(body) = body {
+//             request.send_with_opt_str(Some(&body)).expect("XmlHttpRequest.send method failed");
+//         } else {
+//             request.send().expect("XmlHttpRequest.send method failed");
+//         }
+//         // DONE
+//         Ok(())
+//     }
+//     pub fn send_ext(
+//         &self,
+//         custom: impl HttpClientExt + 'static
+//     ) -> Result<(), ()> where S::Msg: 'static {
+//         // HELPERS
+//         fn parse_headers(value: String) -> Vec<(String, String)> {
+//             value
+//                 .split("\r\n")
+//                 .map(|line| -> (String, String) {
+//                     let pos = line
+//                         .chars()
+//                         .position(|x| {
+//                             x == ':'
+//                         })
+//                         .expect("missing colon");
+//                     let (x, y) = line.split_at(pos);
+//                     let x = String::from(x);
+//                     let y = String::from(y.trim_start_matches(":"));
+//                     (x, y)
+//                 })
+//                 .collect::<Vec<_>>()
+//         }
+//         // SETUP
+//         let HttpRequest{url,method,headers,body} = custom.to_http_request();
+//         let mut request = web_sys::XmlHttpRequest::new().expect("new XmlHttpRequest failed");
+//         let method = method.unwrap_or(String::from("GET"));
+//         request.open(&method, &url);
+//         for (k, v) in headers {
+//             request.set_request_header(&k, &v).expect("XmlHttpRequest.setRequestHeader() failed");
+//         }
+//         let onload_callback = Closure::once_into_js({
+//             let local_queue = self.local_queue.clone();
+//             let request = request.clone();
+//             move |value: JsValue| {
+//                 let request = request;
+//                 let local_queue = local_queue;
+//                 let response_text = request
+//                     .response_text()
+//                     .expect("XmlHttpRequest.responseText getter failed");
+//                 let response_status = request
+//                     .status()
+//                     .expect("XmlHttpRequest.status getter failed");
+//                 let response_headers = request
+//                     .get_all_response_headers()
+//                     .expect("XmlHttpRequest.getAllResponseHeaders() failed");
+//                 console!("headers: {:#?}", &response_headers);
+//                 let response_headers = {
+//                     if response_headers.is_empty() {
+//                         Default::default()
+//                     } else {
+//                         parse_headers(response_headers)
+//                     }
+//                 };
+//                 let response = HttpResponse {
+//                     status: response_status,
+//                     headers: response_headers,
+//                     body: response_text.unwrap_or(Default::default()),
+//                 };
+//                 if let Some(value) = custom.on_reply(response) {
+//                     register_message(SystemMessage::Public {
+//                         from_name: String::from(""),
+//                         from_tid: TypeId::of::<()>(),
+//                         value,
+//                     });
+//                 }
+//             }
+//         });
+//         let onload_callback: js_sys::Function = From::from(onload_callback);
+//         request.set_onloadend(Some(&onload_callback));
+//         // SEND
+//         if let Some(body) = body {
+//             request.send_with_opt_str(Some(&body)).expect("XmlHttpRequest.send method failed");
+//         } else {
+//             request.send().expect("XmlHttpRequest.send method failed");
+//         }
+//         // DONE
+//         Ok(())
+//     }
+// }
+
+// pub trait HttpClientExt : ToHttpRequest {
+//     fn on_reply(&self, value: HttpResponse)-> Option<Rc<Any>>;
+// }
 
 pub trait ToHttpRequest {
     fn to_http_request(&self) -> HttpRequest;
@@ -323,6 +351,15 @@ pub struct HttpResponse {
     pub headers: Vec<(String, String)>,
     pub body: String,
 }
+
+// impl HttpResponse {
+//     pub fn output<T: DeserializeOwned>(&self) -> Result<T, ()> {
+//         match serde_json::from_str::<T>(&self.body) {
+//             Ok(value) => Ok(value),
+//             _ => Err(())
+//         }
+//     }
+// }
 
 
 
