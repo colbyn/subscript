@@ -70,6 +70,9 @@ fn mk_request_future(request: impl ToHttpRequest) -> impl Future<Item=Response, 
     let mut opts = RequestInit::new();
     opts.method(&method.unwrap_or(String::from("GET")));
     opts.mode(RequestMode::Cors);
+    if let Some(body) = body {
+        opts.body(Some(&JsValue::from_str(&body)));
+    }
     let request = Request::new_with_str_and_init(
         &url,
         &opts,
