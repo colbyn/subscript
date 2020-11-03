@@ -1,0 +1,231 @@
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::borrow::Cow;
+use std::collections::HashSet;
+
+use crate::parser;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// HELPERS
+///////////////////////////////////////////////////////////////////////////////
+
+pub enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HTML TREE AST
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Node {
+    Element(Box<Element>),
+    Text(String),
+    Fragment(Vec<Node>),
+}
+
+impl Node {
+    pub fn to_html_str(&self, indent_level: usize) -> String {
+        let level = {
+            if indent_level == 0 || indent_level == 1 {
+                String::from("")
+            } else {
+                std::iter::repeat(" ").take(indent_level).collect::<String>()
+            }
+        };
+        match self {
+            Node::Element(element) => {
+                let attrs = element.attrs
+                    .iter()
+                    .map(|(key, value)| {
+                        format!("{}=\"{}\"", key, value)
+                    })
+                    .collect::<Vec<_>>();
+                let attrs = attrs.join(" ");
+                let attrs = {
+                    if !element.attrs.is_empty() {
+                        format!(" {}", attrs)
+                    } else {
+                        String::new()
+                    }
+                };
+                let children = element.children
+                    .iter()
+                    .map(|child| {
+                        child.to_html_str(indent_level + 1)
+                    })
+                    .collect::<Vec<_>>();
+                let children = children.join("");
+                if element.children.len() == 1 {
+                    format!(
+                        "{lvl}<{tag}{attrs}>{children}</{tag}>\n",
+                        lvl=level,
+                        tag=element.tag,
+                        attrs=attrs,
+                        children=children
+                    )
+                } else {
+                    format!(
+                        "{lvl}<{tag}{attrs}>\n{children}</{tag}>\n",
+                        lvl=level,
+                        tag=element.tag,
+                        attrs=attrs,
+                        children=children
+                    )
+                }
+            }
+            Node::Text(text) => {
+                text.clone()
+            }
+            Node::Fragment(xs) => {
+                let children = xs
+                    .iter()
+                    .map(|child| {
+                        child.to_html_str(indent_level + 1)
+                    })
+                    .collect::<Vec<_>>();
+                children.join("\n")
+            }
+        }
+    }
+    pub fn into_fragment(self) -> Vec<Node> {
+        match self {
+            Node::Fragment(xs) => {xs}
+            _ => vec![]
+        }
+    }
+    pub fn parse_str(html_str: &str) -> Self {
+        Node::Fragment(crate::parser::parse_html_str(html_str).payload)
+    }
+    pub fn apply(&mut self, f: Rc<dyn Fn(&mut Node)>) {
+        match self {
+            Node::Element(element) => {
+                for child in element.children.iter_mut() {
+                    child.apply(f.clone());
+                }
+            }
+            Node::Fragment(xs) => {
+                for x in xs.iter_mut() {
+                    x.apply(f.clone());
+                }
+            }
+            _ => {}
+        }
+        f(self);
+    }
+    pub fn tag(&self) -> Option<String> {
+        match self {
+            Node::Element(element) => Some(element.tag.clone()),
+            _ => None
+        }
+    }
+    pub fn is_tag(&self, tag: &str) -> bool {
+        self.tag() == Some(String::from(tag))
+    }
+    pub fn has_attr(&self, key: &str) -> bool {
+        match self {
+            Node::Element(element) => {
+                element.attrs.contains_key(key)
+            },
+            _ => false
+        }
+    }
+    pub fn get_attr(&self, key: &str) -> Option<String> {
+        match self {
+            Node::Element(element) => {
+                if let Some(key) = element.attrs.get(key) {
+                    Some(key.clone())
+                } else {
+                    None
+                }
+            },
+            _ => None
+        }
+    }
+    pub fn replace_children(&mut self, new_children: Vec<Node>) {
+        match self {
+            Node::Element(element) => {
+                element.children = new_children;
+            },
+            _ => ()
+        }
+    }
+    pub fn normalize(self) -> Self {
+        match self {
+            Node::Element(mut element) => {
+                let mut new_children = Vec::<Node>::new();
+                for child in element.children.into_iter() {
+                    match child {
+                        Node::Fragment(mut xs) => {
+                            for x in xs {
+                                new_children.push(x.normalize())
+                            }
+                        }
+                        node => {
+                            new_children.push(node.normalize())
+                        }
+                    }
+                }
+                element.children = new_children;
+                Node::Element(element)
+            }
+            Node::Fragment(elements) => {
+                let mut new_children = Vec::<Node>::new();
+                for child in elements.into_iter() {
+                    match child {
+                        Node::Fragment(mut xs) => {
+                            for x in xs {
+                                new_children.push(x.normalize())
+                            }
+                        }
+                        node => {
+                            new_children.push(node.normalize())
+                        }
+                    }
+                }
+                Node::Fragment(new_children)
+            }
+            node => node
+        }
+    }
+}
+
+impl Default for Node {
+    fn default() -> Self {Node::Fragment(vec![])}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Element {
+    pub tag: String,
+    pub attrs: HashMap<String, String>,
+    pub children: Vec<Node>,
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TEST
+///////////////////////////////////////////////////////////////////////////////
+
+pub fn run() {
+    let source = include_str!("../test.html");
+    let mut html = Node::parse_str(source);
+    html.apply(Rc::new(|node: &mut Node| {
+        if !node.is_tag("include") {return}
+        if let Some(value) = node.get_attr("src") {
+            let contents = std::fs::read(&value).expect(&format!(
+                "missing file {}",
+                value
+            ));
+            let contents = String::from_utf8(contents).unwrap();
+            let contents = Node::parse_str(&contents).into_fragment();
+            *node = Node::Fragment(contents);
+        }
+    }));
+    let mut html = html.normalize();
+    // println!("{:#?}", html);
+    println!("{}", html.to_html_str(0))
+}
+
+
+

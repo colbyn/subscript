@@ -1,9 +1,2 @@
 /target
-/dist
-node_modules
-**/*.rs.bk
-.commands.out.sh
-rls.toml
-/pkg
 .DS_Store
-Cargo.lock

@@ -1,9 +1,0 @@
-/docs
-/target
-/dist
-/node_modules
-.commands.out.sh
-rls.toml
-/pkg
-.DS_Store
-Cargo.lock
