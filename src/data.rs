@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 use crate::parser;
 
@@ -29,10 +30,10 @@ pub enum Node {
 impl Node {
     pub fn to_html_str(&self, indent_level: usize) -> String {
         let level = {
-            if indent_level == 0 || indent_level == 1 {
+            if indent_level == 0 {
                 String::from("")
             } else {
-                std::iter::repeat(" ").take(indent_level).collect::<String>()
+                std::iter::repeat(" ").take(indent_level * 2).collect::<String>()
             }
         };
         match self {
@@ -58,7 +59,14 @@ impl Node {
                     })
                     .collect::<Vec<_>>();
                 let children = children.join("");
-                if element.children.len() == 1 {
+                if element.children.len() == 0 {
+                    format!(
+                        "{lvl}<{tag}{attrs}></{tag}>",
+                        lvl=level,
+                        tag=element.tag,
+                        attrs=attrs,
+                    )
+                } else if self.only_text_children() {
                     format!(
                         "{lvl}<{tag}{attrs}>{children}</{tag}>\n",
                         lvl=level,
@@ -68,7 +76,7 @@ impl Node {
                     )
                 } else {
                     format!(
-                        "{lvl}<{tag}{attrs}>\n{children}</{tag}>\n",
+                        "{lvl}<{tag}{attrs}>\n{children}{lvl}</{tag}>\n",
                         lvl=level,
                         tag=element.tag,
                         attrs=attrs,
@@ -83,7 +91,7 @@ impl Node {
                 let children = xs
                     .iter()
                     .map(|child| {
-                        child.to_html_str(indent_level + 1)
+                        child.to_html_str(indent_level)
                     })
                     .collect::<Vec<_>>();
                 children.join("\n")
@@ -95,6 +103,13 @@ impl Node {
             Node::Fragment(xs) => {xs}
             _ => vec![]
         }
+    }
+    pub fn only_text_children(&self) -> bool {
+        self.get_children()
+            .into_iter()
+            .all(|x| {
+                x.is_text()
+            })
     }
     pub fn parse_str(html_str: &str) -> Self {
         Node::Fragment(crate::parser::parse_html_str(html_str).payload)
@@ -152,6 +167,14 @@ impl Node {
             _ => ()
         }
     }
+    pub fn get_children(&self) -> Vec<Node> {
+        match self {
+            Node::Element(element) => {
+                element.children.clone()
+            },
+            _ => vec![]
+        }
+    }
     pub fn normalize(self) -> Self {
         match self {
             Node::Element(mut element) => {
@@ -190,6 +213,15 @@ impl Node {
             node => node
         }
     }
+    pub fn get_text(&self) -> Option<String> {
+        match self {
+            Node::Text(x) => Some(x.clone()),
+            _ => None
+        }
+    }
+    pub fn is_text(&self) -> bool {
+        self.get_text().is_some()
+    }
 }
 
 impl Default for Node {
@@ -209,15 +241,33 @@ pub struct Element {
 
 pub fn run() {
     let source = include_str!("../test.html");
+    let source_dir = PathBuf::from("./");
+    let root_dir = PathBuf::from("./");
     let mut html = Node::parse_str(source);
-    html.apply(Rc::new(|node: &mut Node| {
+    html.apply(Rc::new(move |node: &mut Node| {
+        let source_dir = source_dir.clone();
         if !node.is_tag("include") {return}
         if let Some(value) = node.get_attr("src") {
-            let contents = std::fs::read(&value).expect(&format!(
-                "missing file {}",
-                value
+            let path = {
+                if value.starts_with("~/") {
+                    let value = value.strip_prefix("~/").unwrap_or(&value);
+                    root_dir.join(PathBuf::from(value))
+                } else {
+                    source_dir.join(PathBuf::from(value))
+                }
+            };
+            let contents = std::fs::read(&path).expect(&format!(
+                "missing file {:?}",
+                path
             ));
             let contents = String::from_utf8(contents).unwrap();
+            let embeded_contents = node
+                .get_children()
+                .into_iter()
+                .map(|x| {x.to_html_str(0)})
+                .collect::<Vec<_>>()
+                .join("\n");
+            let contents = contents.replace("<content></content>", &embeded_contents);
             let contents = Node::parse_str(&contents).into_fragment();
             *node = Node::Fragment(contents);
         }

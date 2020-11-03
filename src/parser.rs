@@ -12,56 +12,24 @@ use html5ever::tendril::TendrilSink;
 use markup5ever_rcdom as rcdom;
 use rcdom::{Handle, NodeData, RcDom};
 
-fn walk(handle: &Handle) {
-    let node = handle;
-    match node.data {
-        NodeData::Document => println!("#Document"),
-        NodeData::Doctype {
-            ref name,
-            ref public_id,
-            ref system_id,
-        } => {
-            println!("<!DOCTYPE {} \"{}\" \"{}\">", name, public_id, system_id)
-        }
-
-        NodeData::Text { ref contents } => {
-            let text = escape_default(&contents.borrow());
-        },
-
-        NodeData::Comment { ref contents } => {
-            let comment = format!("<!-- {} -->", escape_default(contents));
-        },
-
-        NodeData::Element {
-            ref name,
-            ref attrs,
-            ..
-        } => {
-            assert!(name.ns == ns!(html));
-            print!("<{}", name.local);
-            for attr in attrs.borrow().iter() {
-                assert!(attr.name.ns == ns!());
-                print!(" {}=\"{}\"", attr.name.local, attr.value);
-            }
-            println!(">");
-        },
-
-        NodeData::ProcessingInstruction { .. } => unreachable!(),
-    }
-
-    for child in node.children.borrow().iter() {
-        walk(child);
-    }
-}
 
 fn convert_impl(handle: &Handle) -> Vec<crate::data::Node> {
     let node = handle;
     match node.data {
         NodeData::Text { ref contents } => {
             let text = escape_default(&contents.borrow());
-            if text.trim() == "\\n" {
+            let is_empty = text
+                .trim()
+                .split_ascii_whitespace()
+                .map(|x| x.clone())
+                .flat_map(|x| {x.lines()})
+                .filter(|x| {!x.is_empty()})
+                .filter(|x| {x != &"\\n"})
+                .collect::<Vec<_>>();
+            if is_empty.is_empty() {
                 vec![]
             } else {
+                // println!("{:?}", text);
                 vec![crate::data::Node::Text(text)]
             }
         },
@@ -110,21 +78,26 @@ fn convert_impl(handle: &Handle) -> Vec<crate::data::Node> {
     }
 }
 
-fn convert_root(handle: &Handle) -> Vec<crate::data::Node> {
+fn convert_root(handle: &Handle, document_mode: bool) -> Vec<crate::data::Node> {
     let result = convert_impl(handle);
-    match &result[..] {
-        [crate::data::Node::Element(element)] if (element.tag == String::from("html")) => {
-            element.children.clone()
+    if !document_mode {
+        match &result[..] {
+            [crate::data::Node::Element(element)] if (element.tag == String::from("html")) => {
+                element.children.clone()
+            }
+            _ => {
+                unimplemented!()
+            }
         }
-        _ => {
-            unimplemented!()
-        }
+    } else {
+        result
     }
 }
 
 // FIXME: Copy of str::escape_default from std, which is currently unstable
 pub fn escape_default(s: &str) -> String {
-    s.chars().flat_map(|c| c.escape_default()).collect()
+    // s.chars().flat_map(|c| c.escape_default()).collect()
+    String::from(s)
 }
 
 #[derive(Debug, Clone)]
@@ -138,18 +111,31 @@ pub fn parse_html_str(html_str: &str) -> ParsedResult {
     use markup5ever::{QualName, Namespace, LocalName, Prefix};
     let mut source = Cursor::new(String::from(html_str));
     let default_env = QualName::new(None, ns!(html), LocalName::from("div"));
-    let dom = parse_fragment(
-            RcDom::default(),
-            Default::default(),
-            default_env,
-            Vec::new(),
-        )
-        .from_utf8()
-        .read_from(&mut source)
-        .unwrap();
+    let document_mode = html_str.contains("<html>");
+    let dom = {
+        if document_mode {
+            parse_document(
+                RcDom::default(),
+                Default::default(),
+            )
+            .from_utf8()
+            .read_from(&mut source)
+            .unwrap()
+        } else {
+            parse_fragment(
+                RcDom::default(),
+                Default::default(),
+                default_env,
+                Vec::new(),
+            )
+            .from_utf8()
+            .read_from(&mut source)
+            .unwrap()
+        }
+    };
     
     // TRAVERSE
-    let payload = convert_root(&dom.document);
+    let payload = convert_root(&dom.document, document_mode);
 
     if !dom.errors.is_empty() {
         eprintln!("\nParse errors:");
