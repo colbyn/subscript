@@ -17,6 +17,7 @@ pub enum Either<L, R> {
     Right(R),
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // HTML TREE AST
 ///////////////////////////////////////////////////////////////////////////////
@@ -237,7 +238,7 @@ impl Node {
     pub fn is_text(&self) -> bool {
         self.get_text().is_some()
     }
-    pub fn element(
+    pub fn new_element(
         tag: &str,
         attrs: HashMap<String, String>,
         children: &[Node],
@@ -248,7 +249,7 @@ impl Node {
             children: children.to_owned(),
         }))
     }
-    pub fn text(value: &str) -> Self {
+    pub fn new_text(value: &str) -> Self {
         Node::Text(String::from(value))
     }
     pub fn is_inline_node(&self) -> bool {
@@ -311,8 +312,10 @@ pub fn run() {
         source: PathBuf::from("./test.html"),
         root_dir: PathBuf::from("./"),
     };
+    html.apply(macors::markdown_tag(&ctx));
     html.apply(macors::include_tag(&ctx));
     html.apply(macors::tex_tag(&ctx));
+    html.apply(macors::note_tag(&ctx));
     let mut html = html.normalize();
     println!("{}", html.to_html_str(0))
 }

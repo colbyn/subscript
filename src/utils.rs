@@ -1,3 +1,5 @@
+pub mod detect_indent;
+
 pub fn is_inline_tag(tag: &str) -> bool {
     if (tag == "a") {return true}
     if (tag == "abbr") {return true}
@@ -56,4 +58,37 @@ pub fn is_header_tag(tag: &str) -> bool {
     tag == "h4" ||
     tag == "h5" ||
     tag == "h6"
+}
+
+
+pub fn get_indent_level(source: &str) -> usize {
+    detect_indent::detect_indent(source).amount()
+}
+
+pub fn get_indent_str(source: &str) -> String {
+    detect_indent::detect_indent(source).indent().to_owned()
+}
+
+pub fn trim_indent(source: &str) -> String {
+    let level = get_indent_str(source);
+    source
+        .lines()
+        .map(|line| {
+            line.strip_prefix(&level).unwrap_or(line)
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+
+pub fn compile_markdown(source: String) -> crate::data::Node {
+    let html_str = {
+        use comrak::{markdown_to_html, ComrakOptions};
+        let mut options = ComrakOptions::default();
+        options.render.unsafe_ = true;
+        options.render.unsafe_ = true;
+        let out = markdown_to_html(&source, &options);
+        out
+    };
+    crate::data::Node::parse_str(&html_str)
 }
