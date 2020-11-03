@@ -306,11 +306,11 @@ impl Context {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn run() {
-    let source = include_str!("../test.html");
+    let source = include_str!("../test/test.html");
     let mut html = Node::parse_str(source);
     let ctx = Context{
-        source: PathBuf::from("./test.html"),
-        root_dir: PathBuf::from("./"),
+        source: PathBuf::from("./test/test.html"),
+        root_dir: PathBuf::from("./test"),
     };
     html.apply(macors::markdown_tag(&ctx));
     html.apply(macors::include_tag(&ctx));
