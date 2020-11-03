@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::parser;
+use crate::macors;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,7 +67,14 @@ impl Node {
                         tag=element.tag,
                         attrs=attrs,
                     )
-                } else if self.only_text_children() {
+                } else if self.is_inline_node() {
+                    format!(
+                        "<{tag}{attrs}>{children}</{tag}>",
+                        tag=element.tag,
+                        attrs=attrs,
+                        children=children
+                    )
+                } else if self.only_inline_children() {
                     format!(
                         "{lvl}<{tag}{attrs}>{children}</{tag}>\n",
                         lvl=level,
@@ -109,6 +117,13 @@ impl Node {
             .into_iter()
             .all(|x| {
                 x.is_text()
+            })
+    }
+    pub fn only_inline_children(&self) -> bool {
+        self.get_children()
+            .into_iter()
+            .all(|x| {
+                x.is_inline_node()
             })
     }
     pub fn parse_str(html_str: &str) -> Self {
@@ -222,6 +237,40 @@ impl Node {
     pub fn is_text(&self) -> bool {
         self.get_text().is_some()
     }
+    pub fn element(
+        tag: &str,
+        attrs: HashMap<String, String>,
+        children: &[Node],
+    ) -> Self {
+        Node::Element(Box::new(Element{
+            tag: String::from(tag),
+            attrs,
+            children: children.to_owned(),
+        }))
+    }
+    pub fn text(value: &str) -> Self {
+        Node::Text(String::from(value))
+    }
+    pub fn is_inline_node(&self) -> bool {
+        if self.get_attr("block").is_some() {
+            return false;
+        }
+        match self {
+            Node::Element(element) => {
+                if crate::utils::is_inline_tag(&element.tag) {
+                    return true;
+                }
+                if element.tag == String::from("tex") {
+                    return true;
+                }
+                false
+            },
+            Node::Fragment(xs) => {
+                xs.iter().all(|x| x.is_inline_node())
+            }
+            Node::Text(..) => true,
+        }
+    }
 }
 
 impl Default for Node {
@@ -236,44 +285,35 @@ pub struct Element {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// COMPILER MEAT
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Debug, Clone)]
+pub struct Context {
+    pub source: PathBuf,
+    pub root_dir: PathBuf,
+}
+
+impl Context {
+    pub fn source_dir(&self) -> PathBuf {
+        self.source.parent().unwrap().to_owned()
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // TEST
 ///////////////////////////////////////////////////////////////////////////////
 
 pub fn run() {
     let source = include_str!("../test.html");
-    let source_dir = PathBuf::from("./");
-    let root_dir = PathBuf::from("./");
     let mut html = Node::parse_str(source);
-    html.apply(Rc::new(move |node: &mut Node| {
-        let source_dir = source_dir.clone();
-        if !node.is_tag("include") {return}
-        if let Some(value) = node.get_attr("src") {
-            let path = {
-                if value.starts_with("~/") {
-                    let value = value.strip_prefix("~/").unwrap_or(&value);
-                    root_dir.join(PathBuf::from(value))
-                } else {
-                    source_dir.join(PathBuf::from(value))
-                }
-            };
-            let contents = std::fs::read(&path).expect(&format!(
-                "missing file {:?}",
-                path
-            ));
-            let contents = String::from_utf8(contents).unwrap();
-            let embeded_contents = node
-                .get_children()
-                .into_iter()
-                .map(|x| {x.to_html_str(0)})
-                .collect::<Vec<_>>()
-                .join("\n");
-            let contents = contents.replace("<content></content>", &embeded_contents);
-            let contents = Node::parse_str(&contents).into_fragment();
-            *node = Node::Fragment(contents);
-        }
-    }));
+    let ctx = Context{
+        source: PathBuf::from("./test.html"),
+        root_dir: PathBuf::from("./"),
+    };
+    html.apply(macors::include_tag(&ctx));
+    html.apply(macors::tex_tag(&ctx));
     let mut html = html.normalize();
-    // println!("{:#?}", html);
     println!("{}", html.to_html_str(0))
 }
 

@@ -6,6 +6,7 @@
 pub mod data;
 pub mod parser;
 pub mod macors;
+pub mod utils;
 
 
 fn main() {
