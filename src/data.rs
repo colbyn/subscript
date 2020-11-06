@@ -229,14 +229,33 @@ impl Node {
             node => node
         }
     }
-    pub fn get_text(&self) -> Option<String> {
+    pub fn get_children_as_text(&self) -> Vec<String> {
+        let mut texts = Vec::<String>::new();
         match self {
-            Node::Text(x) => Some(x.clone()),
-            _ => None
+            Node::Text(text) => vec![text.clone()],
+            _ => {
+                let mut ys = self
+                    .get_children()
+                    .into_iter()
+                    .flat_map(|x| x.get_children_as_text())
+                    .collect::<Vec<_>>();
+                return ys;
+            }
+        }
+    }
+    pub fn get_text_contents(&self) -> Option<String> {
+        let txts = self.get_children_as_text();
+        if txts.is_empty() {
+            None
+        } else {
+            Some(txts.join(" "))
         }
     }
     pub fn is_text(&self) -> bool {
-        self.get_text().is_some()
+        match self {
+            Node::Text(_) => true,
+            _ => false,
+        }
     }
     pub fn new_element(
         tag: &str,
@@ -312,7 +331,6 @@ pub fn run() {
         source: PathBuf::from("./test/test.html"),
         root_dir: PathBuf::from("./test"),
     };
-    html.apply(macors::markdown_tag(&ctx));
     html.apply(macors::include_tag(&ctx));
     html.apply(macors::tex_tag(&ctx));
     html.apply(macors::note_tag(&ctx));
