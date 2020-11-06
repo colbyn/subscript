@@ -20,10 +20,10 @@
 
 ```html
 <desmos height="200px">
-    <cmd>y=x^2</cmd>
+    <expr>y=x^2</expr>
 </desmos>
 <geogebra height='200' type='graphing'>
-    <cmd>y=x^2</cmd>
+    <expr>y=x^2</expr>
 </geogebra>
 ```
 
