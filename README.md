@@ -10,3 +10,25 @@
 ## Preview
 
 ![Preview](assets/preview.png)
+
+
+## Cool Features
+
+### Graphing VIA Desmos/GeoGebra
+
+> Still being copied over from the original ad-hoc implementation ([over here](https://github.com/colbyn/school-notes)).
+
+```html
+<desmos height="200px">
+    <cmd>y=x^2</cmd>
+</desmos>
+<geogebra height='200' type='graphing'>
+    <cmd>y=x^2</cmd>
+</geogebra>
+```
+
+![Graphing Example](assets/preview-graphing.png)
+
+Which is customizable (see the bottom figure):
+
+![Graphing Example](assets/preview-graphing-2.png)
