@@ -11,6 +11,10 @@
 
 ![Preview](assets/preview.png)
 
+Comes with a syntax highlighting extension for VS Code.
+
+![VS-Code Preview](assets/preview-vscode-plugin.png)
+
 ## Macros
 
 Versatility in Subscript is made possible VIA macros (the syntax is akin to web components, but it's expanded out at compile time compared to runtime, i.e. a macro).
