@@ -15,6 +15,8 @@ Comes with a syntax highlighting extension for VS Code.
 
 ![VS-Code Preview](assets/preview-vscode-plugin.png)
 
+It injects the LaTeX grammar from [latex-workshop](https://marketplace.visualstudio.com/items?itemName=James-Yu.latex-workshop) into the html `<tex>` and `<texblock>` tags. 
+
 ## Macros
 
 Versatility in Subscript is made possible VIA macros (the syntax is akin to web components, but it's expanded out at compile time compared to runtime, i.e. a macro).
