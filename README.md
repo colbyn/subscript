@@ -19,6 +19,8 @@ It injects the LaTeX grammar from [latex-workshop](https://marketplace.visualstu
 
 ## Macros
 
+> For autocomplete in VS-Code, for now, use the custom data definitions in [editors/vscode-html-macros](editors/vscode-html-macros/html-macros.json).
+
 Versatility in Subscript is made possible VIA macros (the syntax is akin to web components, but it's expanded out at compile time compared to runtime, i.e. a macro).
 
 For example, to display math formulas, you may use the `<tex>` macro, to plot `y = x^2`, you may use e.g. the `<desmos>` macro, and etc. Furthermore, say you wanted to publish content with music notation, you could create a macro that provides a high level interface to e.g. [VexFlow](https://www.vexflow.com/). 

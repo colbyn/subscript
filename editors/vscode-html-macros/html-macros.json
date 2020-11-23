@@ -1,0 +1,19 @@
+{
+    "version": 1.1,
+    "tags": [
+        {
+            "name": "tex",
+            "description": "The tex element for LaTeX math code.",
+            "attributes": [
+                { "name": "block" }
+            ]
+        },
+        {
+            "name": "texblock",
+            "description": "The tex element for LaTeX math code.",
+            "attributes": []
+        }
+    ],
+    "globalAttributes": [],
+    "valueSets": []
+}
