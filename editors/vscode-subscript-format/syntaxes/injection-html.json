@@ -25,7 +25,8 @@
         "latex-block": {
 			"begin": "(<texblock>)",
             "end": "(</texblock>)",
-            "name": "comment.block.html",
+			"name": "comment.block.html",
+			"contentName": "support.class.math.block.environment.latex",
 			"patterns": [
 				{
                     "contentName": "meta.embedded.block.latex",
