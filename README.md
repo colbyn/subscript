@@ -9,6 +9,11 @@
 
 ## Example
 
+> Compile with
+> ```bash
+> cargo run -- compile --root=example --input example/pages/**/*.html --output=example/output --trim pages
+> ```
+
 The following file from `./example/pages/index.html`:
 
 ```html
