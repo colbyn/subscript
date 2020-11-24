@@ -7,7 +7,44 @@
 
 - [CSS Paged Media](https://www.w3.org/TR/css-page-3/): support traditional print use cases, or just rendering to a PDF. This is what I am currently planning on using for rendering to e.g. PDFs: [PagedJS](https://www.pagedjs.org)
 
-## Preview
+## Example
+
+The following file from `./example/pages/index.html`:
+
+```html
+<include src="../template/base.html">
+    <h1>Hello World</h1>
+    <items>
+        <p>First Paragraph</p>
+        <p>Second Paragraph</p>
+        <li>Third Item</li>
+    </items>
+</include>
+```
+
+Transforms to:
+
+```html
+<html>
+  <head>
+    <title>Note</title>
+  </head>
+  <body>
+    <h1>Hello World</h1>
+    <ul>
+      <li>
+        <p>First Paragraph</p>
+      </li>
+      <li>
+        <p>Second Paragraph</p>
+      </li>
+      <li>Third Item</li>
+    </ul>
+  </body>
+</html>
+```
+
+## Math Preview
 
 ![Preview](assets/preview.png)
 

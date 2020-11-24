@@ -1,4 +1,7 @@
+use std::path::{PathBuf, Path};
+use std::convert::AsRef;
 pub mod detect_indent;
+use crate::data::Either;
 
 pub fn is_inline_tag(tag: &str) -> bool {
     if (tag == "a") {return true}
@@ -80,15 +83,22 @@ pub fn trim_indent(source: &str) -> String {
         .join("\n")
 }
 
-
-pub fn compile_markdown(source: String) -> crate::data::Node {
-    let html_str = {
-        use comrak::{markdown_to_html, ComrakOptions};
-        let mut options = ComrakOptions::default();
-        options.render.unsafe_ = true;
-        options.render.unsafe_ = true;
-        let out = markdown_to_html(&source, &options);
-        out
-    };
-    crate::data::Node::parse_str(&html_str)
+pub fn load_file(ctx: &crate::data::Context, path: &str) -> String {
+    use std::path::PathBuf;
+    let source_dir = ctx.source_dir();
+    let root_dir = ctx.root_dir.clone();
+    let source_path = root_dir.join(source_dir.join(path));
+    read_file_or_panic(source_path)
 }
+
+
+pub fn read_file_or_panic<P: AsRef<Path>>(path: P) -> String {
+    let path = path.as_ref().to_owned();
+    if !path.exists() {
+        eprintln!("missing file {:?}", path);
+        panic!()
+    }
+    let contents = std::fs::read(&path).unwrap();
+    String::from_utf8(contents).unwrap()
+}
+

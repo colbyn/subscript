@@ -12,6 +12,26 @@
             "name": "texblock",
             "description": "The tex element for LaTeX math code.",
             "attributes": []
+        },
+        {
+            "name": "equation",
+            "description": "The tex element for LaTeX math code in an equation environment.",
+            "attributes": []
+        },
+        {
+            "name": "list",
+            "description": "A better <ol> tag; each child element is wrapped in an li tag.",
+            "attributes": []
+        },
+        {
+            "name": "items",
+            "description": "A better <ul> tag; each child element is wrapped in an li tag.",
+            "attributes": []
+        },
+        {
+            "name": "include",
+            "description": "The compile-time import system.",
+            "attributes": []
         }
     ],
     "globalAttributes": [],

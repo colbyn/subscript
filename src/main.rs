@@ -6,10 +6,10 @@
 
 pub mod data;
 pub mod parser;
-pub mod macors;
+pub mod macros;
 pub mod utils;
 pub mod cli;
 
 fn main() {
-    data::run();
+    cli::run();
 }

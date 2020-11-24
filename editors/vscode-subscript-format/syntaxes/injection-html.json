@@ -7,6 +7,9 @@
         },
         {
 			"include": "#latex-inline"
+		},
+		{
+			"include": "#latex-equation"
         }
 	],
 	"repository": {
@@ -31,6 +34,18 @@
 				{
                     "contentName": "meta.embedded.block.latex",
 					"patterns": [{"include": "text.tex.latex"}]
+				}
+			]
+		},
+		"latex-equation": {
+			"begin": "(<equation>)",
+            "end": "(</equation>)",
+            "name": "comment.block.html",
+            "contentName": "support.class.math.block.environment.latex",
+			"patterns": [
+				{
+                    "contentName": "meta.embedded.block.latex",
+					"patterns": [{"include": "text.tex#math"}]
 				}
 			]
 		}

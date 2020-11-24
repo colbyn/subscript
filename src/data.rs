@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::parser;
-use crate::macors;
+use crate::macros;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -16,6 +16,74 @@ pub enum Either<L, R> {
     Left(L),
     Right(R),
 }
+
+
+#[derive(Clone)]
+struct MacroCallback(MacroFunction<Result<(), ()>>);
+
+impl std::fmt::Debug for MacroCallback {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MacroCallback").finish()
+    }
+}
+
+/// `Ret` is the **return type**.
+pub type MacroFunction<Ret> = Rc<dyn Fn(&mut Node) -> Ret>;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// MACRO DATA TYPES
+///////////////////////////////////////////////////////////////////////////////
+
+#[derive(Clone)]
+pub struct Macro {
+    name: String,
+    callback: MacroCallback,
+}
+
+impl Macro {
+    pub fn new(name: &str, callback: MacroFunction<Option<Result<(), ()>>>) -> Self {
+        Macro{
+            name: name.to_owned(),
+            callback: MacroCallback(Rc::new(move |x| {
+                match callback(x) {
+                    Some(x) => x,
+                    _ => Ok(())
+                }
+            })),
+        }
+    }
+    pub fn new_void(name: &str, callback: MacroFunction<Option<()>>) -> Self {
+        Macro{
+            name: name.to_owned(),
+            callback: MacroCallback(Rc::new(move |x| {
+                let res = callback(x);
+                Ok(())
+            })),
+        }
+    }
+    pub fn match_tag(tag: &str, callback: MacroFunction<()>) -> Self {
+        Macro::new_void(tag, {
+            let tag = String::from(tag);
+            Rc::new(move |node: &mut Node| -> Option<()> {
+                if tag == node.tag()? {
+                    callback(node);
+                }
+                Some(())
+            })
+        })
+    }
+    pub fn eval(&self, node: &mut Node) {
+        match self.callback.0(node) {
+            Err(_) => {
+                eprintln!("macro <{}> failed", self.name);
+                panic!()
+            }
+            _ => (),
+        }
+    }
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -130,7 +198,7 @@ impl Node {
     pub fn parse_str(html_str: &str) -> Self {
         Node::Fragment(crate::parser::parse_html_str(html_str).payload)
     }
-    pub fn apply(&mut self, f: Rc<dyn Fn(&mut Node)>) {
+    pub fn apply(&mut self, f: Macro) {
         match self {
             Node::Element(element) => {
                 for child in element.children.iter_mut() {
@@ -144,7 +212,12 @@ impl Node {
             }
             _ => {}
         }
-        f(self);
+        f.eval(self);
+    }
+    pub fn apply_all(&mut self, macros: Vec<Macro>) {
+        for mut m in macros {
+            self.apply(m);
+        }
     }
     pub fn tag(&self) -> Option<String> {
         match self {
@@ -324,19 +397,20 @@ impl Context {
 // TEST
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn run() {
-    let source = include_str!("../test/test.html");
-    let mut html = Node::parse_str(source);
-    let ctx = Context{
-        source: PathBuf::from("./test/test.html"),
-        root_dir: PathBuf::from("./test"),
-    };
-    html.apply(macors::include_tag(&ctx));
-    html.apply(macors::tex_tag(&ctx));
-    html.apply(macors::note_tag(&ctx));
-    let mut html = html.normalize();
-    println!("{}", html.to_html_str(0))
-}
+// pub fn run() {
+//     let source = include_str!("../test/test.html");
+//     let mut html = Node::parse_str(source);
+//     let ctx = Context{
+//         source: PathBuf::from("./test/test.html"),
+//         root_dir: PathBuf::from("./test"),
+//     };
+//     html.apply(macros::include_tag(&ctx));
+//     html.apply(macros::items_tag(&ctx));
+//     html.apply(macros::latex_suit(&ctx));
+//     html.apply(macros::note_tag(&ctx));
+//     let mut html = html.normalize();
+//     println!("{}", html.to_html_str(0))
+// }
 
 
 
