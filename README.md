@@ -9,9 +9,13 @@
 
 ## Example
 
-> Compile with
+> FYI, you can compile the following with either
 > ```bash
 > cargo run -- compile --root=example --input example/pages/**/*.html --output=example/output --trim pages
+> ```
+> or,
+> ```bash
+> subscript compile --root=example --input example/pages/**/*.html --output=example/output --trim pages
 > ```
 
 The following file from `./example/pages/index.html`:
