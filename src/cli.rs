@@ -24,19 +24,31 @@ enum Opt {
         #[structopt(long, parse(from_os_str))]
         trim: Option<PathBuf>,
 
+        /// E.g. for setting the base path when using GitHub pages.
+        #[structopt(long)]
+        base_url: Option<String>,
+
         /// Output directory.
         #[structopt(long, parse(from_os_str))]
         output: PathBuf,
     }
 }
 
-pub fn compile_file(root: &PathBuf, out_dir: &PathBuf, trim: &Option<PathBuf>, input: PathBuf) {
+pub fn compile_file(
+    root: &PathBuf,
+    out_dir: &PathBuf,
+    trim: &Option<PathBuf>,
+    base_url: &Option<String>,
+    input: PathBuf
+) {
     use crate::{data::*, macros, utils};
     let ctx = Context{
         root_dir: root.clone(),
         source: {
             input.strip_prefix(root).unwrap_or(&input).to_owned()
         },
+        base_url: base_url.clone(),
+        output_dir: out_dir.clone(),
     };
     let input_path_str = input.to_str().unwrap();
     let output_file_path = {
@@ -58,13 +70,14 @@ pub fn compile_file(root: &PathBuf, out_dir: &PathBuf, trim: &Option<PathBuf>, i
     html.apply(macros::items_tag(&ctx));
     html.apply(macros::latex_suit(&ctx));
     html.apply(macros::note_tag(&ctx));
+    html.apply(macros::img_tag(&ctx));
     let mut html = html.normalize();
     std::fs::write(output_file_path, html.to_html_str(0));
 }
 
 pub fn run() {
     match Opt::from_args() {
-        Opt::Compile{root, input, output, trim} => {
+        Opt::Compile{root, input, output, trim, base_url} => {
             let xs = input
                 .into_iter()
                 .flat_map(|x: String| -> Vec<PathBuf> {
@@ -73,7 +86,7 @@ pub fn run() {
                         .collect::<Vec<_>>()
                 })
                 .map(|input: PathBuf| {
-                    compile_file(&root, &output, &trim, input);
+                    compile_file(&root, &output, &trim, &base_url, input);
                 })
                 .collect::<Vec<_>>();
         }

@@ -108,6 +108,7 @@ impl Node {
         };
         match self {
             Node::Element(element) => {
+                // COMMON
                 let attrs = element.attrs
                     .iter()
                     .map(|(key, value)| {
@@ -122,6 +123,15 @@ impl Node {
                         String::new()
                     }
                 };
+                // AD-HOC IMPLIMENTATIONS
+                if element.tag == String::from("img") {
+                    return format!(
+                        "{lvl}<img {attrs}>\n",
+                        lvl=level,
+                        attrs=attrs
+                    )
+                }
+                // GENERAL
                 let children = element.children
                     .iter()
                     .map(|child| {
@@ -246,6 +256,14 @@ impl Node {
                 }
             },
             _ => None
+        }
+    }
+    pub fn set_attr(&mut self, key: &str, value: String) {
+        match self {
+            Node::Element(element) => {
+                element.attrs.insert(key.to_owned(), value);
+            },
+            _ => ()
         }
     }
     pub fn replace_children(&mut self, new_children: Vec<Node>) {
@@ -385,6 +403,8 @@ pub struct Element {
 pub struct Context {
     pub source: PathBuf,
     pub root_dir: PathBuf,
+    pub output_dir: PathBuf,
+    pub base_url: Option<String>,
 }
 
 impl Context {

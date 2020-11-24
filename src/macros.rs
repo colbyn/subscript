@@ -5,7 +5,11 @@ use std::iter::FromIterator;
 use std::convert::AsRef;
 
 use crate::data::*;
-use crate::utils::load_file;
+use crate::utils::{
+    load_file,
+    cache_file_dep,
+    normalize_source_path,
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // MACROS
@@ -139,4 +143,15 @@ pub fn list_tag(ctx: &Context) -> Macro {
         )
     }))
 }
+
+pub fn img_tag(ctx: &Context) -> Macro {
+    let ctx = ctx.clone();
+    Macro::match_tag("img", Rc::new(move |node: &mut Node| {
+        if let Some(src_path) = node.get_attr("src") {
+            let new_src = cache_file_dep(&ctx, &src_path);
+            node.set_attr("src", new_src);
+        }
+    }))
+}
+
 
