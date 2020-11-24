@@ -5,6 +5,7 @@ use structopt::StructOpt;
 /// The Subscript CLI frontend. 
 #[derive(Debug, StructOpt)]
 enum Opt {
+    /// Compile the given HTML files.
     Compile {
         /// Root directory.
         #[structopt(long, parse(from_os_str), default_value=".")]
