@@ -124,12 +124,24 @@ impl Node {
                     }
                 };
                 // AD-HOC IMPLIMENTATIONS
-                if element.tag == String::from("img") {
-                    return format!(
-                        "{lvl}<img {attrs}>\n",
+                let single_tag = |tag: &str| {
+                    let attrs = attrs.clone();
+                    format!(
+                        "{lvl}<{tag} {attrs} >\n",
                         lvl=level,
+                        tag=tag,
                         attrs=attrs
                     )
+                };
+                let no_children = element.children.is_empty();
+                if element.tag == String::from("img") && no_children {
+                    return single_tag("img");
+                }
+                if element.tag == String::from("meta") && no_children {
+                    return single_tag("meta");
+                }
+                if element.tag == String::from("link") && no_children {
+                    return single_tag("link");
                 }
                 // GENERAL
                 let children = element.children
@@ -141,7 +153,7 @@ impl Node {
                 let children = children.join("");
                 if element.children.len() == 0 {
                     format!(
-                        "{lvl}<{tag}{attrs}></{tag}>",
+                        "\n{lvl}<{tag}{attrs}></{tag}>\n",
                         lvl=level,
                         tag=element.tag,
                         attrs=attrs,
@@ -270,6 +282,14 @@ impl Node {
         match self {
             Node::Element(element) => {
                 element.children = new_children;
+            },
+            _ => ()
+        }
+    }
+    pub fn append_children(&mut self, mut new_children: Vec<Node>) {
+        match self {
+            Node::Element(element) => {
+                element.children.append(&mut new_children);
             },
             _ => ()
         }

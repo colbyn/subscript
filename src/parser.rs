@@ -12,6 +12,7 @@ use html5ever::tendril::TendrilSink;
 use markup5ever_rcdom as rcdom;
 use rcdom::{Handle, NodeData, RcDom};
 
+const REPORT_PARSER_ERRORS: bool = true;
 
 fn convert_impl(handle: &Handle) -> Vec<crate::data::Node> {
     let node = handle;
@@ -106,17 +107,45 @@ pub struct ParsedResult {
     pub errors: Vec<String>,
 }
 
+
+fn tokenizer_config() -> html5ever::tokenizer::TokenizerOpts {
+    use markup5ever::{QualName, Namespace, LocalName, Prefix};
+    use markup5ever::interface::tree_builder::QuirksMode;
+    use html5ever::tokenizer::TokenizerOpts;
+    let mut ops: TokenizerOpts = Default::default();
+    // ops.exact_errors = false;
+    ops
+}
+
+fn parser_config() -> html5ever::driver::ParseOpts {
+    use markup5ever::{QualName, Namespace, LocalName, Prefix};
+    use markup5ever::interface::tree_builder::QuirksMode;
+    let mut ops: html5ever::driver::ParseOpts = Default::default();
+    ops.tree_builder = {
+        let mut tree_build_ops = html5ever::tree_builder::TreeBuilderOpts::default();
+        tree_build_ops.exact_errors = false;
+        tree_build_ops.scripting_enabled = true;
+        tree_build_ops
+    };
+    ops.tokenizer = tokenizer_config();
+    ops
+}
+
+
 pub fn parse_html_str(html_str: &str) -> ParsedResult {
     use std::io::Cursor;
     use markup5ever::{QualName, Namespace, LocalName, Prefix};
+    use markup5ever::interface::tree_builder::QuirksMode;
     let mut source = Cursor::new(String::from(html_str));
     let default_env = QualName::new(None, ns!(html), LocalName::from("div"));
-    let document_mode = html_str.contains("<html>");
+    let mut document_mode = {
+        html_str.contains("<html>")
+    };
     let dom = {
         if document_mode {
             parse_document(
                 RcDom::default(),
-                Default::default(),
+                parser_config(),
             )
             .from_utf8()
             .read_from(&mut source)
@@ -124,7 +153,7 @@ pub fn parse_html_str(html_str: &str) -> ParsedResult {
         } else {
             parse_fragment(
                 RcDom::default(),
-                Default::default(),
+                parser_config(),
                 default_env,
                 Vec::new(),
             )
@@ -135,12 +164,14 @@ pub fn parse_html_str(html_str: &str) -> ParsedResult {
     };
     
     // TRAVERSE
-    let payload = convert_root(&dom.document, document_mode);
+    let mut payload = convert_root(&dom.document, document_mode);
 
     if !dom.errors.is_empty() {
-        eprintln!("\nParse errors:");
-        for err in dom.errors.iter() {
-            eprintln!("    {}", err);
+        if REPORT_PARSER_ERRORS {
+            eprintln!("\nParse errors:");
+            for err in dom.errors.iter() {
+                eprintln!("    {}", err);
+            }
         }
     }
     let errors = dom

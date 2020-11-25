@@ -66,12 +66,9 @@ pub fn compile_file(
     }
     let source = utils::read_file_or_panic(input);
     let mut html = Node::parse_str(&source);
-    html.apply(macros::include_tag(&ctx));
-    html.apply(macros::items_tag(&ctx));
-    html.apply(macros::latex_suit(&ctx));
-    html.apply(macros::note_tag(&ctx));
-    html.apply(macros::img_tag(&ctx));
+    crate::macros::apply_macros_pipeline(&ctx, &mut html);
     let mut html = html.normalize();
+    crate::macros::apply_document_macros_pipeline(&ctx, &mut html);
     std::fs::write(output_file_path, html.to_html_str(0));
 }
 

@@ -21,10 +21,22 @@ pub fn include_tag(ctx: &Context) -> Macro {
         let source_dir = ctx.source_dir();
         let root_dir = ctx.root_dir.clone();
         if let Some(src_path) = node.get_attr("src") {
-            let contents = load_file(&ctx, &src_path);
+            let contents = {
+                let base = load_file(&ctx, &src_path);
+                let had_doctype = base.contains("<!DOCTYPE html>");
+                let mut base = Node::parse_str(&base);
+                apply_macros_pipeline(&ctx, &mut base);
+                let mut base = base.to_html_str(0);
+                if had_doctype {
+                    base = format!("<!DOCTYPE html>\n{}", base);
+                }
+                base
+            };
             let embeded_contents = Node::Fragment(node.get_children()).to_html_str(0);
             let contents = contents.replace("<content></content>", &embeded_contents);
-            *node = Node::parse_str(&contents);
+            let mut new_node = Node::parse_str(&contents);
+            
+            *node = new_node;
         }
     }))
 }
@@ -154,4 +166,25 @@ pub fn img_tag(ctx: &Context) -> Macro {
     }))
 }
 
+pub fn subscript_deps(ctx: &Context) -> Macro {
+    let ctx = ctx.clone();
+    Macro::match_tag("head", Rc::new(move |node: &mut Node| {
+        let deps = Node::parse_str(include_str!("../assets/deps.html"));
+        node.append_children(deps.into_fragment());
+    }))
+}
+
+pub fn apply_macros_pipeline(ctx: &Context, html: &mut Node) {
+    html.apply(include_tag(&ctx));
+    html.apply(items_tag(&ctx));
+    html.apply(latex_suit(&ctx));
+    html.apply(note_tag(&ctx));
+    html.apply(img_tag(&ctx));
+}
+
+/// Apply this once to the enture document **before** serializing such
+/// to a string.
+pub fn apply_document_macros_pipeline(ctx: &Context, html: &mut Node) {
+    html.apply(subscript_deps(&ctx));
+}
 

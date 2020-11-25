@@ -1,0 +1,36 @@
+<!-- MATH-JAX -->
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['\\(', '\\)'], ['stem:[', ']'], ['`', '`']],
+        macros: {
+            'dx': "{\\, \\mathrm{d}x\\;}",
+            'Integrate': ['{\\int_{#1}^{#2}\\, #3 \\dx}', 3],
+            'IntegrateFor': ['{\\int_{#1}^{#2}\\, #3 {\\, \\mathrm{d}{#4}\\;}}', 4],
+            'I': ['{\\Integrate{a}{b}{#1}}', 1],
+            'angles': ['\\langle {#1},{#2} \\rangle', 2]
+        },
+    },
+    svg: {
+        fontCache: 'global',
+        minScale: 0.2
+    },
+    processEscapes: true,
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<!--FONTS (TODO SMALLER)-->
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700;1,900&display=swap" rel="stylesheet">
+
+<!-- MISC -->
+<meta name=viewport content="width=device-width,initial-scale=1">  
+<meta charset="utf-8"/>
+
+<!-- GEOGEBRA -->
+<script src="https://www.geogebra.org/apps/deployggb.js"></script>
+
+<!-- DESMOS -->
+<script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
