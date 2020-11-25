@@ -370,11 +370,41 @@ impl Node {
     }
     pub fn new_element(
         tag: &str,
-        attrs: HashMap<String, String>,
+        mut attrs: HashMap<String, String>,
         children: &[Node],
     ) -> Self {
+        let mut styles = Vec::<Styling>::new();
+        let mut set_node_id = false;
+        let node_id = {
+            if let Some(uid) = attrs.get("id") {
+                uid.clone()
+            } else {
+                format!(
+                    "id_{}",
+                    rand::random::<u64>()
+                )
+            }
+        };
+        let children = children
+            .to_owned()
+            .into_iter()
+            .map(|mut child| {
+                if child.is_tag("style") && child.has_attr("inline") {
+                    if let Some(contents) = child.get_text_contents() {
+                        let new_contents = contents.replace("self", &node_id);
+                        child.replace_children(vec![Node::new_text(&new_contents)]);
+                        set_node_id = true;
+                    }
+                }
+                child
+            })
+            .collect::<Vec<_>>();
+        if set_node_id {
+            attrs.insert(String::from("id"), node_id);
+        }
         Node::Element(Box::new(Element{
             tag: String::from(tag),
+            styling: Styling::default(),
             attrs,
             children: children.to_owned(),
         }))
@@ -411,8 +441,14 @@ impl Default for Node {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Element {
     pub tag: String,
+    pub styling: Styling,
     pub attrs: HashMap<String, String>,
     pub children: Vec<Node>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Styling {
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////

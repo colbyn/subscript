@@ -12,4 +12,7 @@ pub mod cli;
 
 fn main() {
     cli::run();
+    // utils::parse_css();
+    // parser::css_root::process_css("div {color: red}");
+    // let source = include_str!("../test.css");
 }

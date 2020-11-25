@@ -1,3 +1,5 @@
+pub mod css;
+
 use std::collections::HashMap;
 use std::default::Default;
 use std::io;
@@ -58,11 +60,16 @@ fn convert_impl(handle: &Handle) -> Vec<crate::data::Node> {
                 .filter(|x| !x.is_empty())
                 .flatten()
                 .collect::<Vec<_>>();
-            vec![crate::data::Node::Element(Box::new(crate::data::Element {
-                tag,
+            // vec![crate::data::Node::Element(Box::new(crate::data::Element {
+            //     tag,
+            //     attrs,
+            //     children,
+            // }))]
+            vec![crate::data::Node::new_element(
+                &tag,
                 attrs,
-                children,
-            }))]
+                &children,
+            )]
         },
         _ => {
             node
