@@ -9,6 +9,8 @@ pub mod parser;
 pub mod macros;
 pub mod utils;
 pub mod cli;
+pub mod server;
+
 
 fn main() {
     cli::run();

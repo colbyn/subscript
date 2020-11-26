@@ -14,7 +14,7 @@ use html5ever::tendril::TendrilSink;
 use markup5ever_rcdom as rcdom;
 use rcdom::{Handle, NodeData, RcDom};
 
-const REPORT_PARSER_ERRORS: bool = true;
+const REPORT_PARSER_ERRORS: bool = false;
 
 fn convert_impl(handle: &Handle) -> Vec<crate::data::Node> {
     let node = handle;
@@ -41,7 +41,6 @@ fn convert_impl(handle: &Handle) -> Vec<crate::data::Node> {
             ref attrs,
             ..
         } => {
-            assert!(name.ns == ns!(html));
             let tag = format!("{}", name.local);
             let attrs = attrs
                 .borrow()

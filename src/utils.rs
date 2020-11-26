@@ -152,9 +152,19 @@ pub fn cache_file_dep(
         if input_path.starts_with("http") {
             input_path.to_owned()
         } else {
-            eprintln!("[warning] ignoring asset: {}", input_path);
+            eprintln!(
+                "[warning] ignoring asset: {} for {}",
+                input_path,
+                ctx.source.to_str().unwrap()
+            );
             input_path.to_owned()
         }
     }
+}
+
+pub fn to_abs_path(root: &PathBuf, file: &PathBuf) -> PathBuf {
+    let pwd = std::env::current_dir().unwrap();
+    let mut root = root.to_owned();
+    pwd.join(file)
 }
 

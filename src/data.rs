@@ -220,21 +220,40 @@ impl Node {
     pub fn parse_str(html_str: &str) -> Self {
         Node::Fragment(crate::parser::parse_html_str(html_str).payload)
     }
-    pub fn apply(&mut self, f: Macro) {
+    pub fn eval(&mut self, f: Rc<dyn Fn(&mut Node)>) {
         match self {
             Node::Element(element) => {
                 for child in element.children.iter_mut() {
-                    child.apply(f.clone());
+                    child.eval(f.clone());
                 }
             }
             Node::Fragment(xs) => {
                 for x in xs.iter_mut() {
-                    x.apply(f.clone());
+                    x.eval(f.clone());
                 }
             }
             _ => {}
         }
-        f.eval(self);
+        f(self);
+    }
+    pub fn apply(&mut self, f: Macro) {
+        // match self {
+        //     Node::Element(element) => {
+        //         for child in element.children.iter_mut() {
+        //             child.apply(f.clone());
+        //         }
+        //     }
+        //     Node::Fragment(xs) => {
+        //         for x in xs.iter_mut() {
+        //             x.apply(f.clone());
+        //         }
+        //     }
+        //     _ => {}
+        // }
+        // f.eval(self);
+        self.eval(Rc::new(move |x| {
+            f.eval(x)
+        }))
     }
     pub fn apply_all(&mut self, macros: Vec<Macro>) {
         for mut m in macros {
@@ -254,6 +273,14 @@ impl Node {
         match self {
             Node::Element(element) => {
                 element.attrs.contains_key(key)
+            },
+            _ => false
+        }
+    }
+    pub fn has_attr_value(&self, key: &str, value: &str) -> bool {
+        match self {
+            Node::Element(element) => {
+                element.attrs.get(key).map(|x| x == value).unwrap_or(false)
             },
             _ => false
         }
@@ -368,46 +395,25 @@ impl Node {
             _ => false,
         }
     }
+    pub fn is_element(&self) -> bool {
+        match self {
+            Node::Element(_) => true,
+            _ => false,
+        }
+    }
     pub fn new_element(
         tag: &str,
         mut attrs: HashMap<String, String>,
         children: &[Node],
     ) -> Self {
-        let mut styles = Vec::<Styling>::new();
-        let mut set_node_id = false;
-        let node_id = {
-            if let Some(uid) = attrs.get("id") {
-                uid.clone()
-            } else {
-                format!(
-                    "id_{}",
-                    rand::random::<u64>()
-                )
-            }
-        };
-        let children = children
-            .to_owned()
-            .into_iter()
-            .map(|mut child| {
-                if child.is_tag("style") && child.has_attr("inline") {
-                    if let Some(contents) = child.get_text_contents() {
-                        let new_contents = contents.replace("self", &node_id);
-                        child.replace_children(vec![Node::new_text(&new_contents)]);
-                        set_node_id = true;
-                    }
-                }
-                child
-            })
-            .collect::<Vec<_>>();
-        if set_node_id {
-            attrs.insert(String::from("id"), node_id);
-        }
-        Node::Element(Box::new(Element{
+        let mut element = Element{
             tag: String::from(tag),
             styling: Styling::default(),
             attrs,
             children: children.to_owned(),
-        }))
+        };
+        macros::hooks::new_element(&mut element);
+        Node::Element(Box::new(element))
     }
     pub fn new_text(value: &str) -> Self {
         Node::Text(String::from(value))

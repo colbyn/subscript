@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::path::{PathBuf, Path};
 use std::collections::HashMap;
 use std::iter::FromIterator;
@@ -25,7 +26,13 @@ pub fn include_tag(ctx: &Context) -> Macro {
                 let base = load_file(&ctx, &src_path);
                 let had_doctype = base.contains("<!DOCTYPE html>");
                 let mut base = Node::parse_str(&base);
-                apply_macros_pipeline(&ctx, &mut base);
+                // Provision the new document:
+                {
+                    let mut new_ctx = ctx.clone();
+                    // new_ctx.source = crate::utils::normalize_source_path(&ctx, &src_path);
+                    new_ctx.source = ctx.source_dir().join(&src_path);
+                    hooks::document(&new_ctx, &mut base);
+                }
                 let mut base = base.to_html_str(0);
                 if had_doctype {
                     base = format!("<!DOCTYPE html>\n{}", base);
@@ -158,13 +165,67 @@ pub fn list_tag(ctx: &Context) -> Macro {
 
 pub fn img_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
+    let processed_attr = "ss.img.processed";
     Macro::match_tag("img", Rc::new(move |node: &mut Node| {
         if let Some(src_path) = node.get_attr("src") {
-            let new_src = cache_file_dep(&ctx, &src_path);
-            node.set_attr("src", new_src);
+            if !node.has_attr(processed_attr) {
+                let new_src = cache_file_dep(&ctx, &src_path);
+                node.set_attr("src", format!(
+                    "/{}",
+                    new_src
+                ));
+                node.set_attr(processed_attr, String::from(""));
+            }
         }
     }))
 }
+
+pub fn link_tag(ctx: &Context) -> Macro {
+    let ctx = ctx.clone();
+    let processed_attr = "ss.link.processed";
+    Macro::match_tag("link", Rc::new(move |node: &mut Node| {
+        if let Some(src_path) = node.get_attr("href") {
+            if !node.has_attr(processed_attr) {
+                let new_src = cache_file_dep(&ctx, &src_path);
+                node.set_attr("href", format!(
+                    "/{}",
+                    new_src
+                ));
+                node.set_attr(processed_attr, String::from(""));
+            }
+        }
+    }))
+}
+
+pub fn element_self_styles(element: &mut Element) {
+    let mut set_node_id = false;
+    let node_id = {
+        if let Some(uid) = element.attrs.get("id") {
+            uid.clone()
+        } else {
+            format!(
+                "id_{}",
+                rand::random::<u64>()
+            )
+        }
+    };
+    for child in element.children.iter_mut() {
+        if child.is_tag("style") && child.has_attr("self") {
+            if let Some(contents) = child.get_text_contents() {
+                let new_contents = contents.replace("self", &format!(
+                    "#{}",
+                    node_id
+                ));
+                child.replace_children(vec![Node::new_text(&new_contents)]);
+                set_node_id = true;
+            }
+        }
+    }
+    if set_node_id {
+        element.attrs.insert(String::from("id"), node_id);
+    }
+}
+
 
 pub fn subscript_deps(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
@@ -174,17 +235,147 @@ pub fn subscript_deps(ctx: &Context) -> Macro {
     }))
 }
 
-pub fn apply_macros_pipeline(ctx: &Context, html: &mut Node) {
-    html.apply(include_tag(&ctx));
-    html.apply(items_tag(&ctx));
-    html.apply(latex_suit(&ctx));
-    html.apply(note_tag(&ctx));
-    html.apply(img_tag(&ctx));
+pub fn hoist_style_tags(ctx: &Context, html: &mut Node) {
+    let ctx = ctx.clone();
+    let style_tags = Rc::new(RefCell::new(Vec::<Node>::new()));
+    let ret_macro = Macro::match_tag("style", Rc::new({
+        let style_tags = style_tags.clone();
+        move |node: &mut Node| {
+            let style_tags = style_tags.clone();
+            style_tags.borrow_mut().push(node.clone());
+            *node = Node::Fragment(Default::default());
+        }
+    }));
+    let hoist_macro = Macro::match_tag("head", Rc::new(move |node: &mut Node| {
+        let style_tags: Vec<Node> = style_tags.borrow().clone();
+        node.append_children(style_tags);
+    }));
+    html.apply(ret_macro);
+    html.apply(hoist_macro);
 }
 
-/// Apply this once to the enture document **before** serializing such
-/// to a string.
-pub fn apply_document_macros_pipeline(ctx: &Context, html: &mut Node) {
-    html.apply(subscript_deps(&ctx));
+pub fn table_of_contents(ctx: &Context, html: &mut Node) {
+    html.eval(Rc::new(|node: &mut Node| {
+        if let Some(tag) = node.tag() {
+            let mut set_id = || {
+                if node.get_attr("id").is_none() {
+                    node.set_attr("id", format!(
+                        "{}",
+                        rand::random::<u64>()
+                    ))
+                }
+            };
+            match &tag[..] {
+                "h1" => set_id(),
+                "h2" => set_id(),
+                "h3" => set_id(),
+                "h4" => set_id(),
+                "h5" => set_id(),
+                "h6" => set_id(),
+                _ => ()
+            }
+        }
+    }));
+    fn runner(node: &Node) -> Vec<Node> {
+        let new_entry = |tag: &str, children: String, uid: &String| {
+            let mut li_attrs = HashMap::default();
+            li_attrs.insert(String::from("for"), String::from(tag));
+            let mut a_attrs = HashMap::default();
+            a_attrs.insert(String::from("href"), format!(
+                "#{}",
+                uid
+            ));
+            let result = Node::new_element(
+                "li",
+                li_attrs,
+                &[Node::new_element(
+                    "a",
+                    a_attrs,
+                    &[Node::new_text(&children)]
+                )]
+            );
+            vec![result]
+        };
+        match node {
+            Node::Element(element) if &element.tag == "h1" => {
+                let uid = element.attrs.get("id").unwrap();
+                let children = node.get_children_as_text().join(" ");
+                new_entry("h1", children, uid)
+            }
+            Node::Element(element) if &element.tag == "h2" => {
+                let uid = element.attrs.get("id").unwrap();
+                let children = node.get_children_as_text().join(" ");
+                new_entry("h2", children, uid)
+            }
+            Node::Element(element) if &element.tag == "h3" => {
+                let uid = element.attrs.get("id").unwrap();
+                let children = node.get_children_as_text().join(" ");
+                new_entry("h3", children, uid)
+            }
+            Node::Element(element) if &element.tag == "h4" => {
+                let uid = element.attrs.get("id").unwrap();
+                let children = node.get_children_as_text().join(" ");
+                new_entry("h4", children, uid)
+            }
+            Node::Element(element) if &element.tag == "h5" => {
+                let uid = element.attrs.get("id").unwrap();
+                let children = node.get_children_as_text().join(" ");
+                new_entry("h5", children, uid)
+            }
+            Node::Element(element) if &element.tag == "h6" => {
+                let uid = element.attrs.get("id").unwrap();
+                let children = node.get_children_as_text().join(" ");
+                new_entry("h6", children, uid)
+            }
+            Node::Element(element) => {
+                return element.children.iter().flat_map(|x| runner(x)).collect()
+            }
+            Node::Fragment(nodes) => {
+                nodes
+                    .iter()
+                    .flat_map(|x| runner(x))
+                    .collect()
+            }
+            _ => Vec::new()
+        }
+    }
+    let headers = runner(html);
+    html.eval(Rc::new(move |node: &mut Node| {
+        if node.is_tag("toc") {
+            let mut attrs = HashMap::default();
+            attrs.insert(String::from("toc"), String::default());
+            *node = Node::new_element(
+                "ul",
+                attrs,
+                &headers
+            );
+        }
+    }));
+}
+
+/// Macro entrypoints.
+pub mod hooks {
+    use super::*;
+
+    /// Custom elements use the 'document' hook.
+    pub fn document(ctx: &Context, html: &mut Node) {
+        html.apply(include_tag(&ctx));
+        html.apply(items_tag(&ctx));
+        html.apply(latex_suit(&ctx));
+        html.apply(note_tag(&ctx));
+        html.apply(img_tag(&ctx));
+        html.apply(link_tag(&ctx));
+    }
+    /// Apply this once to the entire document **before** serializing such to a string.
+    /// This is where e.g. runtime dependencies are inserted.
+    pub fn finalize_document(ctx: &Context, html: &mut Node) {
+        html.apply(subscript_deps(&ctx));
+        hoist_style_tags(&ctx, html);
+        table_of_contents(&ctx, html);
+    }
+    /// Gets called whenever new elements are created (includes elements from the parser).
+    pub fn new_element(element: &mut Element) {
+        element_self_styles(element);
+    }
 }
 

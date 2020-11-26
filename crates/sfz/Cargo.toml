@@ -1,0 +1,48 @@
+[package]
+name = "sfz"
+version = "0.3.0"
+authors = ["Weihang Lo <me@weihanglo.tw>"]
+description = "A simple static file serving command-line tool."
+documentation = "https://github.com/weihanglo/sfz"
+homepage = "https://github.com/weihanglo/sfz"
+repository = "https://github.com/weihanglo/sfz"
+readme = "README.md"
+keywords = ["static", "file", "server", "http", "cli"]
+categories = ["command-line-utilities", "web-programming::http-server"]
+exclude = ["HomebrewFormula"]
+license = "MIT/Apache-2.0"
+edition = "2018"
+
+[dependencies]
+# Command-line
+clap = { version = "2.33", default-features = false }
+# Server
+tokio = { version = "0.2", features = ["rt-core", "macros"] }
+hyper = "0.13"
+headers = "0.3"
+mime_guess = "2.0"
+percent-encoding = "2.1"
+# Compression
+brotli = "3"
+flate2 = "1.0"
+# Rendering
+tera = "1"
+serde = { version = "1.0", features = ["derive"] } # For tera serializing variables to template.
+ignore = "0.4" # Respect to .gitignore while listing directories.
+# Logging
+chrono = "0.4"
+# Directory Download
+qstring = "0.7"
+zip = { version = "0.5", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+tempfile = "3"
+once_cell = "1"
+
+[profile.dev]
+codegen-units = 2
+incremental = true
+
+[profile.release]
+lto = true
+panic = "abort"
