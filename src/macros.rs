@@ -7,10 +7,9 @@ use std::convert::AsRef;
 
 use crate::data::*;
 use crate::utils::{
-    load_file,
     cache_file_dep,
-    normalize_source_path,
 };
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // MACROS
@@ -21,28 +20,42 @@ pub fn include_tag(ctx: &Context) -> Macro {
     Macro::match_tag("include", Rc::new(move |node: &mut Node| {
         let source_dir = ctx.source_dir();
         let root_dir = ctx.root_dir.clone();
-        if let Some(src_path) = node.get_attr("src") {
-            let contents = {
-                let base = load_file(&ctx, &src_path);
+        if let Some(src_path_str) = node.get_attr("src") {
+            let contents = || -> Option<String> {
+                let src_path = FilePath::resolve_include_path(
+                    &ctx,
+                    &src_path_str,
+                )?;
+                if !src_path.exists() {
+                    let source_dir = ctx.source_dir();
+                    eprintln!("MISSING: {}", src_path);
+                    eprintln!(" ORIGINAL {}", src_path_str);
+                    eprintln!("     SOURCE_DIR {}", source_dir);
+                    panic!()
+                }
+                let base: String = src_path.load_text_file();
                 let had_doctype = base.contains("<!DOCTYPE html>");
                 let mut base = Node::parse_str(&base);
                 // Provision the new document:
                 {
                     let mut new_ctx = ctx.clone();
-                    // new_ctx.source = crate::utils::normalize_source_path(&ctx, &src_path);
-                    new_ctx.source = ctx.source_dir().join(&src_path);
+                    new_ctx.source = ctx
+                        .source_dir()
+                        .join(&ctx.root_dir, &src_path)
+                        .unwrap();
                     hooks::document(&new_ctx, &mut base);
                 }
                 let mut base = base.to_html_str(0);
                 if had_doctype {
                     base = format!("<!DOCTYPE html>\n{}", base);
                 }
-                base
+                Some(base)
             };
             let embeded_contents = Node::Fragment(node.get_children()).to_html_str(0);
-            let contents = contents.replace("<content></content>", &embeded_contents);
+            let contents = contents()
+                .unwrap()
+                .replace("<content></content>", &embeded_contents);
             let mut new_node = Node::parse_str(&contents);
-            
             *node = new_node;
         }
     }))
@@ -70,10 +83,12 @@ pub fn latex_suit(ctx: &Context) -> Macro {
             match node.tag()?.as_ref() {
                 /// External File (Block)
                 "tex" if node.has_attr("src") => {
-                    let src = node.get_attr("src").unwrap();
-                    let value = load_file(&ctx, &src);
-                    let new_node = block_latex(value);
-                    *node = new_node;
+                    // let src = node.get_attr("src").unwrap();
+                    // // let value = load_file(&ctx, &src);
+                    // let value = unimplemented!();
+                    // let new_node = block_latex(value);
+                    // *node = new_node;
+                    eprintln!("[unimplemented] tex tags with src link");
                     Some(())
                 }
                 /// LaTeX Math Block
@@ -167,16 +182,18 @@ pub fn img_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     let processed_attr = "ss.img.processed";
     Macro::match_tag("img", Rc::new(move |node: &mut Node| {
-        if let Some(src_path) = node.get_attr("src") {
-            if !node.has_attr(processed_attr) {
-                let new_src = cache_file_dep(&ctx, &src_path);
-                node.set_attr("src", format!(
-                    "/{}",
-                    new_src
-                ));
-                node.set_attr(processed_attr, String::from(""));
-            }
-        }
+        node.get_attr("src")
+            .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
+            .map(|src_path| {
+                if !node.has_attr(processed_attr) && !ctx.fast_upate_mode {
+                    let new_src = cache_file_dep(&ctx, &src_path);
+                    node.set_attr("src", format!(
+                        "/{}",
+                        new_src
+                    ));
+                    node.set_attr(processed_attr, String::from(""));
+                }
+            });
     }))
 }
 
@@ -184,16 +201,18 @@ pub fn link_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     let processed_attr = "ss.link.processed";
     Macro::match_tag("link", Rc::new(move |node: &mut Node| {
-        if let Some(src_path) = node.get_attr("href") {
-            if !node.has_attr(processed_attr) {
-                let new_src = cache_file_dep(&ctx, &src_path);
-                node.set_attr("href", format!(
-                    "/{}",
-                    new_src
-                ));
-                node.set_attr(processed_attr, String::from(""));
-            }
-        }
+        node.get_attr("href")
+            .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
+            .map(|src_path| {
+                if !node.has_attr(processed_attr) {
+                    let new_src = cache_file_dep(&ctx, &src_path);
+                    node.set_attr("href", format!(
+                        "/{}",
+                        new_src
+                    ));
+                    node.set_attr(processed_attr, String::from(""));
+                }
+            });
     }))
 }
 
@@ -255,6 +274,9 @@ pub fn hoist_style_tags(ctx: &Context, html: &mut Node) {
 }
 
 pub fn table_of_contents(ctx: &Context, html: &mut Node) {
+    if ctx.fast_upate_mode {
+        return;
+    }
     html.eval(Rc::new(|node: &mut Node| {
         if let Some(tag) = node.tag() {
             let mut set_id = || {

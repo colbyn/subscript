@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
+use std::convert::AsRef;
+use std::hash::Hash;
 
 use crate::parser;
 use crate::macros;
@@ -463,36 +465,187 @@ pub struct Styling {
 
 #[derive(Debug, Clone)]
 pub struct Context {
-    pub source: PathBuf,
-    pub root_dir: PathBuf,
-    pub output_dir: PathBuf,
+    pub source: FilePath,
+    pub root_dir: FilePath,
+    pub output_dir: FilePath,
     pub base_url: Option<String>,
+    /// When in server/watch mode, we don't want to process e.g. images
+    /// for every file change.
+    pub fast_upate_mode: bool,
+    pub changed_file: Option<FilePath>,
 }
 
 impl Context {
-    pub fn source_dir(&self) -> PathBuf {
-        self.source.parent().unwrap().to_owned()
+    pub fn new<P: AsRef<Path>>(
+        root_dir: P,
+        output_dir: P,
+        source: P,
+    ) -> Self {
+        Context {
+            source: FilePath::new(source.as_ref()).unwrap(),
+            root_dir: FilePath::new(root_dir.as_ref()).unwrap(),
+            output_dir: FilePath::new(output_dir.as_ref()).unwrap(),
+            base_url: None,
+            fast_upate_mode: false,
+            changed_file: None,
+        }
+    }
+    pub fn source_dir(&self) -> FilePath {
+        let path = self.source.0.parent().unwrap().to_owned();
+        FilePath(path)
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TEST
-///////////////////////////////////////////////////////////////////////////////
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct FilePath(PathBuf);
 
-// pub fn run() {
-//     let source = include_str!("../test/test.html");
-//     let mut html = Node::parse_str(source);
-//     let ctx = Context{
-//         source: PathBuf::from("./test/test.html"),
-//         root_dir: PathBuf::from("./test"),
-//     };
-//     html.apply(macros::include_tag(&ctx));
-//     html.apply(macros::items_tag(&ctx));
-//     html.apply(macros::latex_suit(&ctx));
-//     html.apply(macros::note_tag(&ctx));
-//     let mut html = html.normalize();
-//     println!("{}", html.to_html_str(0))
-// }
+impl std::fmt::Debug for FilePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(path) = self.0.to_str() {
+            let formatted = format!("FilePath(\"{}\")", path);
+            f.debug_struct(&formatted).finish()
+        } else {
+            f.debug_struct("FilePath").finish()
+        }
+    }
+}
+impl std::fmt::Display for FilePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.to_str().unwrap())
+    }
+}
+
+
+/// We need to be careful where this is used, since this is used in places where URLs may occur.
+impl FilePath {
+    /// All paths in Subsystem are resolved
+    /// into absolute path files (to keep things consistent). 
+    pub fn new<P: AsRef<Path>>(path: P) -> Option<Self> {
+        let path = path.as_ref().to_owned();
+        let is_http_path = || {
+            let path = path.to_str().unwrap();
+            path.starts_with("http")
+        };
+        if path.is_absolute() {
+            Some(FilePath(path))
+        } else if is_http_path() {
+            None
+        } else {
+            let pwd = std::env::current_dir().unwrap();
+            Some(FilePath(pwd.join(path)))
+        }
+    }
+    /// All paths in Subsystem are resolved
+    /// into absolute path files (to keep things consistent). 
+    /// This is relative to the root dir.
+    pub fn resolve_child_path<P: AsRef<Path>>(
+        parent: P,
+        path: P,
+    ) -> Option<Self> {
+        if path.as_ref().is_absolute() {
+            FilePath::new(path)
+        } else {
+            FilePath::new(parent.as_ref().join(path))
+        }
+    }
+    /// This is relative to the source dir.
+    /// This is used for e.g. `<include>` paths that are relative to
+    /// the source file.
+    pub fn resolve_include_path<P: AsRef<Path>>(
+        ctx: &Context,
+        path: P,
+    ) -> Option<Self> {
+        let source_dir = ctx.source_dir();
+        FilePath::resolve_child_path(
+            &ctx.root_dir,
+            &source_dir.join(&ctx.root_dir, path.as_ref())?
+        )
+    }
+    pub fn is_child_path(&self, parent_path: &FilePath) -> bool {
+        self.0.starts_with(parent_path)
+    }
+    pub fn join<B: AsRef<Path>, P: AsRef<Path>>(&self, base_path: B, sub_path: P) -> Option<FilePath> {
+        if sub_path.as_ref().is_relative() {
+            return FilePath::new(self.0.join(sub_path));
+        }
+        FilePath::new(self.0.join(sub_path))
+    }
+    pub fn to_str(&self) -> &str {
+        self.0.to_str().unwrap()
+    }
+    pub fn to_path_buffer(self) -> PathBuf {
+        self.0
+    }
+    pub fn load_text_file(&self) -> String {
+        if !self.0.exists() {
+            eprintln!("missing file {:?}", self.to_str());
+            panic!()
+        }
+        let contents = std::fs::read(&self).unwrap();
+        String::from_utf8(contents).unwrap()
+    }
+    pub fn load_binary_file(&self) -> Vec<u8> {
+        match self.try_load_binary_file() {
+            Ok(x) => x,
+            Err(_) => {
+                eprintln!("missing file {:?}", self.to_str());
+                panic!()
+            }
+        }
+    }
+    pub fn try_load_binary_file(&self) -> Result<Vec<u8>, ()> {
+        match std::fs::read(&self) {
+            Ok(x) => Ok(x),
+            Err(_) => Err(())
+        }
+    }
+    pub fn parent(&self) -> FilePath {
+        FilePath::new(self.0.parent().unwrap()).unwrap()
+    }
+    /// For source file paths.
+    /// Ensure `trim` is a PathBuf because it is a path fragment.
+    pub fn to_output_path(
+        &self,
+        ctx: &Context,
+        trim: &Option<PathBuf>,
+    ) -> FilePath {
+        let mut relative_path: PathBuf = {
+            self.strip_prefix(&ctx.root_dir).unwrap()
+        };
+        if let Some(trim) = trim {
+            relative_path = relative_path
+                .strip_prefix(trim)
+                .map(|x| x.to_owned())
+                .unwrap_or(relative_path);
+        }
+        let output_path = FilePath::new(ctx.output_dir.0.join(relative_path)).unwrap();
+        output_path
+    }
+    pub fn exists(&self) -> bool {
+        self.0.exists()
+    }
+    pub fn extension(&self) -> Option<String> {
+        self.0
+            .extension()
+            .map(|x| x.to_str().unwrap().to_owned())
+    }
+    pub fn strip_prefix<P: AsRef<Path>>(&self, prefix: P) -> Result<PathBuf, ()> {
+        self.0.strip_prefix(prefix)
+            .map(|x| x.to_owned())
+            .map_err(|_| ())
+    }
+}
+
+impl AsRef<Path> for FilePath {
+    fn as_ref(&self) -> &Path {
+        self.0.as_ref()
+    }
+}
+impl AsRef<FilePath> for FilePath {
+    fn as_ref(&self) -> &FilePath {
+        self
+    }
+}
 
 
 

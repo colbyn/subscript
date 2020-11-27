@@ -10,6 +10,7 @@ pub mod macros;
 pub mod utils;
 pub mod cli;
 pub mod server;
+pub mod browser;
 
 
 fn main() {

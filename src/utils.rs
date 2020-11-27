@@ -1,7 +1,7 @@
 use std::path::{PathBuf, Path};
 use std::convert::AsRef;
 pub mod detect_indent;
-use crate::data::Either;
+use crate::data::{Either, FilePath};
 
 pub fn is_inline_tag(tag: &str) -> bool {
     if (tag == "a") {return true}
@@ -83,27 +83,27 @@ pub fn trim_indent(source: &str) -> String {
         .join("\n")
 }
 
-pub fn normalize_source_path(ctx: &crate::data::Context, path: &str) -> PathBuf {
-    use std::path::PathBuf;
-    let source_dir = ctx.source_dir();
-    let root_dir = ctx.root_dir.clone();
-    root_dir.join(source_dir.join(path))
-}
+// pub fn normalize_source_path(ctx: &crate::data::Context, path: &str) -> PathBuf {
+//     use std::path::PathBuf;
+//     let source_dir = ctx.source_dir();
+//     let root_dir = ctx.root_dir.clone();
+//     root_dir.join(source_dir.join(path))
+// }
 
-pub fn load_file(ctx: &crate::data::Context, path: &str) -> String {
-    read_file_or_panic(normalize_source_path(ctx, path))
-}
+// pub fn load_file(ctx: &crate::data::Context, path: &str) -> String {
+//     read_file_or_panic(normalize_source_path(ctx, path))
+// }
 
 
-pub fn read_file_or_panic<P: AsRef<Path>>(path: P) -> String {
-    let path = path.as_ref().to_owned();
-    if !path.exists() {
-        eprintln!("missing file {:?}", path);
-        panic!()
-    }
-    let contents = std::fs::read(&path).unwrap();
-    String::from_utf8(contents).unwrap()
-}
+// pub fn read_file_or_panic<P: AsRef<Path>>(path: P) -> String {
+//     let path = path.as_ref().to_owned();
+//     if !path.exists() {
+//         eprintln!("missing file {:?}", path);
+//         panic!()
+//     }
+//     let contents = std::fs::read(&path).unwrap();
+//     String::from_utf8(contents).unwrap()
+// }
 
 pub fn lookup_hash<H: std::hash::Hash>(data: &H) -> u64 {
     use std::collections::hash_map::DefaultHasher;
@@ -115,23 +115,21 @@ pub fn lookup_hash<H: std::hash::Hash>(data: &H) -> u64 {
 
 pub fn cache_file_dep(
     ctx: &crate::data::Context,
-    input_path: &str,
+    input_path: &FilePath,
 ) -> String {
-    let src_path = normalize_source_path(ctx, input_path);
-    let src_ext = {
-        src_path
-            .extension()
-            .map(|x| x.to_str().unwrap().to_owned())
-            .map(|x| format!(".{}", x))
-            .unwrap_or(String::from(""))
-    };
-    if let Ok(binary) = std::fs::read(&src_path) {
+    let src_ext = input_path
+        .extension()
+        .map(|x| format!(".{}", x))
+        .unwrap();
+    if let Ok(binary) = input_path.try_load_binary_file() {
         let uid = lookup_hash(&binary);
         let file_name = format!("{}{}", uid, src_ext);
         let output_file_path = ctx.output_dir
-            .join("ss-data")
-            .join(PathBuf::from(file_name));
-        let parent_dir = output_file_path.parent().unwrap();
+            .join(&ctx.root_dir, "ss-data")
+            .unwrap()
+            .join(&ctx.root_dir, &PathBuf::from(file_name))
+            .unwrap();
+        let parent_dir = output_file_path.parent();
         if !parent_dir.exists() {
             std::fs::create_dir_all(&parent_dir).unwrap();
         }
@@ -141,7 +139,7 @@ pub fn cache_file_dep(
         let target_path = output_file_path
             .strip_prefix(&ctx.output_dir)
             .map(|x| x.to_owned())
-            .unwrap_or(output_file_path);
+            .unwrap_or(output_file_path.to_path_buffer());
         let target_path = target_path.to_str().unwrap();
         if let Some(base_url) = ctx.base_url.clone() {
             format!("{}/{}", base_url, target_path)
@@ -149,22 +147,18 @@ pub fn cache_file_dep(
             target_path.to_owned()
         }
     } else {
-        if input_path.starts_with("http") {
-            input_path.to_owned()
-        } else {
-            eprintln!(
-                "[warning] ignoring asset: {} for {}",
-                input_path,
-                ctx.source.to_str().unwrap()
-            );
-            input_path.to_owned()
-        }
+        eprintln!(
+            "[warning] ignoring asset: {} for {}",
+            input_path,
+            ctx.source
+        );
+        input_path.to_str().to_owned()
     }
 }
 
-pub fn to_abs_path(root: &PathBuf, file: &PathBuf) -> PathBuf {
-    let pwd = std::env::current_dir().unwrap();
-    let mut root = root.to_owned();
-    pwd.join(file)
-}
+// pub fn to_abs_path(root: &PathBuf, file: &PathBuf) -> PathBuf {
+//     let pwd = std::env::current_dir().unwrap();
+//     let mut root = root.to_owned();
+//     pwd.join(file)
+// }
 

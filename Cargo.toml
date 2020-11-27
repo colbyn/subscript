@@ -39,3 +39,4 @@ qstring = "0.7"
 zip = { version = "0.5", default-features = false, features = ["deflate"] }
 hotwatch = "0.4.5"
 futures-util = "0.3.8"
+rayon = "1.5.0"

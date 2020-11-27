@@ -1,9 +1,13 @@
 use std::collections::{HashSet, HashMap};
 use std::path::PathBuf;
 use structopt::StructOpt;
+use crate::data::FilePath;
 
 
 /// The Subscript CLI frontend. 
+/// 
+/// Notes, 
+/// * Subscripts currently assumes the output is nested under the root directory.
 #[derive(Debug, StructOpt)]
 enum Opt {
     /// Compile the given HTML files.
@@ -63,40 +67,47 @@ enum Opt {
         /// Currently the server will ignore files that contain the output path.
         #[structopt(long, default_value="3000")]
         port: u16,
+
+        /// Automatically open chrome in kiosk mode.
+        #[structopt(long)]
+        open_browser: bool,
     }
 }
 
 pub fn compile_file(
-    root: &PathBuf,
-    out_dir: &PathBuf,
+    fast_upate_mode: bool,
+    root: &FilePath,
+    out_dir: &FilePath,
     trim: &Option<PathBuf>,
     base_url: &Option<String>,
-    input: PathBuf
+    input: FilePath
 ) {
     use crate::{data::*, macros, utils};
-    let ctx = Context{
-        root_dir: root.clone(),
-        source: {
-            input.strip_prefix(root).unwrap_or(&input).to_owned()
-        },
-        base_url: base_url.clone(),
-        output_dir: out_dir.clone(),
-    };
-    let input_path_str = input.to_str().unwrap();
-    let output_file_path = {
-        let mut res = input
-            .strip_prefix(&root)
-            .unwrap_or(&input);
-        if let Some(trim) = trim {
-            res = res.strip_prefix(trim).unwrap_or(res);
-        }
-        out_dir.join(res)
-    };
-    let output_dir = output_file_path.parent().unwrap();
+    let mut ctx = Context::new(
+        root,
+        out_dir,
+        &input,
+    );
+    ctx.base_url = base_url.clone();
+    ctx.fast_upate_mode = fast_upate_mode;
+    // let output_file_path = {
+    //     let mut res = input
+    //         .strip_prefix(&root)
+    //         .unwrap_or(&input);
+    //     if let Some(trim) = trim {
+    //         res = res.strip_prefix(trim).unwrap_or(res);
+    //     }
+    //     out_dir.join(res)
+    // };
+    let output_file_path = input.to_output_path(
+        &ctx,
+        trim,
+    );
+    let output_dir = output_file_path.parent();
     if !output_dir.exists() {
         std::fs::create_dir_all(&output_dir);
     }
-    let source = utils::read_file_or_panic(input);
+    let source: String = input.load_text_file();
     let mut html = Node::parse_str(&source);
     crate::macros::hooks::document(&ctx, &mut html);
     let mut html = html.normalize();
@@ -105,79 +116,52 @@ pub fn compile_file(
 }
 
 pub fn compile(
-    root: PathBuf,
-    inputs: Vec<PathBuf>,
-    output: PathBuf,
+    fast_upate_mode: bool,
+    root: FilePath,
+    inputs: Vec<FilePath>,
+    output: FilePath,
     trim: Option<PathBuf>,
     base_url: Option<String>,
 ) {
+    use rayon::prelude::*;
+    inputs
+        .into_iter()
+        .for_each(|input| {
+            compile_file(
+                fast_upate_mode,
+                &root,
+                &output,
+                &trim,
+                &base_url,
+                input
+            );
+        });
     println!("[Subscript] Compiled");
-    for input in inputs {
-        compile_file(&root, &output, &trim, &base_url, input);
-    }
 }
 
 pub fn serve(
-    root: PathBuf,
-    inputs: Vec<PathBuf>,
-    output: PathBuf,
+    root: FilePath,
+    inputs: Vec<FilePath>,
+    output: FilePath,
     trim: Option<PathBuf>,
     base_url: Option<String>,
     port: u16,
 ) {
     use hotwatch::{Hotwatch, Event};
     let mut hotwatch = Hotwatch::new().expect("hotwatch failed to initialize!");
+    let fast_upate_mode = false;
     hotwatch.unwatch(output.clone());
-    fn is_output_file(root: &PathBuf, out: &PathBuf, file: &PathBuf) -> bool {
-        assert!(file.is_absolute());
-        let out = crate::utils::to_abs_path(root, out);
-        file.starts_with(out)
-    }
-    // fn is_source_file(root: &PathBuf, source: &[String], file: &PathBuf) -> bool {
-    //     assert!(file.is_absolute());
-    //     let out = crate::utils::to_abs_path(root, out);
-    //     file.starts_with(out)
-    // }
-    let abs_inputs = inputs
-        .iter()
-        .map(|x| (
-            crate::utils::to_abs_path(&root, &x),
-            x.clone()
-        ))
-        .collect::<HashMap<_, _>>();
     hotwatch.watch(root.clone(), {
         let output = output.clone();
         let root = root.clone();
-        let process = |changed: PathBuf| {
-            assert!(changed.is_absolute());
-            if !is_output_file(&root, &output, &changed) {
-                // Recompile just the source file
-                if let Some(file) = abs_inputs.get(&changed) {
-                    compile(
-                        root.clone(),
-                        vec![file.clone()],
-                        output.clone(),
-                        trim.clone(),
-                        base_url.clone(),
-                    );
-                }
-                // Recompile everything
-                else {
-                    compile(
-                        root.clone(),
-                        inputs.clone(),
-                        output.clone(),
-                        trim.clone(),
-                        base_url.clone(),
-                    );
-                }
-            }
-        };
         move |event: Event| {
             match event {
                 Event::Create(path) => {
-                    if !is_output_file(&root, &output, &path) {
+                    let path = FilePath::new(path).unwrap();
+                    let is_output_file: bool = path.is_child_path(&output);
+                    if !is_output_file {
                         compile(
+                            fast_upate_mode,
                             root.clone(),
                             inputs.clone(),
                             output.clone(),
@@ -187,8 +171,11 @@ pub fn serve(
                     }
                 }
                 Event::Write(path) => {
-                    if !is_output_file(&root, &output, &path) {
+                    let path = FilePath::new(path).unwrap();
+                    let is_output_file: bool = path.is_child_path(&output);
+                    if !is_output_file {
                         compile(
+                            fast_upate_mode,
                             root.clone(),
                             inputs.clone(),
                             output.clone(),
@@ -198,8 +185,11 @@ pub fn serve(
                     }
                 }
                 Event::Remove(path) => {
-                    if !is_output_file(&root, &output, &path) {
+                    let path = FilePath::new(path).unwrap();
+                    let is_output_file: bool = path.is_child_path(&output);
+                    if !is_output_file {
                         compile(
+                            fast_upate_mode,
                             root.clone(),
                             inputs.clone(),
                             output.clone(),
@@ -209,8 +199,11 @@ pub fn serve(
                     }
                 }
                 Event::Rename(from, to) => {
-                    if !is_output_file(&root, &output, &to) {
+                    let path = FilePath::new(to).unwrap();
+                    let is_output_file: bool = path.is_child_path(&output);
+                    if !is_output_file {
                         compile(
+                            fast_upate_mode,
                             root.clone(),
                             inputs.clone(),
                             output.clone(),
@@ -234,7 +227,7 @@ pub fn serve(
             cache: 0,
             cors: false,
             compress: false,
-            path: output.clone(),
+            path: output.clone().to_path_buffer(),
             all: true,
             ignore: false,
             follow_links: true,
@@ -246,7 +239,7 @@ pub fn serve(
 }
 
 pub fn run() {
-    fn process_inputs(input: Vec<String>) -> Vec<PathBuf> {
+    fn process_inputs(input: Vec<String>) -> Vec<FilePath> {
         input
             .into_iter()
             .flat_map(|x: String| -> Vec<PathBuf> {
@@ -254,15 +247,36 @@ pub fn run() {
                     .filter_map(Result::ok)
                     .collect::<Vec<_>>()
             })
+            .filter_map(FilePath::new)
             .collect::<Vec<_>>()
     }
     match Opt::from_args() {
         Opt::Compile{root, input, output, trim, base_url} => {
-            compile(root, process_inputs(input), output, trim, base_url);
-        }
-        Opt::Serve{root, input, output, trim, base_url, port} => {
-            let inputs = process_inputs(input);
+            let root = FilePath::new(root).unwrap();
+            let output = FilePath::new(output).unwrap();
             compile(
+                false,
+                root,
+                process_inputs(input),
+                output,
+                trim,
+                base_url
+            );
+        }
+        Opt::Serve{root, input, output, trim, base_url, port, open_browser} => {
+            let inputs = process_inputs(input);
+            let root = FilePath::new(root).unwrap();
+            let output = FilePath::new(output).unwrap();
+            if open_browser {
+                std::thread::spawn({
+                    let pot = port.clone();
+                    move || {
+                        crate::browser::run(port);
+                    }
+                });
+            }
+            compile(
+                false,
                 root.clone(),
                 inputs.clone(),
                 output.clone(),
