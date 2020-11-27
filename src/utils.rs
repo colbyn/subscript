@@ -94,11 +94,10 @@ pub fn lookup_hash<H: std::hash::Hash>(data: &H) -> u64 {
 pub fn cache_file_dep(
     ctx: &crate::data::Context,
     input_path: &FilePath,
-) -> String {
+) -> Option<String> {
     let src_ext = input_path
         .extension()
-        .map(|x| format!(".{}", x))
-        .unwrap();
+        .map(|x| format!(".{}", x))?;
     if let Ok(binary) = input_path.try_load_binary_file() {
         let uid = lookup_hash(&binary);
         let file_name = format!("{}{}", uid, src_ext);
@@ -124,9 +123,12 @@ pub fn cache_file_dep(
                 .strip_suffix("/")
                 .map(|x| x.to_owned())
                 .unwrap_or(base_url);
-            format!("{}/{}", base_url, target_path)
+            Some(format!("{}/{}", base_url, target_path))
         } else {
-            target_path.to_owned()
+            Some(format!(
+                "/{}",
+                target_path.to_owned()
+            ))
         }
     } else {
         eprintln!(
@@ -134,7 +136,7 @@ pub fn cache_file_dep(
             input_path,
             ctx.source
         );
-        input_path.to_str().to_owned()
+        Some(input_path.to_str().to_owned())
     }
 }
 

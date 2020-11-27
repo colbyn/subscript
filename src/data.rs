@@ -652,7 +652,7 @@ lazy_static! {
     static ref GLOBAL_CACHE: Cache = Cache::new();
 }
 
-pub fn cache(ctx: &Context, source_path: &FilePath) -> String {
+pub fn cache(ctx: &Context, source_path: &FilePath) -> Option<String> {
     GLOBAL_CACHE.cache(ctx, source_path)
 }
 
@@ -672,16 +672,16 @@ impl Cache {
     fn insert(&self, source_path: &FilePath, cached_file: CachedFile) {
         self.0.lock().unwrap().insert(source_path.clone(), cached_file);
     }
-    fn cache(&self, ctx: &Context, source_path: &FilePath) -> String {
+    fn cache(&self, ctx: &Context, source_path: &FilePath) -> Option<String> {
         if let Some(cached) = self.lookup(source_path) {
-            return cached.output
+            return Some(cached.output)
         }
-        let out_path = crate::utils::cache_file_dep(ctx, source_path);
+        let out_path = crate::utils::cache_file_dep(ctx, source_path)?;
         let cached_file = CachedFile {
             output: out_path.clone(),
         };
         self.insert(source_path, cached_file);
-        out_path
+        Some(out_path)
     }
 }
 

@@ -206,15 +206,16 @@ pub fn img_tag(ctx: &Context) -> Macro {
         // CACHE ASSET
         node.get_attr("src")
             .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
-            .map(|src_path| {
+            .and_then(|src_path| {
                 if !node.has_attr(processed_attr) {
-                    let new_src = crate::data::cache(&ctx, &src_path);
+                    let new_src = crate::data::cache(&ctx, &src_path)?;
                     node.set_attr("src", format!(
-                        "/{}",
+                        "{}",
                         new_src
                     ));
                     node.set_attr(processed_attr, String::from(""));
                 }
+                Some(())
             });
     }))
 }
@@ -225,22 +226,16 @@ pub fn link_tag(ctx: &Context) -> Macro {
     Macro::match_tag("link", Rc::new(move |node: &mut Node| {
         node.get_attr("href")
             .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
-            .map(|src_path| {
+            .and_then(|src_path| {
                 if !node.has_attr(processed_attr) {
-                    let new_src = cache_file_dep(&ctx, &src_path);
-                    if new_src.starts_with("http") {
-                        node.set_attr("href", format!(
-                            "{}",
-                            new_src
-                        ));
-                    } else {
-                        node.set_attr("href", format!(
-                            "/{}",
-                            new_src
-                        ));
-                    }
+                    let new_src = cache_file_dep(&ctx, &src_path)?;
+                    node.set_attr("href", format!(
+                        "{}",
+                        new_src
+                    ));
                     node.set_attr(processed_attr, String::from(""));
                 }
+                Some(())
             });
     }))
 }
