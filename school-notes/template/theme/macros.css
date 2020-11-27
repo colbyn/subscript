@@ -1,0 +1,58 @@
+div[note] {
+    display: flex;
+    flex-direction: column;
+    align-items: normal;
+}
+div[note] > h1:first-child,
+div[note] > h2:first-child,
+div[note] > h3:first-child,
+div[note] > h4:first-child,
+div[note] > h5:first-child,
+div[note] > h6:first-child {
+    margin: 0;
+    margin-bottom: 4px;
+    width: 100%;
+}
+
+
+div[note]:not([gallery]) {
+    border: 1px solid;
+    border-radius: 3px;
+    border-color: #dcdcdc;
+}
+div[note][gallery] {
+    border: none;
+}
+
+div[note]:not([gallery]) > h1:first-child,
+div[note]:not([gallery]) > h2:first-child,
+div[note]:not([gallery]) > h3:first-child,
+div[note]:not([gallery]) > h4:first-child,
+div[note]:not([gallery]) > h5:first-child,
+div[note]:not([gallery]) > h6:first-child {
+    border-bottom: 1px solid;
+    border-color: inherit;
+    text-align: center;
+}
+
+div[note][gallery] > h1:first-child,
+div[note][gallery] > h2:first-child,
+div[note][gallery] > h3:first-child,
+div[note][gallery] > h4:first-child,
+div[note][gallery] > h5:first-child,
+div[note][gallery] > h6:first-child {
+    border: 1px solid;
+    border-color: inherit;
+    border-radius: 3px;
+    text-align: center;
+}
+
+div[note] > *:not(:first-child) {
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+div[note] div[note] {
+    border-color: #fff;
+    box-shadow: 0 0 1px 0px #7b7b7b;
+}

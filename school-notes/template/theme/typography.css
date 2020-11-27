@@ -3,31 +3,42 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
     border-bottom: 1px solid #444;
     align-self: start;
-    color: #444;
     text-rendering: optimizeLegibility;
 }
 
 h1 {
     font-size: 2.8em;
+    font-weight: 700;
+    color: #303233;
 }
 h2 {
     font-size: 2.3em;
+    font-weight: 700;
+    color: #303233;
 }
 h3 {
-    font-size: 2.0em;
+    font-size: 1.7em;
+    color: #32403f;
+    font-weight: 400;
 }
 h4 {
-    font-size: 1.6em;
+    font-size: 1.3em;
+    color: #32403f;
+    font-weight: 400;
 }
 h5 {
     font-size: 1.2em;
+    color: #32403f;
+    font-weight: 400;
 }
 h6 {
     font-size: 0.9em;
+    color: #32403f;
+    font-weight: 400;
 }
 
 pre {
-    font-family: 'Roboto Slab', serif;
+    font-family: 'Roboto Slab', monospace;
     text-rendering: optimizeLegibility;
 }
 
