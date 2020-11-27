@@ -120,6 +120,10 @@ pub fn cache_file_dep(
             .unwrap_or(output_file_path.to_path_buffer());
         let target_path = target_path.to_str().unwrap();
         if let Some(base_url) = ctx.base_url.clone() {
+            let base_url = base_url
+                .strip_suffix("/")
+                .map(|x| x.to_owned())
+                .unwrap_or(base_url);
             format!("{}/{}", base_url, target_path)
         } else {
             target_path.to_owned()

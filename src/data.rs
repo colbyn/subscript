@@ -115,7 +115,11 @@ impl Node {
                 let attrs = element.attrs
                     .iter()
                     .map(|(key, value)| {
-                        format!("{}=\"{}\"", key, value)
+                        if value.is_empty() {
+                            format!("{}", key)
+                        } else {
+                            format!("{}=\"{}\"", key, value)
+                        }
                     })
                     .collect::<Vec<_>>();
                 let attrs = attrs.join(" ");
@@ -240,20 +244,6 @@ impl Node {
         f(self);
     }
     pub fn apply(&mut self, f: Macro) {
-        // match self {
-        //     Node::Element(element) => {
-        //         for child in element.children.iter_mut() {
-        //             child.apply(f.clone());
-        //         }
-        //     }
-        //     Node::Fragment(xs) => {
-        //         for x in xs.iter_mut() {
-        //             x.apply(f.clone());
-        //         }
-        //     }
-        //     _ => {}
-        // }
-        // f.eval(self);
         self.eval(Rc::new(move |x| {
             f.eval(x)
         }))

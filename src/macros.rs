@@ -183,6 +183,27 @@ pub fn img_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     let processed_attr = "ss.img.processed";
     Macro::match_tag("img", Rc::new(move |node: &mut Node| {
+        node
+            .get_attr("width")
+            .map(|width| {
+                if node.has_attr("ss.proc.width") {
+                    return;
+                }
+                if let Some(style) = node.get_attr("style") {
+                    node.set_attr("style", format!(
+                        "{}; min-width: 0; max-width: {}; width: 100%;",
+                        style,
+                        width,
+                    ));
+                } else {
+                    node.set_attr("style", format!(
+                        ";min-width: 0; max-width: {}; width: 100%;",
+                        width,
+                    ));
+                }
+                node.set_attr("ss.proc.width", String::new());
+            });
+        // CACHE ASSET
         node.get_attr("src")
             .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
             .map(|src_path| {
@@ -207,10 +228,17 @@ pub fn link_tag(ctx: &Context) -> Macro {
             .map(|src_path| {
                 if !node.has_attr(processed_attr) {
                     let new_src = cache_file_dep(&ctx, &src_path);
-                    node.set_attr("href", format!(
-                        "/{}",
-                        new_src
-                    ));
+                    if new_src.starts_with("http") {
+                        node.set_attr("href", format!(
+                            "{}",
+                            new_src
+                        ));
+                    } else {
+                        node.set_attr("href", format!(
+                            "/{}",
+                            new_src
+                        ));
+                    }
                     node.set_attr(processed_attr, String::from(""));
                 }
             });

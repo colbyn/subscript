@@ -71,6 +71,10 @@
             path: 'index.html'
         },
         {
+            name: 'Sample',
+            path: 'sample.html'
+        },
+        {
             name: 'Algebra',
             suffix: 'Reference',
             path: 'algebra/index.html',
@@ -80,11 +84,11 @@
             suffix: 'Class Notes',
             path: 'calc/index.html',
             sub: [
-                // {
-                //     name: 'Reference',
-                //     chapter: '0',
-                //     path: 'calc/reference/index.html'
-                // },
+                {
+                    name: 'Inverse Functions',
+                    chapter: '6',
+                    path: 'calc/chapter6.html'
+                },
             ]
         },
         {
@@ -104,7 +108,7 @@
     function get_link(ref_ref) {
         let href = "";
         if (host === "colbyn.github.io") {
-            href = `https://colbyn.github.io/school-notes/${ref_ref}`;
+            href = `https://colbyn.github.io/subscript/${ref_ref}`;
         } else {
             href = `/${ref_ref}`;
         }
