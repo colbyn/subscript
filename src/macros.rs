@@ -4,6 +4,7 @@ use std::path::{PathBuf, Path};
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use std::convert::AsRef;
+use serde::{Serialize, Deserialize};
 
 use crate::data::*;
 use crate::utils::{
@@ -185,8 +186,8 @@ pub fn img_tag(ctx: &Context) -> Macro {
         node.get_attr("src")
             .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
             .map(|src_path| {
-                if !node.has_attr(processed_attr) && !ctx.fast_upate_mode {
-                    let new_src = cache_file_dep(&ctx, &src_path);
+                if !node.has_attr(processed_attr) {
+                    let new_src = crate::data::cache(&ctx, &src_path);
                     node.set_attr("src", format!(
                         "/{}",
                         new_src
@@ -213,6 +214,68 @@ pub fn link_tag(ctx: &Context) -> Macro {
                     node.set_attr(processed_attr, String::from(""));
                 }
             });
+    }))
+}
+
+pub fn desmos_tag(ctx: &Context) -> Macro {
+    let ctx = ctx.clone();
+    let process_child = |node: &Node| -> Option<HashMap<String, String>> {
+        if !node.is_tag("expr") {
+            return None;
+        }
+        let attrs = vec![
+            ("id", "id"),
+            ("label", "label"),
+            ("label-orientations", "labelOrientations"),
+            ("label-size", "labelSize"),
+            ("line-style", "lineStyle"),
+            ("point-style", "pointStyle"),
+            ("drag-mode", "dragMode"),
+            ("color", "color"),
+        ];
+        let mut command = attrs
+            .into_iter()
+            .filter_map(|(html_key, des_key)| {
+                node.get_attr(html_key)
+                    .map(|value| (des_key.to_owned(), value.to_owned()))
+            })
+            .collect::<HashMap<_, _>>();
+        command.insert(String::from("latex"), node.get_text_contents()?);
+        Some(command)
+    };
+    let html_wrapper = |node: &Node, uid: &str, commands: Vec<HashMap<String, String>>| -> Node {
+        let ref commands = serde_json::to_string(&commands).unwrap();
+        let mut args = HashMap::<&str, String>::from_iter(vec![
+            ("{{uid}}", String::from(uid)),
+            ("{{width}}", {
+                node.get_attr("width").unwrap_or(String::from("300px"))
+            }),
+            ("{{height}}", {
+                node.get_attr("height").unwrap_or(String::from("300px"))
+            }),
+            ("{{show_expressions}}", String::from("false")),
+            ("{{lockViewport}}", String::from("true")),
+            ("{{xAxisNumbers}}", String::from("true")),
+            ("{{yAxisNumbers}}", String::from("true")),
+            ("{{showGrid}}", String::from("false")),
+            ("{{math_bounds}}", String::from("null")),
+            ("{{commands}}", String::from(commands)),
+        ]);
+        let mut html_wrapper = String::from(include_str!("../assets/desmos.txt"));
+        for (key, value) in args {
+            html_wrapper = html_wrapper.replace(key, &value);
+        }
+        Node::parse_str(&html_wrapper)
+    };
+    Macro::match_tag("desmos", Rc::new(move |node: &mut Node| {
+        let uid = format!("uid{}", rand::random::<u64>());
+        let commands = node
+            .get_children()
+            .into_iter()
+            .filter_map(|node| process_child(&node))
+            .collect::<Vec<_>>();
+        let new_node = html_wrapper(node, &uid, commands);
+        *node = new_node;
     }))
 }
 
@@ -274,9 +337,6 @@ pub fn hoist_style_tags(ctx: &Context, html: &mut Node) {
 }
 
 pub fn table_of_contents(ctx: &Context, html: &mut Node) {
-    if ctx.fast_upate_mode {
-        return;
-    }
     html.eval(Rc::new(|node: &mut Node| {
         if let Some(tag) = node.tag() {
             let mut set_id = || {
@@ -375,6 +435,7 @@ pub fn table_of_contents(ctx: &Context, html: &mut Node) {
     }));
 }
 
+
 /// Macro entrypoints.
 pub mod hooks {
     use super::*;
@@ -387,6 +448,7 @@ pub mod hooks {
         html.apply(note_tag(&ctx));
         html.apply(img_tag(&ctx));
         html.apply(link_tag(&ctx));
+        html.apply(desmos_tag(&ctx));
     }
     /// Apply this once to the entire document **before** serializing such to a string.
     /// This is where e.g. runtime dependencies are inserted.

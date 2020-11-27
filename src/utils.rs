@@ -83,28 +83,6 @@ pub fn trim_indent(source: &str) -> String {
         .join("\n")
 }
 
-// pub fn normalize_source_path(ctx: &crate::data::Context, path: &str) -> PathBuf {
-//     use std::path::PathBuf;
-//     let source_dir = ctx.source_dir();
-//     let root_dir = ctx.root_dir.clone();
-//     root_dir.join(source_dir.join(path))
-// }
-
-// pub fn load_file(ctx: &crate::data::Context, path: &str) -> String {
-//     read_file_or_panic(normalize_source_path(ctx, path))
-// }
-
-
-// pub fn read_file_or_panic<P: AsRef<Path>>(path: P) -> String {
-//     let path = path.as_ref().to_owned();
-//     if !path.exists() {
-//         eprintln!("missing file {:?}", path);
-//         panic!()
-//     }
-//     let contents = std::fs::read(&path).unwrap();
-//     String::from_utf8(contents).unwrap()
-// }
-
 pub fn lookup_hash<H: std::hash::Hash>(data: &H) -> u64 {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -155,10 +133,4 @@ pub fn cache_file_dep(
         input_path.to_str().to_owned()
     }
 }
-
-// pub fn to_abs_path(root: &PathBuf, file: &PathBuf) -> PathBuf {
-//     let pwd = std::env::current_dir().unwrap();
-//     let mut root = root.to_owned();
-//     pwd.join(file)
-// }
 

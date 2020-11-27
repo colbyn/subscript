@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::path::{PathBuf, Path};
@@ -647,5 +648,51 @@ impl AsRef<FilePath> for FilePath {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// CACHE
+///////////////////////////////////////////////////////////////////////////////
+
+pub type SourcePath = FilePath;
+pub type OutputPath = FilePath;
+
+pub struct Cache(Arc<Mutex<HashMap<SourcePath, CachedFile>>>);
+
+lazy_static! {
+    /// This is an example for using doc comment attributes
+    static ref GLOBAL_CACHE: Cache = Cache::new();
+}
+
+pub fn cache(ctx: &Context, source_path: &FilePath) -> String {
+    GLOBAL_CACHE.cache(ctx, source_path)
+}
+
+#[derive(Debug, Clone)]
+pub struct CachedFile {
+    output: String,
+}
+
+
+impl Cache {
+    fn new() -> Self {
+        Cache(Arc::new(Mutex::new(HashMap::default())))
+    }
+    fn lookup(&self, path: &FilePath) -> Option<CachedFile> {
+        self.0.lock().unwrap().get(path).map(|x| x.clone())
+    }
+    fn insert(&self, source_path: &FilePath, cached_file: CachedFile) {
+        self.0.lock().unwrap().insert(source_path.clone(), cached_file);
+    }
+    fn cache(&self, ctx: &Context, source_path: &FilePath) -> String {
+        if let Some(cached) = self.lookup(source_path) {
+            return cached.output
+        }
+        let out_path = crate::utils::cache_file_dep(ctx, source_path);
+        let cached_file = CachedFile {
+            output: out_path.clone(),
+        };
+        self.insert(source_path, cached_file);
+        out_path
+    }
+}
 
 

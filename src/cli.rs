@@ -80,7 +80,8 @@ pub fn compile_file(
     out_dir: &FilePath,
     trim: &Option<PathBuf>,
     base_url: &Option<String>,
-    input: FilePath
+    input: FilePath,
+    changed_file: Option<FilePath>,
 ) {
     use crate::{data::*, macros, utils};
     let mut ctx = Context::new(
@@ -90,15 +91,7 @@ pub fn compile_file(
     );
     ctx.base_url = base_url.clone();
     ctx.fast_upate_mode = fast_upate_mode;
-    // let output_file_path = {
-    //     let mut res = input
-    //         .strip_prefix(&root)
-    //         .unwrap_or(&input);
-    //     if let Some(trim) = trim {
-    //         res = res.strip_prefix(trim).unwrap_or(res);
-    //     }
-    //     out_dir.join(res)
-    // };
+    ctx.changed_file = changed_file;
     let output_file_path = input.to_output_path(
         &ctx,
         trim,
@@ -122,6 +115,7 @@ pub fn compile(
     output: FilePath,
     trim: Option<PathBuf>,
     base_url: Option<String>,
+    changed_file: Option<FilePath>,
 ) {
     use rayon::prelude::*;
     inputs
@@ -133,7 +127,8 @@ pub fn compile(
                 &output,
                 &trim,
                 &base_url,
-                input
+                input,
+                changed_file.clone(),
             );
         });
     println!("[Subscript] Compiled");
@@ -167,6 +162,7 @@ pub fn serve(
                             output.clone(),
                             trim.clone(),
                             base_url.clone(),
+                            Some(path),
                         );
                     }
                 }
@@ -181,6 +177,7 @@ pub fn serve(
                             output.clone(),
                             trim.clone(),
                             base_url.clone(),
+                            Some(path),
                         );
                     }
                 }
@@ -195,6 +192,7 @@ pub fn serve(
                             output.clone(),
                             trim.clone(),
                             base_url.clone(),
+                            Some(path),
                         );
                     }
                 }
@@ -209,6 +207,7 @@ pub fn serve(
                             output.clone(),
                             trim.clone(),
                             base_url.clone(),
+                            Some(path),
                         );
                     }
                 }
@@ -260,7 +259,8 @@ pub fn run() {
                 process_inputs(input),
                 output,
                 trim,
-                base_url
+                base_url,
+                None,
             );
         }
         Opt::Serve{root, input, output, trim, base_url, port, open_browser} => {
@@ -282,6 +282,7 @@ pub fn run() {
                 output.clone(),
                 trim.clone(),
                 base_url.clone(),
+                None,
             );
             serve(
                 root,

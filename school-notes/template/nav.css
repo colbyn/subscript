@@ -26,7 +26,6 @@ div[toc] > ul[toc] > li[for=h6] {font-size: 0.7em;}
 
 div[toc] > ul[toc] li {
     margin-bottom: 12px;
-    width: 100%;
 }
 div[toc] > ul[toc] a {
     text-decoration: none;

@@ -109,6 +109,7 @@ Long term wise, I'd like to move away from the current monolithic architecture, 
 ### Graphing VIA Desmos/GeoGebra
 
 > Still being copied over from the original ad-hoc implementation ([over here](https://github.com/colbyn/school-notes)). I think the API can be cleaned up a bit as well, for instance, I think grid lines should be disabled by default.
+> * Basic support for `<desmos>` is implemented.
 
 ```html
 <desmos height="200px">
