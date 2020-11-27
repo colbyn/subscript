@@ -1,0 +1,44 @@
+body {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    max-width: 100vw;
+}
+main {
+    padding-bottom: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+main > * {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    margin-bottom: 10px;
+}
+
+main > h1 {
+    max-width: 95%;
+}
+
+@media (max-width: 900px) {
+    main {
+        padding: 20px;
+    }
+    main > h1 {
+        max-width: unset;
+    }
+}
+
+table {
+    width: fit-content;
+    border-collapse: collapse;
+    border: none;
+}
+th, td {
+    border: 1px solid black;
+    padding: 4px;
+    text-rendering: optimizeLegibility;
+}
+

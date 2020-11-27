@@ -1,0 +1,305 @@
+<html>
+  <head>
+    <title>Note</title>
+    <link  rel="stylesheet" href="/https://github.com/colbyn/subscript/ss-data/17865854586374241494.css" ss.link.processed="" >
+    <link  rel="stylesheet" ss.link.processed="" href="/https://github.com/colbyn/subscript/ss-data/3061361258076025190.css" >
+    <link  ss.link.processed="" href="/https://github.com/colbyn/subscript/ss-data/11680353076686658937.css" rel="stylesheet" >
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['\\(', '\\)'], ['stem:[', ']'], ['`', '`']],
+        macros: {
+            'dx': "{\\, \\mathrm{d}x\\;}",
+            'Integrate': ['{\\int_{#1}^{#2}\\, #3 \\dx}', 3],
+            'IntegrateFor': ['{\\int_{#1}^{#2}\\, #3 {\\, \\mathrm{d}{#4}\\;}}', 4],
+            'I': ['{\\Integrate{a}{b}{#1}}', 1],
+            'angles': ['\\langle {#1},{#2} \\rangle', 2]
+        },
+    },
+    svg: {
+        fontCache: 'global',
+        minScale: 0.2
+    },
+    processEscapes: true,
+};
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" type="text/javascript" id="MathJax-script" async=""></script>
+    <link  href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700;1,900&display=swap" rel="stylesheet" >
+    <meta  name="viewport" content="width=device-width,initial-scale=1" >
+    <meta  charset="utf-8" >
+
+    <script src="https://www.geogebra.org/apps/deployggb.js"></script>
+
+    <script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <link  rel="preconnect" href="https://fonts.gstatic.com" >
+    <link  rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" >
+    <link  href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" >
+    <link  href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" >
+    <link  rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" >
+    <link  href="https://raw.githubusercontent.com/joshuarudd/typeset.css/master/typeset.min.css" rel="stylesheet" >
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+    body {
+        margin: 0;
+    }
+</style>
+    <style>
+    nav#side-nav {
+        border: 1px solid #000;
+        border-radius: 3px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        margin: 25px;
+        width: 100%;
+        margin: 0 auto;
+        margin-top: 10px;
+    }
+    nav#side-nav > span {
+        border-bottom: 1px solid #000;
+        margin-bottom: 4px;
+        padding: 4px;
+    }
+    nav#side-nav ul {
+        display: flex;
+        flex-direction: column;
+        color: #000;
+
+        margin-left: 4px;
+        border-left: 1px solid #e0e0e0;
+        padding-left: 10px;
+    }
+    nav#side-nav ul > li {
+        display: flex;
+        color: inherit;
+        flex-direction: column;
+    }
+    nav#side-nav ul > li > a {
+        color: inherit;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+    nav#side-nav ul > li > a > span.suffix {
+        margin-right: 10px;
+        font-size: 0.8em;
+        font-weight: 100;
+
+        padding: 3px;
+        font-size: 0.3em;
+        text-decoration: none;
+        border: 1px solid #e0e0e0;
+        color: #191919;
+    }
+    nav#side-nav ul > li > a > span.chapter {
+        margin-right: 10px;
+        text-decoration: underline;
+    }
+    nav#side-nav ul > li > a > span.name {
+        text-decoration: underline;
+    }
+</style>
+  </head>
+  <body>
+    <header root="">
+      <nav id="side-nav"><span>Navigation</span></nav>
+<script>
+    function $(f) {
+        return f();
+    }
+    let menu = [
+        {
+            name: 'Homepage',
+            path: 'index.html'
+        },
+        {
+            name: 'Sample',
+            path: 'sample.html'
+        },
+        {
+            name: 'Algebra',
+            suffix: 'Reference',
+            path: 'algebra/index.html',
+        },
+        {
+            name: 'Calculus 1',
+            suffix: 'Class Notes',
+            path: 'calc/index.html',
+            sub: [
+                {
+                    name: 'Inverse Functions',
+                    chapter: '6',
+                    path: 'calc/chapter6.html'
+                },
+            ]
+        },
+        {
+            name: 'Trigonometry',
+            suffix: 'Class Notes',
+            path: 'trig/index.html',
+            sub: [
+                // {
+                //     name: 'Miscellaneous',
+                //     chapter: '0',
+                //     path: 'trig/misc/index.html'
+                // },
+            ]
+        },
+    ];
+    let host = window.location.host;
+    function get_link(ref_ref) {
+        let href = "";
+        if (host === "colbyn.github.io") {
+            href = `https://colbyn.github.io/school-notes/${ref_ref}`;
+        } else {
+            href = `/${ref_ref}`;
+        }
+        return href;
+    }
+    function build_entry(entry) {
+        let host = window.location.host;
+        let node = document.createElement("li");
+        // LINK NODE
+        $(() => {
+            let link_node = document.createElement('a');
+            link_node.href = get_link(entry.path);
+            // SUFFIX
+            if ('suffix' in entry) {
+                let span_node = document.createElement('span');
+                span_node.className = "suffix";
+                span_node.textContent = entry.suffix;
+                link_node.appendChild(span_node);
+            }
+            // CHAPTER
+            if ('chapter' in entry) {
+                let span = document.createElement("span");
+                span.className = "chapter";
+                span.textContent = `Chapter ${entry.chapter}`;
+                link_node.appendChild(span);
+            }
+            // NAME
+            if ('name' in entry) {
+                let span = document.createElement("span");
+                span.className = "name";
+                span.textContent = entry.name;
+                link_node.appendChild(span);
+            }
+            node.appendChild(link_node);
+        });
+        // CHILD NODES
+        if ('sub' in entry) {
+            node.appendChild(build_entries(entry.sub));
+        }
+        // DONE
+        return node;
+    }
+    function build_entries(entries) {
+        let ul_node = document.createElement("ul");
+        for (entry of entries) {
+            ul_node.appendChild(build_entry(entry));
+        }
+        return ul_node;
+    }
+    // BUILD ROOT MENU
+    let root_ul_node = document.querySelector("nav#side-nav");
+    console.assert(root_ul_node);
+    root_ul_node.appendChild(build_entries(menu));
+</script>      <div toc="">
+        <ul toc="">
+          <li for="h1"><a href="#58031137892269989">Sesame snaps lollipop marshmallow marzipan</a></li>
+          <li for="h2"><a href="#8048076431641834750">Sesame snaps lollipop marshmallow marzipan</a></li>
+          <li for="h3"><a href="#17667848348751486339">Sesame snaps lollipop marshmallow marzipan</a></li>
+          <li for="h4"><a href="#13615244573680065976">Sesame snaps lollipop marshmallow marzipan</a></li>
+          <li for="h5"><a href="#10341369737847625932">Sesame snaps lollipop marshmallow marzipan</a></li>
+          <li for="h6"><a href="#10526421154948612280">Sesame snaps lollipop marshmallow marzipan</a></li>
+        </ul>
+      </div>
+    </header>
+    <main>
+      <h1 id="58031137892269989">Sesame snaps lollipop marshmallow marzipan</h1>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears. Bear claw cake toffee cake macaroon marshmallow. Cookie marzipan biscuit tart brownie ice cream brownie. Dessert oat cake topping apple pie chocolate jelly beans jelly pudding powder. Ice cream soufflé sugar plum cupcake sweet. Lemon drops sweet roll cupcake biscuit cookie. Ice cream pie apple pie fruitcake dessert sweet roll chocolate bar. Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans. Cotton candy pie danish candy danish. Biscuit sweet bonbon chocolate bar. Danish soufflé cotton candy.</p>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears. Bear claw cake toffee cake macaroon marshmallow. Cookie marzipan biscuit tart brownie ice cream brownie. Dessert oat cake topping apple pie chocolate jelly beans jelly pudding powder. Ice cream soufflé sugar plum cupcake sweet. Lemon drops sweet roll cupcake biscuit cookie. Ice cream pie apple pie fruitcake dessert sweet roll chocolate bar. Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans. Cotton candy pie danish candy danish. Biscuit sweet bonbon chocolate bar. Danish soufflé cotton candy.</p>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears. Bear claw cake toffee cake macaroon marshmallow. Cookie marzipan biscuit tart brownie ice cream brownie. Dessert oat cake topping apple pie chocolate jelly beans jelly pudding powder. Ice cream soufflé sugar plum cupcake sweet. Lemon drops sweet roll cupcake biscuit cookie. Ice cream pie apple pie fruitcake dessert sweet roll chocolate bar. Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans. Cotton candy pie danish candy danish. Biscuit sweet bonbon chocolate bar. Danish soufflé cotton candy.</p>
+      <h2 id="8048076431641834750">Sesame snaps lollipop marshmallow marzipan</h2>
+      <h3 id="17667848348751486339">Sesame snaps lollipop marshmallow marzipan</h3>
+      <h4 id="13615244573680065976">Sesame snaps lollipop marshmallow marzipan</h4>
+      <h5 id="10341369737847625932">Sesame snaps lollipop marshmallow marzipan</h5>
+      <h6 id="10526421154948612280">Sesame snaps lollipop marshmallow marzipan</h6>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears. Bear claw cake toffee cake macaroon marshmallow. Cookie marzipan biscuit tart brownie ice cream brownie. Dessert oat cake topping apple pie chocolate jelly beans jelly pudding powder. Ice cream soufflé sugar plum cupcake sweet. Lemon drops sweet roll cupcake biscuit cookie. Ice cream pie apple pie fruitcake dessert sweet roll chocolate bar. Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans. Cotton candy pie danish candy danish. Biscuit sweet bonbon chocolate bar. Danish soufflé cotton candy.</p>
+      <dl>
+        <dt>biscuit tart brownie ice cream brownie</dt>
+        <dd>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</dd>
+        <dt>biscuit tart brownie ice cream brownie</dt>
+        <dd>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</dd>
+        <dt>biscuit tart brownie ice cream brownie</dt>
+        <dd>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</dd>
+      </dl>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears.</p>
+      <ul>
+        <li>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</li>
+        <li>biscuit tart brownie ice cream brownie</li>
+        <li>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</li>
+        <li>biscuit tart brownie ice cream brownie</li>
+        <li>Ice cream pie apple pie fruitcake dessert sweet roll chocolate bar.</li>
+      </ul>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears.</p>
+      <ol>
+        <li>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</li>
+        <li>biscuit tart brownie ice cream brownie</li>
+        <li>Jelly beans pie cheesecake carrot cake candy canes wafer sweet roll jelly beans.</li>
+        <li>biscuit tart brownie ice cream brownie</li>
+        <li>Ice cream pie apple pie fruitcake dessert sweet roll chocolate bar.</li>
+      </ol>
+      <p>Sesame snaps lollipop marshmallow marzipan candy powder. Lollipop chocolate cake sugar plum. marshmallow sugar plum gingerbread bears.</p>
+      <table>
+        <tbody>
+          <tr>
+            <th>Red</th>
+            <th>Green</th>
+            <th>Blue</th>
+          </tr>
+          <tr>
+            <td>Jelly beans</td>
+            <td>Cheesecake carrot cake</td>
+            <td>Ice cream pie apple pie</td>
+          </tr>
+          <tr>
+            <td>Jelly beans</td>
+            <td>Cheesecake carrot cake</td>
+            <td>Ice cream pie apple pie</td>
+          </tr>
+          <tr>
+            <td>Jelly beans</td>
+            <td>Cheesecake carrot cake</td>
+            <td>Ice cream pie apple pie</td>
+          </tr>
+        </tbody>
+      </table>
+      <img  ss.img.processed="" src="/https://github.com/colbyn/subscript/ss-data/10544197202976252867.png" >
+      <img  src="/https://github.com/colbyn/subscript/ss-data/557206671515079649.jpg" ss.img.processed="" >
+
+      <div id="uid12063493250588693797" style="width: 300px; height: 300px;" desmos=""></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid12063493250588693797');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        xAxisNumbers: true,
+        yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    null
+    for (cmd of [{"latex":"y = x^2"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>    </main>
+  </body>
+</html>
