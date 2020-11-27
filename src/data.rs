@@ -322,6 +322,14 @@ impl Node {
             _ => vec![]
         }
     }
+    pub fn get_attributes(&self) -> HashMap<String, String> {
+        match self {
+            Node::Element(element) => {
+                element.attrs.clone()
+            },
+            _ => Default::default()
+        }
+    }
     pub fn normalize(self) -> Self {
         match self {
             Node::Element(mut element) => {

@@ -126,7 +126,7 @@ pub fn note_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     Macro::new_void("note", Rc::new(move |node: &mut Node| {
         if !node.is_tag("note") {return Some(())}
-        let mut attrs = HashMap::new();
+        let mut attrs = node.get_attributes();
         attrs.insert(String::from("note"), String::new());
         *node = Node::new_element(
             "div",
