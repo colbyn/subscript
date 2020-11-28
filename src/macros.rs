@@ -93,7 +93,7 @@ pub fn latex_suit(ctx: &Context) -> Macro {
                     Some(())
                 }
                 /// LaTeX Math Block
-                "texblock" | "tex" if node.has_attr("block") => {
+                "tex" if node.has_attr("block") => {
                     let text_contents = node.get_text_contents()?;
                     let new_node = block_latex(text_contents);
                     *node = new_node;
@@ -106,6 +106,13 @@ pub fn latex_suit(ctx: &Context) -> Macro {
                     *node = new_node;
                     Some(())
                 },
+                /// LaTeX Math Block
+                "texblock" => {
+                    let text_contents = node.get_text_contents()?;
+                    let new_node = block_latex(text_contents);
+                    *node = new_node;
+                    Some(())
+                }
                 /// LaTeX Equation (Block)
                 "equation" => {
                     let text_contents = node.get_text_contents()?;

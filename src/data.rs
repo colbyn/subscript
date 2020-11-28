@@ -387,7 +387,7 @@ impl Node {
         if txts.is_empty() {
             None
         } else {
-            Some(txts.join(" "))
+            Some(txts.join("\n"))
         }
     }
     pub fn is_text(&self) -> bool {
