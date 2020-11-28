@@ -78,7 +78,7 @@
     <img width="500px" src="../../static/calc-textbook/6.2/8.png">
 </div>
 <note gallery>
-    <h3>Other Formulas</h3>
+    <h3>Other Formulas & Proofs</h3>
     <div>
         <style self>
             self {
@@ -95,53 +95,122 @@
             }
         </style>
         <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
+            <h4>Basic Exponential Formula</h4>
+            <equation>
+                f(x) &= a^x \\
+                f^{\prime}(x) &= a^x \cdot \ln(a) \\
+            </equation>
         </note>
         <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
+            <h4>Generalized Exponential Formula</h4>
+            <equation>
+                f(x) &= a^{g(x)} \\
+                f^{\prime}(x) &= a^x \cdot \ln(a) \cdot \frac{\mathrm{d}}{\mathrm{d}x}\Big(g(x)\Big) \\
+            </equation>
         </note>
         <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
-        </note>
-    </div>
-</note>
-
-<note>
-    <h3>Other Formulas</h3>
-    <div>
-        <style self>
-            self {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                column-gap: 8px;
-                row-gap: 8px;
-                margin-bottom: 4px;
-            }
-            @media (max-width: 900px) {
-                self {
-                    grid-template-columns: 1fr;
-                }
-            }
-        </style>
-        <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
-        </note>
-        <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
-        </note>
-        <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
+            <h4>Exponential Formula Proof</h4>
+            <texblock>
+                \newcommand{\d}[1]{\frac{\mathrm{d}}{\mathrm{d}{#1}}}
+                \newcommand{\df}[2]{\frac{\mathrm{d}{#1}}{\mathrm{d}{#2}}}
+                \begin{equation}
+                \begin{aligned}
+                    \overbrace{f(x) = y = a^x}^{\text{apply $\ln$ to both sides}} \\
+                    \ln y = \ln b^x \\
+                    \overbrace{\ln y = x \cdot \ln a \\}^{\text{differentiate}} \\
+                    \overbrace{\frac{1}{y} \df{y}{x} = \cdot 1 \ln a}^{\text{multiply both sides with $y$}} \\
+                    \overbrace{\df{y}{x} = \ln a \cdot y}^{\text{plugin original $y$}} \\
+                    \overbrace{\df{y}{x} = \ln a \cdot a^x}^{\text{answer}} \\\\
+                    f^{\prime}(x) = \ln a \cdot a^x \\
+                \end{aligned}
+                \end{equation}
+            </texblock>
         </note>
     </div>
 </note>
 
 <h2>§6.4 | Derivatives of Logarithmic Functions</h2>
+<div>
+    <style self>
+        self {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: auto;
+        }
+        @media (max-width: 900px) {
+            self {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <img width="500px" src="../../static/calc-textbook/6.2/1.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/2.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/3.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/4.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/5.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/6.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/7.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/8.png">
+    <img width="500px" src="../../static/calc-textbook/6.2/9.png">
+</div>
+<note gallery>
+    <h3>Other Formulas & Proofs</h3>
+    <div>
+        <style self>
+            self {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                column-gap: 8px;
+                row-gap: 8px;
+                margin-bottom: 4px;
+            }
+            @media (max-width: 900px) {
+                self {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+        <note>
+            <h4>Basic Logarithmic Formula</h4>
+            <equation>
+                f(x) &= \log_{b}(x) \\\\
+                f^{\prime}(x) &= \frac{1}{x \cdot \ln(b)}
+            </equation>
+        </note>
+        <note>
+            <h4>Generalized Logarithmic Formula</h4>
+            <equation>
+                f(x) &= \log_{b}\left(g(x)\right) \\\\
+                f^{\prime}(x) &= \frac{1}{x \cdot \ln(b)} \cdot \frac{\mathrm{d}}{\mathrm{d}x}\Big(g(x)\Big)
+            </equation>
+        </note>
+        <note>
+            <h4>Change of Base Formula</h4>
+            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
+        </note>
+        <note>
+            <h4>Logarithmic Formula Proof</h4>
+            <texblock>
+                \newcommand{\d}[1]{\frac{\mathrm{d}}{\mathrm{d}{#1}}}
+                \newcommand{\df}[2]{\frac{\mathrm{d}{#1}}{\mathrm{d}{#2}}}
+                \begin{equation}
+                \begin{split}
+                    f(x) &= \log_{b}(x) \\\\
+                         &= \overbrace{\frac{\ln(x)}{\ln(b)}}^{\text{change of base}} \\\\
+                         &= \overbrace{\frac{1}{\ln(b)}}^{\text{constant}} \cdot \ln(x) \\\\
+                    & \text{given}\\
+                    & \d{x} \; \ln(x) = \frac{1}{x} \\\\
+                    &\text{therefore} \\
+                    f^{\prime}(x) &= \frac{1}{\ln(b)} \cdot \d{x}\Big(\ln(x) \Big) \\
+                                  &= \frac{1}{\ln(b)} \cdot \frac{1}{x} \\
+                                  &= \frac{1}{x \cdot \ln b}
+                \end{split}
+                \end{equation}
+            </texblock>
+        </note>
+    </div>
+</note>
+
 <h2>§6.5 | Exponential Growth and Decay</h2>
 <h2>§6.6 | Inverse Trigonometric Functions</h2>
 <h2>§6.7 | Hyperbolic Functions</h2>
