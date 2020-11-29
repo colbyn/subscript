@@ -58,11 +58,6 @@ h6 {
     }
 }
 
-pre {
-    font-family: 'Roboto Slab', monospace;
-    text-rendering: optimizeLegibility;
-}
-
 dl, ul, ol {
     display: flex;
     flex-direction: column;
@@ -73,4 +68,13 @@ dl, ul, ol {
 p, a {
     font-family: 'Roboto', serif;
     text-rendering: optimizeLegibility;
+}
+
+pre {
+    font-family: 'Roboto Slab', monospace;
+    text-rendering: optimizeLegibility;
+}
+
+p {
+    margin: 12px 4px;
 }

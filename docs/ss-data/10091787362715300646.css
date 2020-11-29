@@ -35,6 +35,7 @@ table {
     width: fit-content;
     border-collapse: collapse;
     border: none;
+    align-self: center;
 }
 th, td {
     border: 1px solid black;
