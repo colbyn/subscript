@@ -489,9 +489,9 @@ impl Context {
             changed_file: None,
         }
     }
-    pub fn source_dir(&self) -> FilePath {
-        let path = self.source.0.parent().unwrap().to_owned();
-        FilePath(path)
+    pub fn source_dir(&self) -> Option<FilePath> {
+        let path = self.source.0.parent()?.to_owned();
+        Some(FilePath(path))
     }
 }
 
@@ -554,7 +554,15 @@ impl FilePath {
         ctx: &Context,
         path: P,
     ) -> Option<Self> {
-        let source_dir = ctx.source_dir();
+        let skip = path
+            .as_ref()
+            .to_str()
+            .unwrap()
+            .starts_with("http");
+        if skip {
+            return None
+        }
+        let source_dir = ctx.source_dir()?;
         FilePath::resolve_child_path(
             &ctx.root_dir,
             &source_dir.join(&ctx.root_dir, path.as_ref())?
@@ -576,12 +584,18 @@ impl FilePath {
         self.0
     }
     pub fn load_text_file(&self) -> String {
-        if !self.0.exists() {
-            eprintln!("missing file {:?}", self.to_str());
-            panic!()
+        match self.try_load_text_file() {
+            Ok(x) => x,
+            Err(_) => {
+                eprintln!("missing file {:?}", self.to_str());
+                panic!()
+            }
         }
-        let contents = std::fs::read(&self).unwrap();
-        String::from_utf8(contents).unwrap()
+    }
+    pub fn try_load_text_file(&self) -> Result<String, ()> {
+        std::fs::read(&self)
+            .map_err(|_| ())
+            .and_then(|x| String::from_utf8(x).map_err(|_| ()))
     }
     pub fn load_binary_file(&self) -> Vec<u8> {
         match self.try_load_binary_file() {
@@ -653,20 +667,27 @@ impl AsRef<FilePath> for FilePath {
 pub type SourcePath = FilePath;
 pub type OutputPath = FilePath;
 
-pub struct Cache(Arc<Mutex<HashMap<SourcePath, CachedFile>>>);
+pub struct Cache(Arc<Mutex<HashMap<SourcePath, CachedItem>>>);
 
 lazy_static! {
     /// This is an example for using doc comment attributes
     static ref GLOBAL_CACHE: Cache = Cache::new();
 }
 
-pub fn cache(ctx: &Context, source_path: &FilePath) -> Option<String> {
-    GLOBAL_CACHE.cache(ctx, source_path)
+pub fn cache_file(ctx: &Context, source_path: &FilePath) -> Option<String> {
+    GLOBAL_CACHE.cache_file(ctx, source_path)
+}
+
+pub fn cache_inline_text(ctx: &Context, source_path: &FilePath) -> Option<String> {
+    GLOBAL_CACHE.cache_inline_text(ctx, source_path)
 }
 
 #[derive(Debug, Clone)]
-pub struct CachedFile {
-    output: String,
+pub enum CachedItem {
+    /// For files that are loaded/feteched at runtime.
+    FilePath {output: String},
+    /// For file-contents that are inlined in the HTML tree.
+    InlineText {contents: String},
 }
 
 
@@ -674,22 +695,42 @@ impl Cache {
     fn new() -> Self {
         Cache(Arc::new(Mutex::new(HashMap::default())))
     }
-    fn lookup(&self, path: &FilePath) -> Option<CachedFile> {
+    fn lookup(&self, path: &FilePath) -> Option<CachedItem> {
         self.0.lock().unwrap().get(path).map(|x| x.clone())
     }
-    fn insert(&self, source_path: &FilePath, cached_file: CachedFile) {
+    fn insert(&self, source_path: &FilePath, cached_file: CachedItem) {
         self.0.lock().unwrap().insert(source_path.clone(), cached_file);
     }
-    fn cache(&self, ctx: &Context, source_path: &FilePath) -> Option<String> {
-        if let Some(cached) = self.lookup(source_path) {
-            return Some(cached.output)
+    fn cache_file(&self, ctx: &Context, source_path: &FilePath) -> Option<String> {
+        if let Some(CachedItem::FilePath{output}) = self.lookup(source_path) {
+            return Some(output)
         }
         let out_path = crate::utils::cache_file_dep(ctx, source_path)?;
-        let cached_file = CachedFile {
+        let cached_file = CachedItem::FilePath {
             output: out_path.clone(),
         };
         self.insert(source_path, cached_file);
         Some(out_path)
+    }
+    fn cache_inline_text(&self, ctx: &Context, source_path: &FilePath) -> Option<String> {
+        if let Some(CachedItem::InlineText{contents}) = self.lookup(source_path) {
+            return Some(contents)
+        }
+        // LOAD FILE
+        if let Ok(contents) = source_path.try_load_text_file() {
+            let cached_file = CachedItem::InlineText {
+                contents: contents.clone(),
+            };
+            self.insert(source_path, cached_file);
+            Some(contents)
+        } else {
+            eprintln!(
+                "[warning] ignoring asset: {} for {}",
+                source_path,
+                ctx.source
+            );
+            None
+        }
     }
 }
 

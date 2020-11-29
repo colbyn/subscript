@@ -28,7 +28,7 @@ pub fn include_tag(ctx: &Context) -> Macro {
                     &src_path_str,
                 )?;
                 if !src_path.exists() {
-                    let source_dir = ctx.source_dir();
+                    let source_dir = ctx.source_dir().unwrap();
                     eprintln!("MISSING: {}", src_path);
                     eprintln!(" ORIGINAL {}", src_path_str);
                     eprintln!("     SOURCE_DIR {}", source_dir);
@@ -42,6 +42,7 @@ pub fn include_tag(ctx: &Context) -> Macro {
                     let mut new_ctx = ctx.clone();
                     new_ctx.source = ctx
                         .source_dir()
+                        .unwrap()
                         .join(&ctx.root_dir, &src_path)
                         .unwrap();
                     hooks::document(&new_ctx, &mut base);
@@ -82,16 +83,6 @@ pub fn latex_suit(ctx: &Context) -> Macro {
         let ctx = ctx.clone();
         move |node: &mut Node| -> Option<()> {
             match node.tag()?.as_ref() {
-                /// External File (Block)
-                "tex" if node.has_attr("src") => {
-                    // let src = node.get_attr("src").unwrap();
-                    // // let value = load_file(&ctx, &src);
-                    // let value = unimplemented!();
-                    // let new_node = block_latex(value);
-                    // *node = new_node;
-                    eprintln!("[unimplemented] tex tags with src link");
-                    Some(())
-                }
                 /// LaTeX Math Block
                 "tex" if node.has_attr("block") => {
                     let text_contents = node.get_text_contents()?;
@@ -106,8 +97,20 @@ pub fn latex_suit(ctx: &Context) -> Macro {
                     *node = new_node;
                     Some(())
                 },
+                /// External File (Block)
+                "texblock" if node.has_attr("src") => {
+                    node
+                        .get_attr("src")
+                        .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
+                        .and_then(|src_path| {
+                            let value = cache_inline_text(&ctx, &src_path)?;
+                            let new_node = block_latex(value);
+                            *node = new_node;
+                            Some(())
+                        })
+                }
                 /// LaTeX Math Block
-                "texblock" => {
+                "texblock" if !node.has_attr("src") => {
                     let text_contents = node.get_text_contents()?;
                     let new_node = block_latex(text_contents);
                     *node = new_node;
@@ -215,7 +218,7 @@ pub fn img_tag(ctx: &Context) -> Macro {
             .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
             .and_then(|src_path| {
                 if !node.has_attr(processed_attr) {
-                    let new_src = crate::data::cache(&ctx, &src_path)?;
+                    let new_src = crate::data::cache_file(&ctx, &src_path)?;
                     node.set_attr("src", format!(
                         "{}",
                         new_src
