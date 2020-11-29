@@ -66,16 +66,22 @@ pub fn include_tag(ctx: &Context) -> Macro {
 pub fn latex_suit(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     let block_latex = |value: String| {
+        let mut attrs = HashMap::from_iter(vec![
+            (String::from("latex"), String::from("block")),
+        ]);
         Node::new_element(
             "div",
-            HashMap::new(),
+            attrs,
             &[Node::new_text(&format!("$${}$$", value))]
         )
     };
     let inline_latex = |value: String| {
+        let mut attrs = HashMap::from_iter(vec![
+            (String::from("latex"), String::from("inline")),
+        ]);
         Node::new_element(
             "span",
-            HashMap::new(),
+            attrs,
             &[Node::new_text(&format!("\\({}\\)", value))]
         )
     };
