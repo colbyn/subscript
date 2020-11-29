@@ -1,0 +1,103 @@
+<h1>Limits</h1>
+<div>
+    <style self>
+        self {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: auto;
+        }
+        @media (max-width: 900px) {
+            self {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <img width="500px" src="https://m7y2z7f7.rocketcdn.me/wp-content/uploads/2018/12/Horizontal-Asymptotes-and-Limits-at-Infinity.png">
+</div>
+<note>
+    <h2>Vertical Asymptote</h2>
+    <p>The line <tex>x=c</tex> is called a <b>vertical asymptote</b> of the curve <tex>y = f(x)</tex> if at least one of the following statements is true:</p>
+    <div>
+        <style self>
+            self {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                column-gap: 8px;
+                row-gap: 8px;
+                margin-bottom: 4px;
+                justify-items: center;
+            }
+            @media (max-width: 900px) {
+                self {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+        <equation>
+            \lim_{x \to c} f(x) &= + \infty \\
+            \lim_{x \to c} f(x) &= - \infty
+        </equation>
+        <equation>
+            \lim_{x \to c^{-}} f(x) &= + \infty \\
+            \lim_{x \to c^{-}} f(x) &= - \infty
+        </equation>
+        <equation>
+            \lim_{x \to c^{+}} f(x) &= + \infty \\
+            \lim_{x \to c^{+}} f(x) &= - \infty
+        </equation>
+    </div>
+</note>
+<note>
+    <h2>Horizontal Asymptote</h2>
+    <p>The line <tex>y=L</tex> is called a <b>horizontal asymptote</b> of the curve <tex>y = f(x)</tex> if either of the following is true:</p>
+    <div>
+        <style self>
+            self {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                column-gap: 8px;
+                row-gap: 8px;
+                margin-bottom: 4px;
+                justify-items: center;
+            }
+            @media (max-width: 900px) {
+                self {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+        <tex>
+            \lim_{x \to \infty} f(x) = L
+        </tex>
+        <tex>
+            \lim_{x \to -\infty} f(x) = L
+        </tex>
+    </div>
+</note>
+<note>
+    <h2>Limit Formulas</h2>
+    <div>
+        <style self>
+            self {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                column-gap: 8px;
+                row-gap: 8px;
+                margin-bottom: 4px;
+                justify-items: center;
+            }
+            @media (max-width: 900px) {
+                self {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+        <equation>
+            \lim_{x \to c} \left( f \circ g \right)(x) &= f \Big( \lim_{x \to c} g(x) \Big)
+        </equation>
+    </div>
+</note>
+
+
+
+
