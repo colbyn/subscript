@@ -65,20 +65,18 @@ pub fn include_tag(ctx: &Context) -> Macro {
 
 pub fn latex_suit(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
-    let block_latex = |value: String| {
-        let mut attrs = HashMap::from_iter(vec![
-            (String::from("latex"), String::from("block")),
-        ]);
+    let block_latex = |node: &Node, value: String| {
+        let mut attrs = node.get_attributes();
+        attrs.insert(String::from("latex"), String::from("block"));
         Node::new_element(
             "div",
             attrs,
             &[Node::new_text(&format!("$${}$$", value))]
         )
     };
-    let inline_latex = |value: String| {
-        let mut attrs = HashMap::from_iter(vec![
-            (String::from("latex"), String::from("inline")),
-        ]);
+    let inline_latex = |node: &Node, value: String| {
+        let mut attrs = node.get_attributes();
+        attrs.insert(String::from("latex"), String::from("inline"));
         Node::new_element(
             "span",
             attrs,
@@ -92,14 +90,14 @@ pub fn latex_suit(ctx: &Context) -> Macro {
                 /// LaTeX Math Block
                 "tex" if node.has_attr("block") => {
                     let text_contents = node.get_text_contents()?;
-                    let new_node = block_latex(text_contents);
+                    let new_node = block_latex(node, text_contents);
                     *node = new_node;
                     Some(())
                 },
                 /// LaTeX Inline Math
                 "tex" if !node.has_attr("block") => {
                     let text_contents = node.get_text_contents()?;
-                    let new_node = inline_latex(text_contents);
+                    let new_node = inline_latex(node, text_contents);
                     *node = new_node;
                     Some(())
                 },
@@ -110,7 +108,7 @@ pub fn latex_suit(ctx: &Context) -> Macro {
                         .and_then(|x| FilePath::resolve_include_path(&ctx, &x))
                         .and_then(|src_path| {
                             let value = cache_inline_text(&ctx, &src_path)?;
-                            let new_node = block_latex(value);
+                            let new_node = block_latex(node, value);
                             *node = new_node;
                             Some(())
                         })
@@ -118,14 +116,14 @@ pub fn latex_suit(ctx: &Context) -> Macro {
                 /// LaTeX Math Block
                 "texblock" if !node.has_attr("src") => {
                     let text_contents = node.get_text_contents()?;
-                    let new_node = block_latex(text_contents);
+                    let new_node = block_latex(node, text_contents);
                     *node = new_node;
                     Some(())
                 }
                 /// LaTeX Equation (Block)
                 "equation" => {
                     let text_contents = node.get_text_contents()?;
-                    let new_node = block_latex(format!(
+                    let new_node = block_latex(node, format!(
                         "\\begin{{equation}}\n\\begin{{split}}\n{txt}\n\\end{{split}}\n\\end{{equation}}",
                         txt=text_contents
                     ));
@@ -156,6 +154,7 @@ pub fn note_tag(ctx: &Context) -> Macro {
 pub fn items_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     Macro::match_tag("items", Rc::new(|node: &mut Node| {
+        let mut attrs = node.get_attributes();
         let mut new_children = Vec::<Node>::new();
         for child in node.get_children() {
             if child.is_tag("li") {
@@ -168,7 +167,7 @@ pub fn items_tag(ctx: &Context) -> Macro {
         }
         *node = Node::new_element(
             "ul",
-            Default::default(),
+            attrs,
             &new_children
         )
     }))
@@ -178,6 +177,7 @@ pub fn list_tag(ctx: &Context) -> Macro {
     let ctx = ctx.clone();
     Macro::match_tag("list", Rc::new(|node: &mut Node| {
         let mut new_children = Vec::<Node>::new();
+        let mut attrs = node.get_attributes();
         for child in node.get_children() {
             if child.is_tag("li") {
                 new_children.push(child);
@@ -189,7 +189,7 @@ pub fn list_tag(ctx: &Context) -> Macro {
         }
         *node = Node::new_element(
             "ol",
-            Default::default(),
+            attrs,
             &new_children
         )
     }))
@@ -463,7 +463,7 @@ pub fn table_of_contents(ctx: &Context, html: &mut Node) {
     let headers = runner(html);
     html.eval(Rc::new(move |node: &mut Node| {
         if node.is_tag("toc") {
-            let mut attrs = HashMap::default();
+            let mut attrs = node.get_attributes();
             attrs.insert(String::from("toc"), String::default());
             *node = Node::new_element(
                 "ul",
@@ -483,6 +483,7 @@ pub mod hooks {
     pub fn document(ctx: &Context, html: &mut Node) {
         html.apply(include_tag(&ctx));
         html.apply(items_tag(&ctx));
+        html.apply(list_tag(&ctx));
         html.apply(latex_suit(&ctx));
         html.apply(note_tag(&ctx));
         html.apply(img_tag(&ctx));
