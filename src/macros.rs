@@ -21,18 +21,15 @@ pub fn include_tag(ctx: &Context) -> Macro {
     Macro::match_tag("include", Rc::new(move |node: &mut Node| {
         let source_dir = ctx.source_dir();
         let root_dir = ctx.root_dir.clone();
-        if let Some(src_path_str) = node.get_attr("src") {
-            let contents = || -> Option<String> {
+        node.get_attr("src")
+            .and_then(|src_path_str| {
                 let src_path = FilePath::resolve_include_path(
                     &ctx,
                     &src_path_str,
                 )?;
                 if !src_path.exists() {
-                    let source_dir = ctx.source_dir().unwrap();
-                    eprintln!("MISSING: {}", src_path);
-                    eprintln!(" ORIGINAL {}", src_path_str);
-                    eprintln!("     SOURCE_DIR {}", source_dir);
-                    panic!()
+                    eprintln!("[WARNING] missing file: {}", src_path);
+                    return None;
                 }
                 let base: String = src_path.load_text_file();
                 let had_doctype = base.contains("<!DOCTYPE html>");
@@ -52,14 +49,16 @@ pub fn include_tag(ctx: &Context) -> Macro {
                     base = format!("<!DOCTYPE html>\n{}", base);
                 }
                 Some(base)
-            };
-            let embeded_contents = Node::Fragment(node.get_children()).to_html_str(0);
-            let contents = contents()
-                .unwrap()
-                .replace("<content></content>", &embeded_contents);
-            let mut new_node = Node::parse_str(&contents);
-            *node = new_node;
-        }
+            })
+            .map(|contents| {
+                let embeded_contents = Node::Fragment(node.get_children()).to_html_str(0);
+                let contents = contents.replace(
+                    "<content></content>",
+                    &embeded_contents
+                );
+                let mut new_node = Node::parse_str(&contents);
+                *node = new_node;
+            });
     }))
 }
 

@@ -11,5 +11,6 @@ pub fn run(port: u16) {
         .arg("--disable-extensions")
         .output()
         .expect("failed to execute process");
+    eprintln!("browser closed");
     std::process::exit(1);
 }

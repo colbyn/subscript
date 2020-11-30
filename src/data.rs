@@ -60,7 +60,7 @@ impl Macro {
         Macro{
             name: name.to_owned(),
             callback: MacroCallback(Rc::new(move |x| {
-                let res = callback(x);
+                let _ = callback(x);
                 Ok(())
             })),
         }
