@@ -58,3 +58,16 @@ div[note] div[note] {
     box-shadow: 0 0 1px 0px #7b7b7b;
 }
 
+div[macro='gallery'] {
+    display: grid;
+    place-items: center;
+    width: auto;
+}
+div[macro='gallery'][columns='2'] {
+    grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 900px) {
+    div[macro='gallery'] {
+        grid-template-columns: 1fr;
+    }
+}
