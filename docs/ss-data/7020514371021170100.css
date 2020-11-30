@@ -66,8 +66,24 @@ div[macro='gallery'] {
 div[macro='gallery'][columns='2'] {
     grid-template-columns: 1fr 1fr;
 }
+div[macro='gallery'][columns='3'] {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+div[macro='gallery'][columns='4'] {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+}
 @media (max-width: 900px) {
     div[macro='gallery'] {
         grid-template-columns: 1fr;
     }
+}
+
+div[latex='block'] {
+    font-family: 'Roboto Slab', monospace;
+    text-rendering: optimizeLegibility;
+}
+
+div[latex='inline'] {
+    font-family: 'Roboto Slab', monospace;
+    text-rendering: optimizeLegibility;
 }
