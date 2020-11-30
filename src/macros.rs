@@ -473,6 +473,20 @@ pub fn table_of_contents(ctx: &Context, html: &mut Node) {
     }));
 }
 
+pub fn gallery_tag(ctx: &Context) -> Macro {
+    let ctx = ctx.clone();
+    Macro::match_tag("gallery", Rc::new(|node: &mut Node| {
+        let mut attrs = node.get_attributes();
+        attrs.insert(String::from("macro"), String::from("gallery"));
+        let mut children = node.get_children();
+        *node = Node::new_element(
+            "div",
+            attrs,
+            &children,
+        )
+    }))
+}
+
 
 /// Macro entrypoints.
 pub mod hooks {
@@ -481,6 +495,7 @@ pub mod hooks {
     /// Custom elements use the 'document' hook.
     pub fn document(ctx: &Context, html: &mut Node) {
         html.apply(include_tag(&ctx));
+        html.apply(gallery_tag(&ctx));
         html.apply(items_tag(&ctx));
         html.apply(list_tag(&ctx));
         html.apply(latex_suit(&ctx));
