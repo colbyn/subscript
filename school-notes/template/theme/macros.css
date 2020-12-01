@@ -60,8 +60,12 @@ div[note] div[note] {
 
 div[macro='gallery'] {
     display: grid;
-    place-items: center;
     width: auto;
+    column-gap: 8px;
+    row-gap: 8px;
+}
+div[macro='gallery'][compact] {
+    place-items: center;
 }
 div[macro='gallery'][columns='2'] {
     grid-template-columns: 1fr 1fr;

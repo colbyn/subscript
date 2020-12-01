@@ -29,21 +29,7 @@
 </gallery>
 <note gallery>
     <h3>Other Formulas, Proofs & Facts for <tex>f(x) = b^x</tex></h3>
-    <div>
-        <style self>
-            self {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                column-gap: 8px;
-                row-gap: 8px;
-                margin-bottom: 4px;
-            }
-            @media (max-width: 900px) {
-                self {
-                    grid-template-columns: 1fr;
-                }
-            }
-        </style>
+    <gallery columns="2">
         <note>
             <h4>Basic Exponential Formula</h4>
             <equation>
@@ -56,8 +42,8 @@
             <equation>
                 f(x) &= a^{g(x)} \\
                 f^{\prime}(x)
-                    &= a^x \cdot \ln(a) \cdot \frac{\mathrm{d}}{\mathrm{d}x}\Big(g(x)\Big) \\\\
-                    &= a^x \cdot \ln(a) \cdot g^{\prime}(x) \\
+                    &= a^{g(x)} \cdot \ln(a) \cdot \frac{\mathrm{d}}{\mathrm{d}x}\Big(g(x)\Big) \\\\
+                    &= a^{g(x)} \cdot \ln(a) \cdot g^{\prime}(x) \\
             </equation>
         </note>
         <note>
@@ -91,7 +77,7 @@
                 </tr>
             </table>
         </note>
-    </div>
+    </gallery>
 </note>
 
 
@@ -121,21 +107,7 @@
 </gallery>
 <note gallery>
     <h3>Other Formulas, Proofs & Facts for <tex>y = \log_b{x}</tex></h3>
-    <div>
-        <style self>
-            self {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                column-gap: 8px;
-                row-gap: 8px;
-                margin-bottom: 4px;
-            }
-            @media (max-width: 900px) {
-                self {
-                    grid-template-columns: 1fr;
-                }
-            }
-        </style>
+    <gallery columns="2">
         <note>
             <h4>Basic Logarithmic Formula</h4>
             <equation>
@@ -153,8 +125,38 @@
             </equation>
         </note>
         <note>
-            <h4>Change of Base Formula</h4>
-            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
+            <h4>Basic Exponential Formula</h4>
+            <equation>
+                f(x) &= a^x \\
+                f^{\prime}(x) &= a^x \cdot \ln(a) \\
+            </equation>
+        </note>
+        <note>
+            <h4>Generalized Exponential Formula</h4>
+            <equation>
+                f(x) &= a^{g(x)} \\
+                f^{\prime}(x)
+                    &= a^{g(x)} \cdot \ln(a) \cdot \frac{\mathrm{d}}{\mathrm{d}x}\Big(g(x)\Big) \\\\
+                    &= a^{g(x)} \cdot \ln(a) \cdot g^{\prime}(x) \\
+            </equation>
+        </note>
+        <note>
+            <h4>Exponential Formula Proof</h4>
+            <texblock>
+                \newcommand{\d}[1]{\frac{\mathrm{d}}{\mathrm{d}{#1}}}
+                \newcommand{\df}[2]{\frac{\mathrm{d}{#1}}{\mathrm{d}{#2}}}
+                \begin{equation}
+                \begin{aligned}
+                    \overbrace{f(x) = y = a^x}^{\text{apply $\ln$ to both sides}} \\
+                    \ln y = \ln b^x \\
+                    \overbrace{\ln y = x \cdot \ln a \\}^{\text{differentiate}} \\
+                    \overbrace{\frac{1}{y} \df{y}{x} = \cdot 1 \ln a}^{\text{multiply both sides with $y$}} \\
+                    \overbrace{\df{y}{x} = \ln a \cdot y}^{\text{plugin original $y$}} \\
+                    \overbrace{\df{y}{x} = \ln a \cdot a^x}^{\text{answer}} \\\\
+                    f^{\prime}(x) = \ln a \cdot a^x \\
+                \end{aligned}
+                \end{equation}
+            </texblock>
         </note>
         <note>
             <h4>Logarithmic Formula Proof</h4>
@@ -177,6 +179,10 @@
             </texblock>
         </note>
         <note>
+            <h4>Change of Base Formula</h4>
+            <img width='300px' src="https://cdn.kastatic.org/googleusercontent/2f5orUa3ApJkpedmwZ_lev_3Hlm0YEFzEf3YfMyN8Y-wXJoPD_moC-TCvJJXaKbs7rFX0c_h2swRxGLNnI2XknzgEg">
+        </note>
+        <note>
             <h4>Domain & Range</h4>
             <table>
                 <tr>
@@ -188,8 +194,8 @@
                     <td><tex>(-\infty, \infty)</tex></td>
                 </tr>
             </table>
-        </note>       
-    </div>
+        </note>
+    </gallery>
 </note>
 
 

@@ -43,3 +43,12 @@ th, td {
     text-rendering: optimizeLegibility;
 }
 
+img {
+    align-self: center;
+}
+
+a {
+    font-family: 'Roboto';
+    color: #02c195;
+    font-weight: 400;
+}
