@@ -32,6 +32,20 @@
             "name": "include",
             "description": "The compile-time import system.",
             "attributes": []
+        },
+        {
+            "name": "gallery",
+            "description": "A gallery of items",
+            "attributes": [
+                {
+                    "name": "columns",
+                    "values": [
+                        {"name": "2"},
+                        {"name": "3"},
+                        {"name": "4"}
+                    ]
+                }
+            ]
         }
     ],
     "globalAttributes": [],
