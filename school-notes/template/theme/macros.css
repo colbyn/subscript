@@ -91,3 +91,8 @@ div[latex='inline'] {
     font-family: 'Roboto Slab', monospace;
     text-rendering: optimizeLegibility;
 }
+
+div[note] > p {
+    text-align: justify;
+    font-weight: 300;
+}

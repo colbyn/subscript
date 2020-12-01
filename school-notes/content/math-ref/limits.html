@@ -1,3 +1,65 @@
+<h1>Functional Utilities</h1>
+<note gallery>
+    <h3>Definitions</h3>
+    <gallery columns="2">
+        <note>
+            <h4>Right to Left Evaluation</h4>
+            <equation>
+                f \triangleleft x &= f(x)
+            </equation>
+        </note>
+        <note>
+            <h4>Left to Right Evaluation</h4>
+            <equation>
+                x \triangleright f &= f(x)
+            </equation>
+        </note>
+        <note>
+            <p>Think of the arrows as denoting the order of evaluation E.g. pass this term to the function on the left, or pass this term to the function on the right of the arrow. Essentially, this is useful for reducing parentheses.</p>
+        </note>
+        <note>
+            <h4>Example</h4>
+            <equation>
+                \sin \triangleleft \frac{4}{12}\tau \;\displaystyle{\text{rad}} &= -\frac{\sqrt{3}}{3} \\
+                \sin \left(\frac{4}{12}\tau \;\displaystyle{\text{rad}} \right) &= -\frac{\sqrt{3}}{3}
+            </equation>
+        </note>
+        <note>
+            <h4>Right to Left Function Composition</h4>
+            <equation>
+                f \circ g \triangleleft x
+                    &= f(g(x)) \\
+                    &= f \triangleleft g \triangleleft x
+            </equation>
+        </note>
+    </gallery>
+</note>
+
+<h1>Radians & Radians Conversion</h1>
+<note gallery>
+    <h3>Definitions</h3>
+    <gallery columns="2">
+        <note>
+            <h4>Constants</h4>
+            <equation>
+                \tau &= 2\pi = 360^{\circ} \\
+                \pi &= \frac{1}{2}\tau = 180^{\circ}
+            </equation>
+        </note>
+        <note>
+            <h4>Conversion</h4>
+            <equation>
+                &\text{given}\\
+                1^{\circ} &= \frac{1}{360} \tau \; {\displaystyle {\text{rad}}} \\
+                1 \; rad &= \frac{1}{\tau} \cdot 360^{\circ}\\\\
+                &\text{therefore}\\
+                x^{\circ} &= \frac{x}{360} \tau \; {\displaystyle {\text{rad}}} \\
+                x \; rad &= \frac{x}{\tau} \cdot 360^{\circ}
+            </equation>
+        </note>
+    </gallery>
+</note>
+
 <h1>Limits</h1>
 <img width="900px" src="https://m7y2z7f7.rocketcdn.me/wp-content/uploads/2018/12/Horizontal-Asymptotes-and-Limits-at-Infinity.png">
 <note>
@@ -69,6 +131,28 @@
     </div>
 </note>
 
-
+<h1>Geometry</h1>
+<h2>Secant line</h2>
+<h2>Tangent Line</h2>
+<note gallery>
+    <h3>Definitions</h3>
+    <gallery columns="2">
+        <note>
+            <h4>Standard Formula for Point <tex>(\textcolor{cyan}{x_1}, \textcolor{cyan}{y_1})</tex></h4>
+            <equation>
+                P &= (\textcolor{cyan}{x_1}, \textcolor{cyan}{y_1}) \\
+                y - \textcolor{cyan}{y_1} &= f^{\prime}(\textcolor{cyan}{x_1})(x - \textcolor{cyan}{x_1})
+            </equation>
+        </note>
+        <note>
+            <h4>Alternative Formula at Point <tex>x = \textcolor{cyan}{a}</tex></h4>
+            <equation>
+                P &= (\textcolor{cyan}{a}, f \triangleleft \textcolor{cyan}{a}) \\
+                y &= f(\textcolor{cyan}{a}) + f^{\prime}(\textcolor{cyan}{a})(x - \textcolor{cyan}{a})
+            </equation>
+        </note>
+    </gallery>
+</note>
+<h2>Perpendicular Line</h2>
 
 
