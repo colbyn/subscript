@@ -1,6 +1,6 @@
 <h1>Functional Utilities</h1>
 <note gallery>
-    <h3>Definitions</h3>
+    <h3 id="functional-utilities-definitions">Definitions</h3>
     <gallery columns="2">
         <note>
             <h4>Right to Left Evaluation</h4>
@@ -15,6 +15,7 @@
             </equation>
         </note>
         <note>
+            <h4>Regarding Left/Right Evaluation Operators</h4>
             <p>Think of the arrows as denoting the order of evaluation E.g. pass this term to the function on the left, or pass this term to the function on the right of the arrow. Essentially, this is useful for reducing parentheses.</p>
         </note>
         <note>
@@ -31,6 +32,13 @@
                     &= f(g(x)) \\
                     &= f \triangleleft g \triangleleft x
             </equation>
+        </note>
+        <note>
+            <h4>Derivative Shorthand</h4>
+            <equation>
+                \delta f(x) &= \frac{\mathrm{d}}{\mathrm{d}x} f(x) = f^\prime(x)
+            </equation>
+            <p>For this notation, the derivative with respect to a given variable, is implicit.</p>
         </note>
     </gallery>
 </note>
@@ -155,4 +163,60 @@
 </note>
 <h2>Perpendicular Line</h2>
 
+<h1>Derivatives</h1>
+<items>
+    <p>See <a href="#functional-utilities-definitions">Functional Utilities - Definitions</a> for commonly used notation conveniences.</p>
+</items>
+<note>
+    <h2>Function Reference</h2>
+    <gallery columns="3">
+        <equation>\delta \sin(x) &= \cos(x)</equation>
+        <equation>\delta \cos(x) &= -\sin(x)</equation>
+        <equation>\delta \tan(x) &= \sec^2(x)</equation>
+        <equation>\delta \csc(x) &= -\cot(x)\csc(x)</equation>
+        <equation>\delta \sec(x) &= \tan(x)\sec(x)</equation>
+        <equation>\delta \cot(x) &= -\csc^2(x)</equation>
+    </gallery>
+    <hr>
+    <note small>
+        <h3>Note</h3>
+        <gallery columns="2">
+            <equation>|x| &= \sqrt{x^2} \neq x</equation>
+            <equation>|x|^2 &= x^2</equation>
+        </gallery>
+    </note>
+    <gallery columns="1">
+        <equation>\delta |x| &= \frac{|x|}{x} = \frac{x}{|x|}</equation>
+    </gallery>
+</note>
+
+<h1>Integrals</h1>
+<items>
+    <p>See <a href="https://en.wikipedia.org/wiki/Lists_of_integrals">Wikipedia - Lists of Integrals</a> for a comprehensive list.</p>
+</items>
+<note>
+    <h2>Function Reference</h2>
+    <gallery columns="2">
+        <equation>\int \sin(x) \mathrm{d}x &= -\cos(x) + C</equation>
+        <equation>\int \cos(x) \mathrm{d}x &= \sin(x)</equation>
+    </gallery>
+    <gallery columns="1">
+        <equation>\int \tan(x) \mathrm{d}x &= -\ln |\cos x| + C = \ln |\sec x| + C</equation>
+    </gallery>
+    <hr>
+    <gallery columns="2">
+        <equation>\int \csc(x) \mathrm{d}x &= -\ln |\csc x + \cot x|</equation>
+        <equation>\int \sec(x) \mathrm{d}x &= \ln |\sec(x) + \tan(x)| + C</equation>
+    </gallery>
+    <gallery columns="1">
+        <equation>\int \cot(x) \mathrm{d}x &= \ln |\sin x| + C</equation>
+    </gallery>
+    <hr>
+    <gallery columns="2">
+        <equation>\int \sec^2(x) \mathrm{d}x &= \tan(x) + C</equation>
+        <equation>\int \csc^2(x) \mathrm{d}x &= -\cot(x) + C</equation>
+        <equation>\int \sec(x)\tan(x) \mathrm{d}x &= \sec(x) + C</equation>
+        <equation>\int \csc(x)\cot(x) \mathrm{d}x &= -\csc(x) + C</equation>
+    </gallery>
+</note>
 

@@ -52,3 +52,13 @@ a {
     color: #02c195;
     font-weight: 400;
 }
+
+hr {
+    border: none;
+    border-bottom: 1px solid #d4d4d4;
+    max-width: 90%;
+    margin: 0 auto;
+    justify-self: center;
+    align-self: center;
+    width: 100%;
+}
