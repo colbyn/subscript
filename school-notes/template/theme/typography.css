@@ -78,3 +78,18 @@ pre {
 p {
     margin: 12px 4px;
 }
+
+li, dt, dd, th, td {
+    font-family: 'Roboto Slab', monospace;
+    text-rendering: optimizeLegibility;
+    text-align: justify;
+}
+
+li, dd {
+    margin-bottom: 4px;
+}
+
+li:last-child,
+dd:last-child {
+    margin-bottom: 0;
+}

@@ -13,6 +13,7 @@ div[note] > h6:first-child {
     margin: 0;
     margin-bottom: 4px;
     width: 100%;
+    padding: 2px;
 }
 
 
@@ -97,6 +98,21 @@ div[note][small]:not([gallery]) h4 {font-size: 0.9em;}
 div[note][small]:not([gallery]) h5 {font-size: 0.6em;}
 div[note][small]:not([gallery]) h6 {font-size: 0.5em;}
 
+
+div[note][monospace]:not([gallery]) * {
+    font-family: 'Roboto Slab', monospace;
+}
+div[note][monospace]:not([gallery]) h1,
+div[note][monospace]:not([gallery]) h2,
+div[note][monospace]:not([gallery]) h3,
+div[note][monospace]:not([gallery]) h4,
+div[note][monospace]:not([gallery]) h5,
+div[note][monospace]:not([gallery]) h6
+{
+    font-family: 'Roboto Slab', monospace;
+    font-weight: 400;
+}
+
 div[macro='gallery'] {
     display: grid;
     width: auto;
@@ -137,3 +153,4 @@ div[note] > p {
     text-align: justify;
     font-weight: 300;
 }
+

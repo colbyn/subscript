@@ -1,0 +1,497 @@
+<note monospace>
+    <h4>#5</h4>
+    <texblock>
+        e^{2\ln(3)} = 3^2 = 9
+    </texblock>
+</note>
+<note monospace>
+    <h4>#6A</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \underbrace{
+            \begin{aligned}
+                \ln(1 + e^{-x}) &= 3 \\
+                e^3 &= 1 + e^{-x} \\
+                e^3 - 1 &= e^{-x} 
+            \end{aligned}
+        }_{\text{Apply $\ln$ to both sides}}
+        \end{equation}
+    </texblock>
+    <texblock>
+        \begin{equation}
+        \begin{split}
+            \ln \left(e^3 - 1\right) &= \ln\left(e^{-x}\right) \\
+            \ln \left(e^3 - 1\right) &= -x \cdot \ln\left(e\right) \\
+            \ln \left(e^3 - 1\right) &= -x \cdot (1) \\
+            \ln \left(e^3 - 1\right) &= -x \\
+            -\ln \left(e^3 - 1\right) &= x
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Answer</p>
+    <texblock>
+        \begin{equation}
+            x = -\ln \left(e^3 - 1\right)
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#6B</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \underbrace{
+            \begin{aligned}
+                \lnp{x + 1} + \lnp{x - 1} &= 1 \\
+                \lnp{(x + 1)(x - 1)} &= 1 \\
+                \lnp{x^2 - 1} &= 1 \\
+                e^1 &= x^2 - 1 \\
+                1 + e^1 &= x^2 \\
+                \sqrt{1 + e^1} &= \sqrt{x^2} \\
+                \pm \sqrt{1 + e^1} &= x \\
+                \sqrt{1 + e^1} &= x \\
+            \end{aligned}
+        }_{\text{no $\pm$ because of domain}}
+        \end{equation}
+    </texblock>
+    <p>Answer</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            x = \sqrt{1 + e^1}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#6C</h4>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            tan^{-1}(x) &= 1 \\
+            x &= \frac{1}{8}\tau = \frac{1}{4}\pi
+        \end{split}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#6D</h4>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            \sin(x) &= 0.3 = \frac{3}{10} \\
+            x = \arcsin(\frac{3}{10})
+        \end{split}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#7A</h4>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            f(x) = y &= \ln |\sec(5x) + \tan(5x)| \\\\
+            f^\prime(x)
+                &= \frac{1}{\sec(5x) + \tan(5x)} \cdot \Big(\sec(5x) + \tan(5x)\Big)^{\prime} \\\\
+                &=  \frac{\frac{5\sin(5x)}{\cos^2(x)} + 5\sec^2(5x)}{\sec(5x) + \tan(5x)} 
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Since</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            \dox \sec(5x)
+                &= \dox \frac{1}{\cos(5x)} \\
+                &= \dox \frac{A}{B} \\
+                &= \frac{A^{\prime} B - A B^{\prime}}{B^2} \\
+                &= \frac{0\cos(5x) - (-5\sin(5x))}{\cos^2(x)} \\
+                &= \frac{5\sin(5x)}{\cos^2(x)} \\
+            \dox \tan(5x) &= 5\sec^2(5x)
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Answer</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            f^\prime(x) = \frac{\frac{5\sin(5x)}{\cos^2(x)} + 5\sec^2(5x)}{\sec(5x) + \tan(5x)}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#7B</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            f(x) = y
+                &= x \cdot \tan^{-1}(4x) \\
+                &= A \cdot B \\
+            f^{\prime}(x)
+                &= A^{\prime} B + A B^{\prime} \\
+                &= \tan^{-1}(4x) + x \frac{1}{1 + (4x)^2} \cdot \dox\Big(4x\Big) \\
+                &= \tan^{-1}(4x) + \frac{4x}{1 + 16x^2}
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Answer</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            f^\prime(x) = \tan^{-1}(4x) + \frac{4x}{1 + 16x^2}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#7C</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            f(x) = y
+                &= e^{mx} \cdot \cos(n x) \\
+                &= AB \\
+            f^{\prime}(x)
+                &= \dox AB \\
+                &= A^{\prime} B + A B^{\prime} \\
+                &= \left(m e^{mx}\right) \cos(n x) + e^{mx} -\sin(n x) \cdot \dox\Big(n x\Big) \\
+                &= m e^{mx}\cos(n x) - n e^{mx}\sin(n x)
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Answer</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            f^\prime(x) = m e^{mx}\cos(n x) - n e^{mx}\sin(n x)
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#7D</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            f(x) = y &= 3^{x \cdot \ln(x)} \\
+            f^\prime(x)
+                &= 3^{x \cdot \ln(x)} \cdot \ln(3) \cdot \dox\Big(x \cdot \ln(x)\Big) \\
+                &= 3^{x \cdot \ln(x)} \cdot \ln(3) \cdot \Big(\ln(x) + 1\Big) \\
+                &= \ln(3) \cdot 3^{x \cdot \ln(x)} \cdot \Big(\ln(x) + 1\Big)
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Where</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            \dox\Big(x \cdot \ln(x)\Big)
+                &= \cdot AB \\
+                &= A^{\prime} B + A B^{\prime} \\
+                &= \ln(x) + x \frac{1}{x} \\
+                &= \ln(x) + 1 \\
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Answer</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            f^\prime(x) = \ln(3) \cdot 3^{x \cdot \ln(x)} \cdot \Big(\ln(x) + 1\Big)
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#19A</h4>
+    <p>Given</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to \infty} e^{-3x} = \lim_{x \to \infty} e^{u}
+        \end{equation}
+    </texblock>
+    <p>Let</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            u = -3x
+        \end{equation}
+    </texblock>
+    <p>As</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            x \to \infty, \;\; u \to -\infty
+        \end{equation}
+    </texblock>
+    <p>Therefore</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to \infty} e^{-3x} = \lim_{u \to -\infty} e^u = 0
+        \end{equation}
+    </texblock>
+    <p>Using the definition from the textbook</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to -\infty} e^x = 0
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#19B</h4>
+    <p>Given</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to 10^{-}} \ln(100 - x^2)
+        \end{equation}
+    </texblock>
+    <p>Let</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            u = 100 - x^2
+        \end{equation}
+    </texblock>
+    <p>As</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            x \to 10, \;\; u \to 0
+        \end{equation}
+    </texblock>
+    <p>Therefore</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to 10^{-}} \ln(100 - x^2) = \lim_{u \to 0} \ln(u) = -\infty
+        \end{equation}
+    </texblock>
+    <p>Using the definition from the textbook</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to 0} \ln(x) = -\infty
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#19C</h4>
+    <p>Given</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to \infty} \arctan(x^3 - x)
+        \end{equation}
+    </texblock>
+    <p>Let</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \underbrace{u = x^3 - x = x(x^2 - 1) = x(x + 1)(x - 1)}_{\text{Odd - Increasing Function}}
+        \end{equation}
+    </texblock>
+    <p>As</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            x \to \infty, \;\; u \to \infty
+        \end{equation}
+    </texblock>
+    <p>Therefore</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to \infty} \arctan(x^3 - x) = \lim_{u \to \infty} \arctan(u) = \frac{\pi}{2}
+        \end{equation}
+    </texblock>
+    <p>Using the definition from the textbook</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to \infty} \arctan(x) = \frac{\pi}{2}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#19D</h4>
+    <p>Begin:</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \newcommand{\eqWithMsg}[1]{\overset{{#1}}{=}}
+        \begin{equation}
+        \begin{split}
+            \lim_{x \to 0} \frac{e^{4x} - 1 - 4x}{x^2}
+                &\eqWithMsg{\frac{0}{0}} \lim_{x \to 0} \frac{4e^{4x} - 4}{2x} \\\\
+                &\eqWithMsg{\frac{0}{0}} \lim_{x \to 0} \frac{16e^{4x}}{2} \\\\
+                &= \frac{16}{2} \lim_{x \to 0} e^{4x} \\\\
+                &= 8 \lim_{x \to 0} e^{4x} \\\\
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Let</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            u = 4x
+        \end{equation}
+    </texblock>
+    <p>As</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            x \to 0, \;\; u \to 0
+        \end{equation}
+    </texblock>
+    <p>Therefore</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \newcommand{\eqWithMsg}[1]{\overset{{#1}}{=}}
+        \begin{equation}
+        \begin{split}
+            \lim_{x \to 0} e^{4x} &= \lim_{u \to 0} e^u \eqWithMsg{DSP} e^0 = 1 \\\\
+            8\lim_{x \to 0} e^{4x} &= 8\lim_{u \to 0} e^u = 8(1) = 8
+        \end{split}
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#19E</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            \lim_{x \to \infty} \frac{e^{4x} - 1 - 4x}{x^2}
+                &\eqWithMsg{\frac{0}{0}} \lim_{x \to \infty} \frac{4e^{4x} - 4}{2x} \\\\
+                &\eqWithMsg{\frac{0}{0}} \lim_{x \to \infty} \frac{16e^{4x}}{2} \\\\
+                &= \frac{16}{2} \lim_{x \to \infty} e^{4x} \\\\
+                &= 8 \lim_{x \to \infty} e^{4x} \\\\
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Let</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            u = 4x
+        \end{equation}
+    </texblock>
+    <p>As</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            x \to \infty, \;\; u \to \infty
+        \end{equation}
+    </texblock>
+    <p>Therefore</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            \lim_{x \to 0} e^{4x} &= \lim_{u \to 0} e^u = \infty \\\\
+            8\lim_{x \to 0} e^{4x} &= 8\lim_{u \to 0} e^u = 8 \cdot \infty = \infty
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Using the definition from the textbook</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+            \lim_{x \to \infty} e^x = \infty
+        \end{equation}
+    </texblock>
+</note>
+<note monospace>
+    <h4>#19F</h4>
+    <p>Begin</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            \lim_{x \to -\infty} \Big( x^2 - x^3 \Big) e^{2x}
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>Let</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            u &= \overbrace{x^2 - x^3 = x^2(1 - x)}^{\text{Odd, Decreasing Function}} \\
+            v &= 2x \\
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>As</p>
+    <texblock>
+        \newcommand{\dox}{\frac{\mathrm{d}}{\mathrm{d}x}}
+        \newcommand{\lnp}[1]{\ln\left({#1}\right)}
+        \begin{equation}
+        \begin{split}
+            x \to -\infty, \;\; u \to \infty \\
+            x \to -\infty, \;\; v \to -\infty \\
+        \end{split}
+        \end{equation}
+    </texblock>
+    <p>TODO: L'Hopital's Rule</p>
+</note>
+
+<hr/>
+
+
+
