@@ -1,0 +1,424 @@
+<html>
+  <head>
+    <title>Note</title>
+    <link  href="https://colbyn.github.io/subscript/ss-data/925182467693724269.css" rel="stylesheet" ss.link.processed >
+    <link  rel="stylesheet" href="https://colbyn.github.io/subscript/ss-data/11307371499081253009.css" ss.link.processed >
+    <link  href="https://colbyn.github.io/subscript/ss-data/8060780432794501854.css" rel="stylesheet" ss.link.processed >
+    <link  href="https://colbyn.github.io/subscript/ss-data/14888004549103363915.css" ss.link.processed rel="stylesheet" >
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['\\(', '\\)'], ['stem:[', ']'], ['`', '`']],
+        macros: {
+            'dx': "{\\, \\mathrm{d}x\\;}",
+            'Integrate': ['{\\int_{#1}^{#2}\\, #3 \\dx}', 3],
+            'IntegrateFor': ['{\\int_{#1}^{#2}\\, #3 {\\, \\mathrm{d}{#4}\\;}}', 4],
+            'I': ['{\\Integrate{a}{b}{#1}}', 1],
+            'angles': ['\\langle {#1},{#2} \\rangle', 2]
+        },
+    },
+    svg: {
+        fontCache: 'global',
+        minScale: 0.2
+    },
+    processEscapes: true,
+};
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" type="text/javascript" id="MathJax-script" async></script>
+    <link  rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700;1,900&display=swap" >
+    <meta  content="width=device-width,initial-scale=1" name="viewport" >
+    <meta  charset="utf-8" >
+
+    <script src="https://www.geogebra.org/apps/deployggb.js"></script>
+
+    <script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <link  href="https://fonts.gstatic.com" rel="preconnect" >
+    <link  rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" >
+    <link  rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap" >
+    <link  href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" >
+    <link  href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" >
+    <link  href="https://raw.githubusercontent.com/joshuarudd/typeset.css/master/typeset.min.css" rel="stylesheet" >
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+    body {
+        margin: 0;
+    }
+</style>
+    <style>
+    nav#side-nav {
+        border: 1px solid #000;
+        border-radius: 3px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        margin: 25px;
+        width: 100%;
+        margin: 0 auto;
+        margin-top: 10px;
+    }
+    nav#side-nav > span {
+        border-bottom: 1px solid #000;
+        margin-bottom: 4px;
+        padding: 4px;
+    }
+    nav#side-nav ul {
+        display: flex;
+        flex-direction: column;
+        color: #000;
+
+        margin-left: 4px;
+        border-left: 1px solid #e0e0e0;
+        padding-left: 10px;
+    }
+    nav#side-nav ul > li {
+        display: flex;
+        color: inherit;
+        flex-direction: column;
+    }
+    nav#side-nav ul > li > a {
+        color: inherit;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+    nav#side-nav ul > li > a > span.suffix {
+        margin-right: 10px;
+        font-size: 0.8em;
+        font-weight: 100;
+
+        padding: 3px;
+        font-size: 0.3em;
+        text-decoration: none;
+        border: 1px solid #e0e0e0;
+        color: #191919;
+    }
+    nav#side-nav ul > li > a > span.chapter {
+        margin-right: 10px;
+        text-decoration: underline;
+    }
+    nav#side-nav ul > li > a > span.name {
+        text-decoration: underline;
+    }
+</style>
+  </head>
+  <body>
+    <header root>
+      <nav id="side-nav"><span>Navigation</span></nav>
+<script>
+    function $(f) {
+        return f();
+    }
+    let menu = [
+        {
+            name: 'Homepage',
+            path: 'index.html'
+        },
+        {
+            name: 'Sample',
+            path: 'sample.html'
+        },
+        {
+            name: 'Mathematics Reference',
+            suffix: 'Personal Notes',
+            path: 'math-ref.html',
+        },
+        {
+            name: 'Calculus 1',
+            suffix: 'Class Notes',
+            path: 'calc1/index.html',
+            sub: [
+                {
+                    name: 'Inverse Functions',
+                    chapter: '6',
+                    path: 'calc1/chapter6.html'
+                },
+            ]
+        },
+        {
+            name: 'Trigonometry',
+            suffix: 'Class Notes',
+            path: 'trig/index.html',
+            sub: [
+                {
+                    name: 'Topics in Analytic Geometry',
+                    chapter: '6',
+                    path: 'trig/chapter6.html'
+                },
+                {
+                    name: 'Review',
+                    path: 'trig/review.html'
+                },
+            ]
+        },
+    ];
+    let host = window.location.host;
+    function get_link(ref_ref) {
+        let href = "";
+        if (host === "colbyn.github.io") {
+            href = `https://colbyn.github.io/subscript/${ref_ref}`;
+        } else {
+            href = `/${ref_ref}`;
+        }
+        return href;
+    }
+    function build_entry(entry) {
+        let host = window.location.host;
+        let node = document.createElement("li");
+        // LINK NODE
+        $(() => {
+            let link_node = document.createElement('a');
+            link_node.href = get_link(entry.path);
+            // SUFFIX
+            if ('suffix' in entry) {
+                let span_node = document.createElement('span');
+                span_node.className = "suffix";
+                span_node.textContent = entry.suffix;
+                link_node.appendChild(span_node);
+            }
+            // CHAPTER
+            if ('chapter' in entry) {
+                let span = document.createElement("span");
+                span.className = "chapter";
+                span.textContent = `Chapter ${entry.chapter}`;
+                link_node.appendChild(span);
+            }
+            // NAME
+            if ('name' in entry) {
+                let span = document.createElement("span");
+                span.className = "name";
+                span.textContent = entry.name;
+                link_node.appendChild(span);
+            }
+            node.appendChild(link_node);
+        });
+        // CHILD NODES
+        if ('sub' in entry) {
+            node.appendChild(build_entries(entry.sub));
+        }
+        // DONE
+        return node;
+    }
+    function build_entries(entries) {
+        let ul_node = document.createElement("ul");
+        for (entry of entries) {
+            ul_node.appendChild(build_entry(entry));
+        }
+        return ul_node;
+    }
+    // BUILD ROOT MENU
+    let root_ul_node = document.querySelector("nav#side-nav");
+    console.assert(root_ul_node);
+    root_ul_node.appendChild(build_entries(menu));
+</script>      <div toc>
+        <ul toc>
+          <li for="h1"><a href="#9495769263772564286">Review</a></li>
+          <li for="h2"><a href="#28001189170894758">Graphs of Trigonometric Functions</a></li>
+          <li for="h2"><a href="#8162977380193337843">Overview</a></li>
+          <li for="h4"><a href="#1252569153567139153">\(y = \sin(x)\)</a></li>
+          <li for="h4"><a href="#44543774414547717">\(y = \csc(x)\)</a></li>
+          <li for="h4"><a href="#14441415822454832928">\(y = \cos(x)\)</a></li>
+          <li for="h4"><a href="#8629835481460591454">\(y = \sec(x)\)</a></li>
+          <li for="h4"><a href="#12632974603024424008">\(y = \tan(x)\)</a></li>
+          <li for="h4"><a href="#11139231846065133123">\(y = \cot(x)\)</a></li>
+        </ul>
+      </div>
+    </header>
+    <main>
+      <h1 id="9495769263772564286">Review</h1>
+      <h2 id="28001189170894758">Graphs of Trigonometric Functions</h2>
+      <div note gallery>
+        <h2 id="8162977380193337843">Overview</h2>
+        <div columns="2" macro="gallery">
+          <div columns="1" macro="gallery">
+            <div note>
+              <h4 id="1252569153567139153"><span latex="inline">\(y = \sin(x)\)</span></h4>
+
+              <div desmos style="width: 300px; height: 300px;" id="uid11186779138422393972" macro="desmos"></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid11186779138422393972');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        // xAxisNumbers: true,
+        // yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    if (
+        {"top":1.1,"left":-3.3,"bottom":-1.1,"right":3.3} &&
+        {"top":1.1,"left":-3.3,"bottom":-1.1,"right":3.3} !== null &&
+        {"top":1.1,"left":-3.3,"bottom":-1.1,"right":3.3} !== undefined
+    ) {
+        calculator.setMathBounds({"top":1.1,"left":-3.3,"bottom":-1.1,"right":3.3});
+    }
+    for (cmd of [{"latex":"y=\\left\\{-\\pi\\le x\\le\\pi : \\sin(x)\\right\\}"},{"lineStyle":"DASHED","color":"purple","latex":"x = -\\pi"},{"latex":"x = \\pi","lineStyle":"DASHED","color":"purple"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>            </div>
+            <div note>
+              <h4 id="44543774414547717"><span latex="inline">\(y = \csc(x)\)</span></h4>
+
+              <div desmos style="width: 300px; height: 300px;" macro="desmos" id="uid9220221250721341652"></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid9220221250721341652');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        // xAxisNumbers: true,
+        // yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    if (
+        {"left":-3.3,"top":20.0,"right":3.3,"bottom":-20.0} &&
+        {"left":-3.3,"top":20.0,"right":3.3,"bottom":-20.0} !== null &&
+        {"left":-3.3,"top":20.0,"right":3.3,"bottom":-20.0} !== undefined
+    ) {
+        calculator.setMathBounds({"left":-3.3,"top":20.0,"right":3.3,"bottom":-20.0});
+    }
+    for (cmd of [{"latex":"y=\\left\\{-\\pi\\le x\\le\\pi : \\csc(x)\\right\\}"},{"lineStyle":"DASHED","color":"purple","latex":"x = -\\pi"},{"lineStyle":"DASHED","color":"purple","latex":"x = \\pi"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>            </div>
+          </div>
+          <div macro="gallery" columns="1">
+            <div note>
+              <h4 id="14441415822454832928"><span latex="inline">\(y = \cos(x)\)</span></h4>
+
+              <div style="width: 300px; height: 300px;" macro="desmos" desmos id="uid279446100995957603"></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid279446100995957603');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        // xAxisNumbers: true,
+        // yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    if (
+        {"left":-0.5,"right":7.28,"top":1.1,"bottom":-1.1} &&
+        {"left":-0.5,"right":7.28,"top":1.1,"bottom":-1.1} !== null &&
+        {"left":-0.5,"right":7.28,"top":1.1,"bottom":-1.1} !== undefined
+    ) {
+        calculator.setMathBounds({"left":-0.5,"right":7.28,"top":1.1,"bottom":-1.1});
+    }
+    for (cmd of [{"latex":"y=\\left\\{0 \\le x \\le 2\\pi : \\cos(x)\\right\\}"},{"latex":"x = 2\\pi","color":"purple","lineStyle":"DASHED"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>            </div>
+            <div note>
+              <h4 id="8629835481460591454"><span latex="inline">\(y = \sec(x)\)</span></h4>
+
+              <div style="width: 300px; height: 300px;" id="uid6820475655287870030" macro="desmos" desmos></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid6820475655287870030');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        // xAxisNumbers: true,
+        // yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    if (
+        {"bottom":-20.0,"right":7.28,"left":-0.5,"top":20.0} &&
+        {"bottom":-20.0,"right":7.28,"left":-0.5,"top":20.0} !== null &&
+        {"bottom":-20.0,"right":7.28,"left":-0.5,"top":20.0} !== undefined
+    ) {
+        calculator.setMathBounds({"bottom":-20.0,"right":7.28,"left":-0.5,"top":20.0});
+    }
+    for (cmd of [{"latex":"y=\\left\\{0 \\le x \\le 2\\pi : \\sec(x)\\right\\}"},{"color":"purple","lineStyle":"DASHED","latex":"x = 2\\pi"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>            </div>
+          </div>
+          <div columns="1" macro="gallery">
+            <div note>
+              <h4 id="12632974603024424008"><span latex="inline">\(y = \tan(x)\)</span></h4>
+
+              <div desmos style="width: 300px; height: 300px;" id="uid9152602698612709468" macro="desmos"></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid9152602698612709468');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        // xAxisNumbers: true,
+        // yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    if (
+        {"top":20.0,"bottom":-20.0,"right":2.07,"left":-2.07} &&
+        {"top":20.0,"bottom":-20.0,"right":2.07,"left":-2.07} !== null &&
+        {"top":20.0,"bottom":-20.0,"right":2.07,"left":-2.07} !== undefined
+    ) {
+        calculator.setMathBounds({"top":20.0,"bottom":-20.0,"right":2.07,"left":-2.07});
+    }
+    for (cmd of [{"latex":"\n                        y=\\left\\{-\\frac{1}{2}\\pi\\le x\\le\\frac{1}{2}\\pi:\\tan\\left(x\\right)\\right\\}\n                    "},{"latex":"\n                        x=-\\frac{1}{2}\\pi\n                    ","color":"purple","lineStyle":"DASHED"},{"latex":"\n                        x=\\frac{1}{2}\\pi\n                    ","lineStyle":"DASHED","color":"purple"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>            </div>
+            <div note>
+              <h4 id="11139231846065133123"><span latex="inline">\(y = \cot(x)\)</span></h4>
+
+              <div style="width: 300px; height: 300px;" macro="desmos" desmos id="uid11738253996065433913"></div>
+<script>
+window.addEventListener("load", function on_load() {
+    var elt = document.getElementById('uid11738253996065433913');
+    var options = {
+        expressionsCollapsed: true,
+        expressions: false,
+        lockViewport: true,
+        settingsMenu: false,
+        border: false,
+        // xAxisNumbers: true,
+        // yAxisNumbers: true,
+        showGrid: false,
+    };
+    var calculator = Desmos.GraphingCalculator(elt, options);
+    if (
+        {"right":2.07,"top":20.0,"bottom":-20.0,"left":-2.07} &&
+        {"right":2.07,"top":20.0,"bottom":-20.0,"left":-2.07} !== null &&
+        {"right":2.07,"top":20.0,"bottom":-20.0,"left":-2.07} !== undefined
+    ) {
+        calculator.setMathBounds({"right":2.07,"top":20.0,"bottom":-20.0,"left":-2.07});
+    }
+    for (cmd of [{"latex":"\n                        y=\\left\\{-\\frac{1}{2}\\pi\\le x\\le\\frac{1}{2}\\pi:\\cot\\left(x\\right)\\right\\}\n                    "},{"latex":"\n                        x=-\\frac{1}{2}\\pi\n                    ","lineStyle":"DASHED","color":"purple"},{"color":"purple","latex":"\n                        x=\\frac{1}{2}\\pi\n                    ","lineStyle":"DASHED"}]) {
+        calculator.setExpression(cmd);
+    }
+});
+</script>            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
