@@ -277,7 +277,40 @@ pub fn desmos_tag(ctx: &Context) -> Macro {
                 node.get_attr(html_key)
                     .map(|value| (des_key.to_owned(), value.to_owned()))
             })
+            .map(|(key, value)| {
+                if key == "lineStyle" && value.to_lowercase() == "solid" {
+                    return (key, String::from("SOLID"))
+                }
+                if key == "lineStyle" && value.to_lowercase() == "dashed" {
+                    return (key, String::from("DASHED"))
+                }
+                if key == "lineStyle" && value.to_lowercase() == "dotted" {
+                    return (key, String::from("DOTTED"))
+                }
+                (key, value)
+            })
             .collect::<HashMap<_, _>>();
+        if let Some(value) = node.get_attr("font-size") {
+            let mut value = value
+                .replace("-", "_")
+                .to_owned();
+            if value.replace("-", "_").to_lowercase() == "very_small" {
+                value = String::from("VERY_SMALL");
+            }
+            if value.replace("-", "_").to_lowercase() == "small" {
+                value = String::from("SMALL");
+            }
+            if value.replace("-", "_").to_lowercase() == "medium" {
+                value = String::from("MEDIUM");
+            }
+            if value.replace("-", "_").to_lowercase() == "large" {
+                value = String::from("LARGE");
+            }
+            if value.replace("-", "_").to_lowercase() == "very_large" {
+                value = String::from("VERY_LARGE");
+            }
+            command.insert(String::from("fontSize"), value);
+        }
         command.insert(String::from("latex"), node.get_text_contents()?);
         Some(command)
     };
@@ -300,6 +333,35 @@ pub fn desmos_tag(ctx: &Context) -> Macro {
             ("{{commands}}", String::from(commands)),
         ]);
         let mut html_wrapper = String::from(include_str!("../assets/desmos.txt"));
+        let mut set_math_bounds = || -> Option<()> {
+            let mut math_bounds = HashMap::<String, f32>::default();
+            node.get_attr("left")
+                .and_then(|x| x.parse::<f32>().ok())
+                .map(|value: f32| {
+                    math_bounds.insert(String::from("left"), value);
+                });
+            node.get_attr("right")
+                .and_then(|x| x.parse::<f32>().ok())
+                .map(|value: f32| {
+                    math_bounds.insert(String::from("right"), value);
+                });
+            node.get_attr("top")
+                .and_then(|x| x.parse::<f32>().ok())
+                .map(|value: f32| {
+                    math_bounds.insert(String::from("top"), value);
+                });
+            node.get_attr("bottom")
+                .and_then(|x| x.parse::<f32>().ok())
+                .map(|value: f32| {
+                    math_bounds.insert(String::from("bottom"), value);
+                });
+            if !math_bounds.is_empty() {
+                let math_bounds = serde_json::to_string(&math_bounds).ok()?;
+                args.insert("{{math_bounds}}", math_bounds);
+            }
+            Some(())
+        };
+        set_math_bounds();
         for (key, value) in args {
             html_wrapper = html_wrapper.replace(key, &value);
         }

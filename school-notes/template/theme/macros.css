@@ -154,3 +154,6 @@ div[note] > p {
     font-weight: 300;
 }
 
+div[macro="desmos"] {
+    align-self: center;
+}
