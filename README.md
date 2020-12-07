@@ -21,7 +21,6 @@
           <expr>y=x^2</expr>
       </desmos>
       ```
-      > Note that the above is still being migrated over from my old [GitHub repository (colbyn/school-notes)](https://github.com/colbyn/school-notes). 
       
       Or, do you need to embed musical notation? Create a macro that embeds [VexFlow](https://www.vexflow.com/). 
 
