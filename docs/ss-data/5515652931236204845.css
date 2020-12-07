@@ -13,6 +13,7 @@ div[note] > h6:first-child {
     margin: 0;
     margin-bottom: 4px;
     width: 100%;
+    padding: 2px;
 }
 
 
@@ -58,6 +59,60 @@ div[note] div[note] {
     box-shadow: 0 0 0px 1px #eeeeee;
 }
 
+@media (min-width: 900px) {
+    div[note][small] {
+        display: grid;
+        grid-template-columns: min-content 1fr;
+        padding: 0;
+    }
+    div[note][small] > h1:first-child,
+    div[note][small] > h2:first-child,
+    div[note][small] > h3:first-child,
+    div[note][small] > h4:first-child,
+    div[note][small] > h5:first-child,
+    div[note][small] > h6:first-child {
+        margin: 0;
+        align-self: center;
+        border-right: 1px solid #dcdcdc !important;
+        border-bottom: none;
+        border-color: inherit;
+        border-radius: unset;
+        padding-left: 12px;
+        padding-right: 12px;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        min-width: 200px;
+        justify-content: flex-end;
+        padding-right: 12px;
+    }
+}
+div[macro='gallery'][small] {font-size: 0.8em;}
+div[note][small]:not([gallery]) div[macro='gallery'] {font-size: 0.8em;}
+div[note][small]:not([gallery]) h1 {font-size: 2em;}
+div[note][small]:not([gallery]) h2 {font-size: 0.8em;}
+div[note][small]:not([gallery]) h3 {font-size: 1.3em;}
+div[note][small]:not([gallery]) h4 {font-size: 0.9em;}
+div[note][small]:not([gallery]) h5 {font-size: 0.6em;}
+div[note][small]:not([gallery]) h6 {font-size: 0.5em;}
+
+
+div[note][monospace]:not([gallery]) * {
+    font-family: 'Roboto Slab', monospace;
+}
+div[note][monospace]:not([gallery]) h1,
+div[note][monospace]:not([gallery]) h2,
+div[note][monospace]:not([gallery]) h3,
+div[note][monospace]:not([gallery]) h4,
+div[note][monospace]:not([gallery]) h5,
+div[note][monospace]:not([gallery]) h6
+{
+    font-family: 'Roboto Slab', monospace;
+    font-weight: 400;
+}
+
 div[macro='gallery'] {
     display: grid;
     width: auto;
@@ -98,3 +153,4 @@ div[note] > p {
     text-align: justify;
     font-weight: 300;
 }
+

@@ -40,7 +40,6 @@ table {
 th, td {
     border: 1px solid black;
     padding: 4px;
-    text-rendering: optimizeLegibility;
 }
 
 img {
@@ -49,6 +48,7 @@ img {
 
 a {
     font-family: 'Roboto';
+    text-rendering: optimizeLegibility;
     color: #02c195;
     font-weight: 400;
 }
@@ -61,4 +61,8 @@ hr {
     justify-self: center;
     align-self: center;
     width: 100%;
+}
+
+dl[center] {
+    margin: 0 auto !important;
 }
