@@ -102,26 +102,3 @@ For now, all supported macros are implemented in the core compiler.
 
 Long term wise, I'd like to move away from the current monolithic architecture, and support extensibility in a more general manner VIA some scripting language. For this, I plan on embedding [Deno](https://github.com/denoland/deno), which will provide a multitude of benefits that e.g. NodeJS can't offer (Deno is from the creator of NodeJS).
 
-
-
-## Cool Features (Using Macros)
-
-### Graphing VIA Desmos/GeoGebra
-
-> Still being copied over from the original ad-hoc implementation ([over here](https://github.com/colbyn/school-notes)). I think the API can be cleaned up a bit as well, for instance, I think grid lines should be disabled by default.
-> * Basic support for `<desmos>` is implemented.
-
-```html
-<desmos height="200px">
-    <expr>y=x^2</expr>
-</desmos>
-<geogebra height='200' type='graphing'>
-    <expr>y=x^2</expr>
-</geogebra>
-```
-
-![Graphing Example](assets/preview-graphing.png)
-
-Which is customizable (see the bottom figure):
-
-![Graphing Example](assets/preview-graphing-2.png)
